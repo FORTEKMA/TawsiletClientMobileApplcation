@@ -11,12 +11,15 @@ import {
   RefreshControl,
   Animated,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
+import { ref, onValue, off, query, orderByChild, limitToLast } from 'firebase/database';
+import db from '../../utils/firebase';
 import { colors } from '../../utils/colors';
 import { 
   trackScreenView, 
@@ -31,13 +34,14 @@ const AllChatsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [connectionStatus, setConnectionStatus] = useState('connected');
   
   const currentUser = useSelector((state) => state?.user?.currentUser);
 
   // Track screen view on mount
   useEffect(() => {
     trackScreenView('AllChats');
- //   trackChatListViewed();
+    trackChatListViewed();
     
     // Animate screen entrance
     Animated.timing(fadeAnim, {
@@ -45,75 +49,182 @@ const AllChatsScreen = () => {
       duration: 300,
       useNativeDriver: true,
     }).start();
-    
-    loadChats();
   }, []);
 
-  const loadChats = async () => {
-    try {
-      setLoading(true);
-      // TODO: Implement Firebase Realtime Database query to get user's chats
-      // For now, using mock data
-      const mockChats = [
-        {
-          id: '1',
-          driverName: 'Ahmed Ben Ali',
-          driverAvatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-          lastMessage: 'I\'m on my way to pick you up',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-          unreadCount: 2,
-          orderId: 'ORD001',
-          status: 'active'
-        },
-        {
-          id: '2',
-          driverName: 'Mohamed Trabelsi',
-          driverAvatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-          lastMessage: 'Thank you for choosing our service!',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-          unreadCount: 0,
-          orderId: 'ORD002',
-          status: 'completed'
-        },
-        {
-          id: '3',
-          driverName: 'Karim Sassi',
-          driverAvatar: 'https://randomuser.me/api/portraits/men/3.jpg',
-          lastMessage: 'I\'ve arrived at the pickup location',
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-          unreadCount: 0,
-          orderId: 'ORD003',
-          status: 'completed'
-        }
-      ];
+  // Set up Firebase listeners when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (currentUser?.id) {
+        setupFirebaseListeners();
+      }
       
-      setChats(mockChats);
-    } catch (error) {
-      console.error('Error loading chats:', error);
-    } finally {
+      return () => {
+        cleanupFirebaseListeners();
+      };
+    }, [currentUser?.id])
+  );
+
+  const setupFirebaseListeners = () => {
+    if (!currentUser?.id) return;
+
+    setLoading(true);
+
+    // Listen for connection status
+    const connectedRef = ref(db, '.info/connected');
+    const connectionListener = onValue(connectedRef, (snapshot) => {
+      setConnectionStatus(snapshot.val() ? 'connected' : 'disconnected');
+    });
+
+    // Get user's chat list - assuming we store user chat references
+    const userChatsRef = ref(db, `userChats/${currentUser.id}`);
+    const userChatsListener = onValue(userChatsRef, async (snapshot) => {
+      const userChatsData = snapshot.val();
+      
+      if (!userChatsData) {
+        setChats([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get chat details for each chat ID
+      const chatPromises = Object.keys(userChatsData).map(async (chatId) => {
+        return new Promise((resolve) => {
+          const chatInfoRef = ref(db, `chats/${chatId}/info`);
+          const chatInfoListener = onValue(chatInfoRef, (chatSnapshot) => {
+            const chatInfo = chatSnapshot.val();
+            
+            if (chatInfo) {
+              // Get last message
+              const messagesRef = ref(db, `chats/${chatId}/messages`);
+              const lastMessageQuery = query(messagesRef, orderByChild('timestamp'), limitToLast(1));
+              
+              onValue(lastMessageQuery, (messageSnapshot) => {
+                const messages = messageSnapshot.val();
+                const lastMessage = messages ? Object.values(messages)[0] : null;
+                
+                // Get unread count for current user
+                const unreadRef = ref(db, `chats/${chatId}/unreadCount/${currentUser.userType || 'user'}`);
+                onValue(unreadRef, (unreadSnapshot) => {
+                  const unreadCount = unreadSnapshot.val() || 0;
+                  
+                  // Get other user info (driver info)
+                  const otherUserType = (currentUser.userType || 'user') === 'user' ? 'driver' : 'user';
+                  const participantsRef = ref(db, `chats/${chatId}/participants`);
+                  
+                  onValue(participantsRef, (participantsSnapshot) => {
+                    const participants = participantsSnapshot.val();
+                    let otherUserData = null;
+                    
+                    if (participants) {
+                      Object.values(participants).forEach(participant => {
+                        if (participant.id !== currentUser.id) {
+                          otherUserData = participant;
+                        }
+                      });
+                    }
+                    
+                    const chatItem = {
+                      id: chatId,
+                      driverName: otherUserData?.name || otherUserData?.firstName + ' ' + (otherUserData?.lastName || '') || 'Unknown Driver',
+                      driverAvatar: otherUserData?.profilePicture?.url || otherUserData?.avatar || 'https://via.placeholder.com/56',
+                      lastMessage: lastMessage?.text || 'No messages yet',
+                      timestamp: lastMessage?.timestamp ? new Date(lastMessage.timestamp) : new Date(),
+                      unreadCount: unreadCount,
+                      orderId: chatId,
+                      status: chatInfo.status || 'active',
+                      lastMessageSender: lastMessage?.senderType || '',
+                      lastMessageTime: lastMessage?.timestamp || Date.now(),
+                      otherUserData: otherUserData,
+                    };
+                    
+                    resolve(chatItem);
+                  });
+                });
+              });
+            } else {
+              resolve(null);
+            }
+          });
+        });
+      });
+
+      try {
+        const chatItems = await Promise.all(chatPromises);
+        const validChats = chatItems.filter(chat => chat !== null);
+        
+        // Sort chats by last message time (newest first)
+        validChats.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
+        
+        setChats(validChats);
+      } catch (error) {
+        console.error('Error processing chats:', error);
+        setChats([]);
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error('Error fetching user chats:', error);
       setLoading(false);
+    });
+
+    // Store listeners for cleanup
+    window.firebaseListeners = {
+      connectionListener,
+      userChatsListener,
+    };
+  };
+
+  const cleanupFirebaseListeners = () => {
+    if (window.firebaseListeners) {
+      const { connectionListener, userChatsListener } = window.firebaseListeners;
+      
+      if (connectionListener) {
+        off(ref(db, '.info/connected'), 'value', connectionListener);
+      }
+      
+      if (userChatsListener && currentUser?.id) {
+        off(ref(db, `userChats/${currentUser.id}`), 'value', userChatsListener);
+      }
+      
+      window.firebaseListeners = null;
     }
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    loadChats().finally(() => setRefreshing(false));
+    
+    // Clean up existing listeners
+    cleanupFirebaseListeners();
+    
+    // Set up new listeners
+    setTimeout(() => {
+      setupFirebaseListeners();
+      setRefreshing(false);
+    }, 1000);
   };
 
   const handleChatPress = (chat) => {
-    // trackChatOpened(chat.id, {
-    //   driver_name: chat.driverName,
-    //   order_id: chat.orderId,
-    //   chat_status: chat.status
-    // });
+    trackChatOpened(chat.id, {
+      driver_name: chat.driverName,
+      order_id: chat.orderId,
+      chat_status: chat.status
+    });
     
     navigation.navigate('ChatScreen', {
       requestId: chat.orderId,
       driverData: {
+        id: chat.otherUserData?.id,
+        name: chat.driverName,
         firstName: chat.driverName.split(' ')[0],
         lastName: chat.driverName.split(' ')[1] || '',
-        profilePicture: { url: chat.driverAvatar }
-      }
+        avatar: chat.driverAvatar,
+        profilePicture: { url: chat.driverAvatar },
+        vehicle_info: chat.otherUserData?.vehicule ? 
+          `${chat.otherUserData.vehicule.mark || ''} • ${chat.otherUserData.vehicule.matriculation || ''}`.trim() : 
+          'Vehicle Info',
+        rating: chat.otherUserData?.rating || '5.0',
+      },
+      userType: currentUser?.userType || 'user',
     });
   };
 
@@ -124,10 +235,10 @@ const AllChatsScreen = () => {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return t('chat.just_now');
-    if (minutes < 60) return t('chat.minutes_ago', { count: minutes });
-    if (hours < 24) return t('chat.hours_ago', { count: hours });
-    if (days < 7) return t('chat.days_ago', { count: days });
+    if (minutes < 1) return t('chat.just_now', 'Just now');
+    if (minutes < 60) return t('chat.minutes_ago', `${minutes}m ago`);
+    if (hours < 24) return t('chat.hours_ago', `${hours}h ago`);
+    if (days < 7) return t('chat.days_ago', `${days}d ago`);
     
     return timestamp.toLocaleDateString();
   };
@@ -136,8 +247,22 @@ const AllChatsScreen = () => {
     switch (status) {
       case 'active': return '#34C759';
       case 'completed': return '#8E8E93';
+      case 'pending': return '#FF9500';
       default: return '#8E8E93';
     }
+  };
+
+  const renderConnectionBanner = () => {
+    if (connectionStatus === 'connected') return null;
+
+    return (
+      <View style={styles.connectionBanner}>
+        <MaterialCommunityIcons name="wifi-off" size={16} color="#fff" />
+        <Text style={styles.connectionText}>
+          {t('chat.connecting', 'Connecting...')}
+        </Text>
+      </View>
+    );
   };
 
   const renderChatItem = ({ item, index }) => (
@@ -158,7 +283,11 @@ const AllChatsScreen = () => {
         activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
-          <Image source={{ uri: item.driverAvatar }} style={styles.avatar} />
+          <Image 
+            source={{ uri: item.driverAvatar }} 
+            style={styles.avatar}
+            defaultSource={{ uri: 'https://via.placeholder.com/56' }}
+          />
           <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(item.status) }]} />
         </View>
         
@@ -170,7 +299,10 @@ const AllChatsScreen = () => {
           
           <View style={styles.messageRow}>
             <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.lastMessage}
+              {item.lastMessageSender === (currentUser?.userType || 'user') ? 
+                `${t('chat.you', 'You')}: ${item.lastMessage}` : 
+                item.lastMessage
+              }
             </Text>
             {item.unreadCount > 0 && (
               <View style={styles.unreadBadge}>
@@ -192,21 +324,39 @@ const AllChatsScreen = () => {
   const renderEmptyState = () => (
     <Animated.View style={[styles.emptyContainer, { opacity: fadeAnim }]}>
       <MaterialCommunityIcons name="message-outline" size={80} color="#E0E0E0" />
-      <Text style={styles.emptyTitle}>{t('chat.no_chats_title')}</Text>
-      <Text style={styles.emptySubtitle}>{t('chat.no_chats_subtitle')}</Text>
+      <Text style={styles.emptyTitle}>
+        {t('chat.no_chats_title', 'No conversations yet')}
+      </Text>
+      <Text style={styles.emptySubtitle}>
+        {t('chat.no_chats_subtitle', 'Your chat conversations with drivers will appear here')}
+      </Text>
       <TouchableOpacity 
         style={styles.bookRideButton}
         onPress={() => navigation.navigate('Home')}
       >
         <MaterialCommunityIcons name="plus" size={20} color="#fff" />
-        <Text style={styles.bookRideButtonText}>{t('chat.book_ride')}</Text>
+        <Text style={styles.bookRideButtonText}>
+          {t('chat.book_ride', 'Book a Ride')}
+        </Text>
       </TouchableOpacity>
     </Animated.View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={styles.loadingText}>
+        {t('chat.loading_chats', 'Loading conversations...')}
+      </Text>
+    </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      {/* Connection Status Banner */}
+      {renderConnectionBanner()}
       
       {/* Header */}
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
@@ -218,9 +368,11 @@ const AllChatsScreen = () => {
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{t('chat.all_chats')}</Text>
+          <Text style={styles.headerTitle}>
+            {t('chat.all_chats', 'All Chats')}
+          </Text>
           <Text style={styles.headerSubtitle}>
-            {chats.length} {t('chat.conversations')}
+            {chats.length} {t('chat.conversations', 'conversations')}
           </Text>
         </View>
         
@@ -228,6 +380,10 @@ const AllChatsScreen = () => {
           style={styles.searchButton}
           onPress={() => {
             // TODO: Implement search functionality
+            Alert.alert(
+              t('common.coming_soon', 'Coming Soon'),
+              t('chat.search_feature_coming_soon', 'Chat search feature will be available soon!')
+            );
           }}
         >
           <Ionicons name="search" size={24} color={colors.primary} />
@@ -236,10 +392,7 @@ const AllChatsScreen = () => {
 
       {/* Chat List */}
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>{t('chat.loading_chats')}</Text>
-        </View>
+        renderLoadingState()
       ) : (
         <FlatList
           data={chats}
@@ -256,6 +409,10 @@ const AllChatsScreen = () => {
           }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={chats.length === 0 ? styles.emptyListContainer : styles.listContainer}
+          initialNumToRender={10}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          removeClippedSubviews={true}
         />
       )}
     </SafeAreaView>
@@ -266,6 +423,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+  },
+  connectionBanner: {
+    backgroundColor: '#FF5722',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  connectionText: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 8,
+    fontWeight: '500',
   },
   header: {
     flexDirection: 'row',
@@ -327,6 +498,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: '#F0F0F0',
   },
   statusIndicator: {
     position: 'absolute',
@@ -351,10 +523,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+    flex: 1,
   },
   timestamp: {
     fontSize: 12,
     color: '#8E8E93',
+    marginLeft: 8,
   },
   messageRow: {
     flexDirection: 'row',
@@ -390,6 +564,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 40,
   },
   loadingText: {
     marginTop: 16,
@@ -401,6 +576,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingVertical: 60,
   },
   emptyTitle: {
     fontSize: 20,

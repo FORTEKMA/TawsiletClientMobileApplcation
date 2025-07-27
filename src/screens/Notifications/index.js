@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { ScrollView, SafeAreaView, View, Text, TouchableOpacity } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text, TouchableOpacity, I18nManager } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { getNotification } from '../../store/notificationSlice/notificationSlice';
 import { colors } from '../../utils/colors';
@@ -14,23 +15,25 @@ import {
   trackNotificationReceived 
 } from '../../utils/analytics';
 
-// Fake data for testing
- 
-
 const EmptyState = () => {
   const { t } = useTranslation();
   return (
-    <View style={styles.emptyContainer}>
-      <MaterialIcons 
-        name="notifications-off" 
-        size={80} 
-        color={colors.textSecondary}
-        style={styles.emptyIcon}
-      />
-      <Text style={styles.emptyTitle}>{t('notifications.empty.title')}</Text>
-      <Text style={styles.emptyDescription}>
-        {t('notifications.empty.description')}
+    <View style={styles.uberEmptyContainer}>
+      <View style={styles.uberEmptyIconContainer}>
+        <Icon name="bell-off-outline" size={64} color="#8E8E93" />
+      </View>
+      <Text style={styles.uberEmptyTitle}>
+        {t('notifications.empty.title', 'No notifications yet')}
       </Text>
+      <Text style={styles.uberEmptyDescription}>
+        {t('notifications.empty.description', 'When you have notifications, they\'ll appear here')}
+      </Text>
+      <TouchableOpacity style={styles.uberEmptyButton} activeOpacity={0.7}>
+        <Icon name="refresh" size={20} color="#007AFF" />
+        <Text style={styles.uberEmptyButtonText}>
+          {t('notifications.refresh', 'Refresh')}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -66,7 +69,7 @@ const Notifications = () => {
   }, [notifications]);
 
   // Use fake data for testing
-  const displayNotifications =notifications;
+  const displayNotifications = notifications;
 
   // Group notifications by date
   const groupedNotifications = displayNotifications?.reduce((acc, notification) => {
@@ -76,40 +79,91 @@ const Notifications = () => {
     return acc;
   }, {});
 
+  const handleMarkAllRead = () => {
+    // TODO: Implement mark all as read functionality
+  };
+
+  const handleSettings = () => {
+    // TODO: Navigate to notification settings
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.drawerToggleButton}
-          onPress={() => navigation.openDrawer()}
-        >
-          <Ionicons name="menu" size={24} color={colors.primary} />
-        </TouchableOpacity>
-        
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
+    <SafeAreaView style={styles.uberContainer}>
+      <View style={styles.uberMainContainer}>
+        {/* Modern Header */}
+        <View style={styles.uberHeader}>
+          <TouchableOpacity 
+            style={styles.uberHeaderButton}
+            onPress={() => navigation.openDrawer()}
+            activeOpacity={0.7}
+          >
+            <Icon name="menu" size={24} color="#000" />
+          </TouchableOpacity>
+          
+          <View style={styles.uberHeaderContent}>
+            <Text style={styles.uberHeaderTitle}>{t('notifications.title')}</Text>
+            <Text style={styles.uberHeaderSubtitle}>
+              {displayNotifications?.length > 0 
+                ? t('notifications.count', `${displayNotifications.length} notifications`)
+                : t('notifications.no_new', 'No new notifications')
+              }
+            </Text>
+          </View>
+          
+          {displayNotifications?.length > 0 && (
+            <TouchableOpacity 
+              style={styles.uberHeaderButton}
+              onPress={handleSettings}
+              activeOpacity={0.7}
+            >
+              <Icon name="cog-outline" size={24} color="#000" />
+            </TouchableOpacity>
+          )}
+          
+          {!displayNotifications?.length && <View style={styles.uberHeaderSpacer} />}
         </View>
-        
-        <View style={styles.headerSpacer} />
+
+        {displayNotifications?.length > 0 ? (
+          <>
+            {/* Action Bar */}
+            <View style={styles.uberActionBar}>
+              <TouchableOpacity 
+                style={styles.uberActionButton}
+                onPress={handleMarkAllRead}
+                activeOpacity={0.7}
+              >
+                <Icon name="check-all" size={20} color="#007AFF" />
+                <Text style={styles.uberActionButtonText}>
+                  {t('notifications.mark_all_read', 'Mark all as read')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView 
+              style={styles.uberScrollView}
+              contentContainerStyle={styles.uberScrollContainer}
+              showsVerticalScrollIndicator={false}
+            >
+              {groupedNotifications &&
+                Object.entries(groupedNotifications).map(([date, notifications]) => (
+                  <NotificationGroup
+                    key={date}
+                    date={date}
+                    notifications={notifications.map(notification => ({
+                      ...notification,
+                      title: notification.title
+                    }))}
+                  />
+                ))}
+              
+              {/* Bottom Spacing */}
+              <View style={styles.uberBottomSpacing} />
+            </ScrollView>
+          </>
+        ) : (
+          <EmptyState />
+        )}
       </View>
-      {displayNotifications?.length !== 0 ? (
-        <ScrollView style={styles.container}>
-          {groupedNotifications &&
-            Object.entries(groupedNotifications).map(([date, notifications]) => (
-              <NotificationGroup
-                key={date}
-                date={date}
-                notifications={notifications.map(notification => ({
-                  ...notification,
-                  title: notification.title
-                }))}
-              />
-            ))}
-                    <View style={{height:100}}/>
-        </ScrollView>
-      ) : (
-        <EmptyState />
-      )}
     </SafeAreaView>
   );
 };

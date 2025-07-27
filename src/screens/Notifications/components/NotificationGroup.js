@@ -13,7 +13,7 @@ const getDayLabel = (date, t) => {
     notificationDate.getMonth() === today.getMonth() &&
     notificationDate.getFullYear() === today.getFullYear()
   ) {
-    return t('notifications.today');
+    return t('notifications.today', 'Today');
   } else {
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
@@ -22,7 +22,7 @@ const getDayLabel = (date, t) => {
       notificationDate.getMonth() === yesterday.getMonth() &&
       notificationDate.getFullYear() === yesterday.getFullYear()
     ) {
-      return t('notifications.yesterday');
+      return t('notifications.yesterday', 'Yesterday');
     }
   }
 
@@ -33,11 +33,21 @@ const NotificationGroup = ({ date, notifications }) => {
   const { t } = useTranslation();
   
   return (
-    <View>
-      <Text style={styles.date}>{getDayLabel(date, t)}</Text>
-      {notifications.map((notification) => (
-        <NotificationItem key={notification.id} notification={notification} />
-      ))}
+    <View style={styles.uberNotificationGroup}>
+      <View style={styles.uberDateHeader}>
+        <Text style={styles.uberDateLabel}>{getDayLabel(date, t)}</Text>
+        <View style={styles.uberDateDivider} />
+      </View>
+      
+      <View style={styles.uberNotificationList}>
+        {notifications.map((notification, index) => (
+          <NotificationItem 
+            key={notification.id} 
+            notification={notification}
+            isLast={index === notifications.length - 1}
+          />
+        ))}
+      </View>
     </View>
   );
 };

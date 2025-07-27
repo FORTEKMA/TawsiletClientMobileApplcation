@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform,TextInput } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
-import { styles } from '../styles';
-import ConfirmButton from './ConfirmButton';
-import Geolocation from 'react-native-geolocation-service';
-import { getAddressFromCoordinates } from '../../../utils/helpers/mapUtils';
-import { Spinner, Toast } from 'native-base';
+ 
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { API_GOOGLE } from "@env";
 import { 
@@ -123,34 +119,35 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
 
       {/* Uber-style Search Input */}
       <View style={localStyles.uberContent}>
-        <View style={localStyles.searchContainer}>
-          <View style={localStyles.inputWrapper}>
-            <View style={localStyles.iconContainer}>
-              <MaterialCommunityIcons name="circle" size={12} color="#000" />
-            </View>
             
             <GooglePlacesAutocomplete
               predefinedPlacesAlwaysVisible={false}
               placeholder={t('location.where_from', 'Where from?')}
               debounce={300} 
               onPress={handleLocationSelect}
-              ref={inputRef}
-              textInputProps={{
-                placeholder: formData?.pickupAddress?.address ? formData?.pickupAddress?.address : t('location.where_from', 'Where from?'),
-                placeholderTextColor: "#8E8E93",
-                style: localStyles.textInput
-              }}
+              textInputContainer={localStyles.searchContainer}
+             
+               textInputProps={{
+                style:localStyles.inputWrapper,
+                placeholder:formData?.pickupAddress?.address ? formData?.pickupAddress?.address : t('location.where_from', 'Where from?'),
+                placeholderTextColor:"#8E8E93",
+               ref:inputRef, 
+                
+               }}
+               renderLeftButton={()=>{
+                return (
+                  <MaterialCommunityIcons style={localStyles.leftIcon} name="circle" size={12} color="#000" />
+                )
+               }}
+            
               query={{
                 key: API_GOOGLE,
                 language: 'en',
                 components: 'country:tn',
               }}
               styles={{
-                container: localStyles.autocompleteContainer,
-                textInputContainer: localStyles.textInputContainer,
-                listView: localStyles.listView,
-                textInput: localStyles.googleTextInput,
-                row: localStyles.row,
+               
+                 
                 description: localStyles.description,
               }}
               fetchDetails={true}
@@ -158,12 +155,7 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
               minLength={2}
             />
             
-            <TouchableOpacity style={localStyles.searchIconContainer}>
-              <MaterialIcons name="search" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
+            
         {/* Uber-style Continue Button */}
         <TouchableOpacity
           style={[
@@ -180,7 +172,7 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
             {t('location.set_pickup_location', 'Set pickup location')}
           </Text>
         </TouchableOpacity>
-      </View>
+        </View>
     </View>
   );
 };
@@ -188,7 +180,7 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 8,
@@ -216,6 +208,7 @@ const localStyles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 24,
+    flex: 1,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -225,9 +218,17 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 4,
     minHeight: 56,
+    flex:1,
+    marginBottom:15,
+    paddingLeft:30,
   },
-  iconContainer: {
+  leftIcon: {
     marginRight: 12,
+    position:"absolute",
+     left:10,
+     top:22,
+     zIndex:1000,
+    
   },
   autocompleteContainer: {
     flex: 1,
@@ -239,6 +240,7 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 0,
     marginHorizontal: 0,
     height: 48,
+    
   },
   googleTextInput: {
     backgroundColor: 'transparent',
@@ -281,11 +283,7 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     marginBottom: Platform.OS === 'ios' ? 34 : 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+   
   },
   uberButtonDisabled: {
     backgroundColor: '#E5E5EA',

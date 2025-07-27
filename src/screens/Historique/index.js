@@ -27,8 +27,7 @@ import { colors } from "../../utils/colors";
 import { useTranslation } from "react-i18next";
 import { 
   trackScreenView, 
-  trackHistoryViewed,
-  trackHistoryFiltered 
+  trackHistoryViewed
 } from '../../utils/analytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -108,7 +107,7 @@ const Historique = ({ navigation }) => {
 
   const handleFilterChange = (newFilter) => {
     setStatusFilter(newFilter);
-    //trackHistoryFiltered(newFilter);
+ 
   };
 
   const handleSearch = (searchTerm) => {
@@ -143,6 +142,26 @@ const Historique = ({ navigation }) => {
   };
 
   const stats = getFilterStats();
+
+  // Loading placeholder component
+  const LoadingPlaceholder = () => (
+    <View style={styles.loadingPlaceholder}>
+      <View style={styles.loadingCard}>
+        <View style={styles.loadingHeader}>
+          <View style={styles.loadingAvatar} />
+          <View style={styles.loadingTextContainer}>
+            <View style={styles.loadingTitle} />
+            <View style={styles.loadingSubtitle} />
+          </View>
+        </View>
+        <View style={styles.loadingContent}>
+          <View style={styles.loadingLine} />
+          <View style={[styles.loadingLine, { width: '70%' }]} />
+          <View style={[styles.loadingLine, { width: '60%' }]} />
+        </View>
+      </View>
+    </View>
+  );
 
   const renderHeader = () => {
     return (
@@ -237,12 +256,12 @@ const Historique = ({ navigation }) => {
           </Text>
         </View>
         
-        <TouchableOpacity 
+        <View 
           style={styles.refreshButton}
-          onPress={handleRefresh}
+          
         >
-          <Ionicons name="refresh" size={24} color={colors.primary} />
-        </TouchableOpacity>
+           
+        </View>
       </Animated.View>
 
       {/* Content */}
@@ -278,11 +297,13 @@ const Historique = ({ navigation }) => {
         />
       </View>
 
-      {/* Loading Overlay */}
+   
+      {/* Loading Placeholders */}
       {loading && newOrders.length === 0 && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>{t('common.loading')}</Text>
+        <View style={styles.placeholdersContainer}>
+          {[1, 2, 3].map((index) => (
+            <LoadingPlaceholder key={index} />
+          ))}
         </View>
       )}
     </SafeAreaView>
@@ -315,22 +336,25 @@ const styles = StyleSheet.create({
   headerContent: {
     flex: 1,
     marginLeft: 12,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     color: '#000',
     marginBottom: 2,
+    textAlign: 'center',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#666',
+    textAlign: 'center',
   },
   refreshButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F5F5',
+   
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -444,6 +468,62 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flexGrow: 1,
+  },
+  // Loading placeholder styles
+  placeholdersContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  loadingPlaceholder: {
+    marginBottom: 16,
+  },
+  loadingCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  loadingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  loadingAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E0E0E0',
+    marginRight: 12,
+  },
+  loadingTextContainer: {
+    flex: 1,
+  },
+  loadingTitle: {
+    height: 16,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    marginBottom: 6,
+    width: '60%',
+  },
+  loadingSubtitle: {
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    width: '40%',
+  },
+  loadingContent: {
+    gap: 8,
+  },
+  loadingLine: {
+    height: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+    width: '100%',
   },
 });
 

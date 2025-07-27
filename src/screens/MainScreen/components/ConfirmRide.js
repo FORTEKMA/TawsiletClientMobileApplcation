@@ -19,6 +19,7 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   const user = useSelector(state => state.user.currentUser);
   const [loading, setLoading] = useState(true);
   const [price, setPrice] = useState(0);
+  const [priceData, setPriceData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
@@ -70,11 +71,11 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     const currentLang = i18nInstance.language;
     switch (currentLang) {
       case 'ar':
-        return vehicle.name_ar || vehicle.name_en || 'Vehicle';
+        return vehicle.name_ar || vehicle.name_en || t('confirm_ride.vehicle');
       case 'fr':
-        return vehicle.name_fr || vehicle.name_en || 'Vehicle';
+        return vehicle.name_fr || vehicle.name_en || t('confirm_ride.vehicle');
       default:
-        return vehicle.name_en || 'Vehicle';
+        return vehicle.name_en || t('confirm_ride.vehicle');
     }
   };
 
@@ -82,13 +83,13 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   const getDefaultDescription = (vehicleId) => {
     switch (vehicleId) {
       case 1:
-        return t('vehicle.economy_desc', 'Affordable rides for everyday trips');
+        return t('confirm_ride.vehicle_economy_desc');
       case 2:
-        return t('vehicle.comfort_desc', 'More space and comfort');
+        return t('confirm_ride.vehicle_comfort_desc');
       case 3:
-        return t('vehicle.premium_desc', 'Premium vehicles for special occasions');
+        return t('confirm_ride.vehicle_premium_desc');
       default:
-        return t('vehicle.standard_desc', 'Standard ride');
+        return t('confirm_ride.vehicle_standard_desc');
     }
   };
 
@@ -105,13 +106,10 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     setLoading(true);
     try {
       if (formData?.distance && formData?.vehicleType) {
-        const calculatedPrice = await calculatePrice(
-          formData.distance,
-          formData.duration,
-          formData.vehicleType.id,
-          formData.selectedDate
-        );
-        setPrice(calculatedPrice);
+       
+        const calculatedPriceData = await calculatePrice(formData);
+        setPrice(calculatedPriceData.price);
+        setPriceData(calculatedPriceData);
       }
     } catch (error) {
       console.error('Error calculating price:', error);
@@ -120,59 +118,71 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     }
   };
 
-  const handleConfirmRide = async () => {
-    if (isLoading) return;
 
-    // Animate button press
-    Animated.sequence([
-      Animated.timing(buttonScaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  const handleConfirm = () => {
+    trackBookingStepCompleted(4, 'Ride Confirmation', {
+      price: price,
+      distance: formData.distance,
+      time: formData.time,
+      vehicle_type: formData?.vehicleType?.key,
+      has_scheduled_date: !!formData.selectedDate
+    });
+    goNext({ price });
+  };
 
-    setIsLoading(true);
-    
+
+
+  const handleReservation = async () => {
     try {
-      const requestData = {
-        pickup_location: formData.pickupLocation,
-        dropoff_location: formData.dropoffLocation,
-        pickup_address: formData.pickupAddress,
-        dropoff_address: formData.dropoffAddress,
-        vehicle_type_id: formData.vehicleType.id,
-        scheduled_time: formData.selectedDate,
+      setIsLoading(true);
+      const payload = {
+        payType: "Livraison",
+        commandStatus: "Pending",
+        totalPrice: price,
         distance: formData.distance,
-        duration: formData.duration,
-        estimated_price: price,
-        user_id: user.id
-      };
-
-      const response = await api.post('/requests', requestData);
+        ...splitDateTime(formData.selectedDate),
       
-      if (response.data.success) {
-        trackRideConfirmed(requestData);
-        trackBookingStepCompleted('confirm_ride');
-        
-        setShowSuccessModal(true);
-        setTimeout(() => {
-          setShowSuccessModal(false);
-          goNext(response.data.request);
-        }, 2000);
-      } else {
-        throw new Error(response.data.message || 'Failed to create request');
+        duration: formData.time,
+        isAccepted: false,
+        client: {
+          id: user.id
+        },
+        carType:formData?.vehicleType.id,
+        pickUpAddress: {
+          Address: formData?.pickupAddress?.address || "Livraison",
+          coordonne: {
+            longitude: formData?.pickupAddress?.longitude || "17",
+            latitude: formData?.pickupAddress?.latitude || "17",
+          },
+        },
+        dropOfAddress: {
+          Address: formData?.dropAddress?.address || "Livraison",
+          coordonne: {
+            longitude: formData?.dropAddress?.longitude || "17",
+            latitude: formData?.dropAddress?.latitude || "17",
+          },
+        }
       }
+      const res = await api.post("/commands", { data: payload });
+      
+      // Track successful reservation
+      trackRideConfirmed({
+        ...formData,
+        price: price,
+        reservation_id: res.data?.id
+      });
+      
+      setShowSuccessModal(true);
     } catch (error) {
-      console.error('Error confirming ride:', error);
-      // Handle error (show toast, etc.)
+      console.log(error);
     } finally {
       setIsLoading(false);
     }
+  }
+
+  
+  const handleConfirmRide = async () => {
+    formData?.selectedDate != undefined ? handleReservation() : handleConfirm()
   };
 
   const handleBack = () => {
@@ -181,21 +191,23 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   };
 
   const formatPrice = (price) => {
-    return `${price.toFixed(2)} ${t('currency', 'DT')}`;
+    return `${price.toFixed(2)} ${t('common.currency')}`;
   };
 
   const formatDateTime = (date) => {
-    if (!date) return t('now', 'Now');
+    if (!date) return t('confirm_ride.now');
     
     const now = new Date();
     const selectedDate = new Date(date);
     const diffInMinutes = Math.floor((selectedDate - now) / (1000 * 60));
     
     if (diffInMinutes < 60) {
-      return t('in_minutes', `In ${diffInMinutes} minutes`);
+      return t('confirm_ride.in_minutes', { minutes: diffInMinutes });
     } else if (diffInMinutes < 1440) {
       const hours = Math.floor(diffInMinutes / 60);
-      return t('in_hours', `In ${hours} hour${hours > 1 ? 's' : ''}`);
+      return hours === 1 
+        ? t('confirm_ride.in_hours', { hours: hours })
+        : t('confirm_ride.in_hours_plural', { hours: hours });
     } else {
       return selectedDate.toLocaleDateString() + ' ' + selectedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
@@ -213,10 +225,10 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
         }
       ]}
     >
-      {/* Uber-style Header */}
+      {/* Professional Header */}
       <Animated.View 
         style={[
-          localStyles.uberHeader,
+          localStyles.header,
           {
             transform: [{ scale: scaleAnim }],
           }
@@ -229,23 +241,23 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
         >
           <MaterialCommunityIcons 
             name={I18nManager.isRTL ? "chevron-right" : "chevron-left"} 
-            size={28} 
-            color="#000" 
+            size={24} 
+            color="#1a1a1a" 
           />
         </TouchableOpacity>
         
         <View style={localStyles.headerContent}>
-          <Text style={localStyles.uberTitle}>
-            {t('confirm_your_ride', 'Confirm your ride')}
+          <Text style={localStyles.title}>
+            {t('confirm_ride.title')}
           </Text>
-          <Text style={localStyles.uberSubtitle}>
-            {t('review_trip_details', 'Review your trip details')}
+          <Text style={localStyles.subtitle}>
+            {t('confirm_ride.subtitle')}
           </Text>
         </View>
       </Animated.View>
 
-      {/* Uber-style Content */}
-      <View style={localStyles.uberContent}>
+      {/* Main Content */}
+      <View style={localStyles.content}>
         {/* Trip Summary Card */}
         <Animated.View 
           style={[
@@ -266,19 +278,19 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
             <View style={localStyles.routeDetails}>
               <View style={localStyles.locationItem}>
                 <Text style={localStyles.locationLabel}>
-                  {t('pickup', 'Pickup')}
+                  {t('confirm_ride.pickup')}
                 </Text>
                 <Text style={localStyles.locationAddress} numberOfLines={1}>
-                  {formData.pickupAddress?.address || t('current_location', 'Current location')}
+                  {formData.pickupAddress?.address || t('confirm_ride.current_location')}
                 </Text>
               </View>
               
               <View style={localStyles.locationItem}>
                 <Text style={localStyles.locationLabel}>
-                  {t('destination', 'Destination')}
+                  {t('confirm_ride.destination')}
                 </Text>
                 <Text style={localStyles.locationAddress} numberOfLines={1}>
-                  {formData.dropoffAddress?.address || t('destination', 'Destination')}
+                  {formData.dropAddress?.address || t('confirm_ride.destination')}
                 </Text>
               </View>
             </View>
@@ -296,7 +308,7 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
             <View style={localStyles.detailRow}>
               <MaterialCommunityIcons name="map-marker-distance" size={20} color="#666" />
               <Text style={localStyles.detailText}>
-                {rideData?.distance ? `${(rideData.distance/1000).toFixed(1)} km` : t('calculating', 'Calculating...')}
+                {priceData?.distance ? `${(priceData.distance).toFixed(1)} ${t('common.km')}` : t('confirm_ride.calculating')}
               </Text>
             </View>
             
@@ -313,15 +325,15 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
           {/* Price Section */}
           <View style={localStyles.priceSection}>
             <Text style={localStyles.priceLabel}>
-              {t('estimated_fare', 'Estimated fare')}
+              {t('confirm_ride.total_price')}
             </Text>
             <Text style={localStyles.priceValue}>
-              {loading ? t('calculating', 'Calculating...') : formatPrice(price)}
+              {loading ? t('confirm_ride.calculating') : formatPrice(price)}
             </Text>
           </View>
         </Animated.View>
 
-        {/* Uber-style Confirm Button */}
+        {/* Confirm Button */}
         <Animated.View 
           style={[
             localStyles.buttonContainer,
@@ -332,8 +344,8 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
         >
           <TouchableOpacity
             style={[
-              localStyles.uberButton,
-              (isLoading || loading) && localStyles.uberButtonDisabled
+              localStyles.confirmButton,
+              (isLoading || loading) && localStyles.confirmButtonDisabled
             ]}
             onPress={handleConfirmRide}
             disabled={isLoading || loading}
@@ -343,12 +355,12 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
               <ActivityIndicator size="small" color="#fff" />
             ) : (
               <>
-                <Text style={localStyles.uberButtonText}>
-                  {t('confirm_ride', 'Confirm Ride')}
+                <Text style={localStyles.confirmButtonText}>
+                  {t('confirm_ride.confirm_ride')}
                 </Text>
                 <MaterialCommunityIcons 
                   name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
-                  size={24} 
+                  size={20} 
                   color="#fff" 
                 />
               </>
@@ -374,10 +386,10 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
           >
             <MaterialCommunityIcons name="check-circle" size={60} color="#4CAF50" />
             <Text style={localStyles.successTitle}>
-              {t('ride_confirmed', 'Ride Confirmed!')}
+              {t('confirm_ride.ride_confirmed')}
             </Text>
             <Text style={localStyles.successMessage}>
-              {t('searching_driver', 'Searching for a driver...')}
+              {t('confirm_ride.searching_driver')}
             </Text>
           </Animated.View>
         </View>
@@ -389,22 +401,24 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
 const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 8,
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
   },
-  uberHeader: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 32,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -412,34 +426,33 @@ const localStyles = StyleSheet.create({
   headerContent: {
     flex: 1,
   },
-  uberTitle: {
-    fontSize: 28,
+  title: {
+    fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: '#1a1a1a',
     marginBottom: 4,
   },
-  uberSubtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
+  subtitle: {
+    fontSize: 14,
+    color: '#6c757d',
+    fontWeight: '400',
   },
-  uberContent: {
+  content: {
     paddingHorizontal: 24,
     flex: 1,
+    paddingTop: 24,
   },
   tripCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 16,
-    padding: 20,
+    padding: 24,
     marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   routeSection: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   routeIndicator: {
     alignItems: 'center',
@@ -450,51 +463,55 @@ const localStyles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#000',
     marginBottom: 8,
   },
   routeLine: {
     width: 2,
     height: 40,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#dee2e6',
     marginBottom: 8,
   },
   dropoffDot: {
     width: 12,
     height: 12,
     borderRadius: 2,
-    backgroundColor: '#FF5722',
+    backgroundColor: '#000',
   },
   routeDetails: {
     flex: 1,
   },
   locationItem: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   locationLabel: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontSize: 12,
+    color: '#6c757d',
     marginBottom: 4,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   locationAddress: {
     fontSize: 16,
-    color: '#000',
-    fontWeight: '500',
+    color: '#1a1a1a',
+    fontWeight: '600',
+    lineHeight: 22,
   },
   tripDetails: {
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    paddingTop: 16,
-    marginBottom: 16,
+    borderTopColor: '#f8f9fa',
+    paddingTop: 20,
+    marginBottom: 20,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   detailText: {
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
+    color: '#495057',
     marginLeft: 12,
     fontWeight: '500',
   },
@@ -505,27 +522,27 @@ const localStyles = StyleSheet.create({
   },
   priceSection: {
     borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-    paddingTop: 16,
+    borderTopColor: '#f8f9fa',
+    paddingTop: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   priceLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#1a1a1a',
   },
   priceValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#000',
+    color: '#1a1a1a',
   },
   buttonContainer: {
     marginTop: 'auto',
     paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  uberButton: {
+  confirmButton: {
     backgroundColor: '#000',
     borderRadius: 12,
     paddingVertical: 16,
@@ -533,16 +550,11 @@ const localStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
-  uberButtonDisabled: {
-    backgroundColor: '#E5E5EA',
+  confirmButtonDisabled: {
+    backgroundColor: '#6c757d',
   },
-  uberButtonText: {
+  confirmButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
@@ -560,17 +572,19 @@ const localStyles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
     marginHorizontal: 40,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   successTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#000',
+    color: '#1a1a1a',
     marginTop: 16,
     marginBottom: 8,
   },
   successMessage: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: '#6c757d',
     textAlign: 'center',
   },
 });

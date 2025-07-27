@@ -288,36 +288,7 @@ try {
             </View>
           </View>
 
-          {/* Stats Section */}
-          <View style={styles.uberStatsContainer}>
-            <View style={styles.uberStatItem}>
-              <View style={styles.uberStatIconContainer}>
-                <MaterialCommunityIcons name="car" size={24} color="#000" />
-              </View>
-              <Text style={styles.uberStatNumber}>0</Text>
-              <Text style={styles.uberStatLabel}>{t('profile.total_rides')}</Text>
-            </View>
-            
-            <View style={styles.uberStatDivider} />
-            
-            <View style={styles.uberStatItem}>
-              <View style={styles.uberStatIconContainer}>
-                <MaterialCommunityIcons name="star" size={24} color="#FFB800" />
-              </View>
-              <Text style={styles.uberStatNumber}>5.0</Text>
-              <Text style={styles.uberStatLabel}>{t('profile.rating')}</Text>
-            </View>
-            
-            <View style={styles.uberStatDivider} />
-            
-            <View style={styles.uberStatItem}>
-              <View style={styles.uberStatIconContainer}>
-                <MaterialCommunityIcons name="wallet" size={24} color="#34C759" />
-              </View>
-              <Text style={styles.uberStatNumber}>0</Text>
-              <Text style={styles.uberStatLabel}>{t('profile.saved')}</Text>
-            </View>
-          </View>
+         
         </View>
         
         {/* Menu Section */}

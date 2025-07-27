@@ -13,6 +13,8 @@ import {
   Keyboard,
   StatusBar
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import {localStyles} from "./localStyles"
 import DriverMarker from '../../components/DriverMarker';
 import MapView, {Marker, PROVIDER_GOOGLE,Polyline} from 'react-native-maps';
@@ -31,8 +33,7 @@ import { ref , onValue, off, query, orderByChild, equalTo } from 'firebase/datab
 import db from '../../utils/firebase';
  import PickupLocation from './components/PickupLocation';
 import DropoffLocation from './components/DropoffLocation';
-import ExpandableStep from './components/ExpandableStep';
-import LottieView from 'lottie-react-native';
+ import LottieView from 'lottie-react-native';
 import {API_GOOGLE} from "@env"
 import axios from 'axios';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -843,26 +844,14 @@ if (activeDateStr) setActivationDate(activeDateStr);
             />
           )}
           {step === 3 && (
-            <ExpandableStep 
-              step={3}
-              title={t('booking.step3.choose_vehicle', 'Choose Vehicle')}
-              subtitle={t('booking.step3.select_vehicle_subtitle', 'Select the vehicle that suits your needs')}
-              isExpanded={expandedSteps[3]}
-              onToggle={() => toggleStepExpansion(3)}
-            >
+           
               <ChooseVehicle formData={formData} goNext={goNext} goBack={goBack} />
-            </ExpandableStep>
+        
           )}
           {step === 4 && (
-            <ExpandableStep 
-              step={4}
-              title={t('booking.step4.confirm_ride', 'Confirm Ride')}
-              subtitle={t('booking.step4.review_details', 'Review your trip details')}
-              isExpanded={expandedSteps[4]}
-              onToggle={() => toggleStepExpansion(4)}
-            >
+             
               <ConfirmRide handleReset={handleReset} formData={formData} goNext={goNext} goBack={goBack} />
-            </ExpandableStep>
+         
           )}
           {step === 4.5 && (
             <LoginStep 
@@ -872,15 +861,9 @@ if (activeDateStr) setActivationDate(activeDateStr);
             />
           )}
           {step === 5 && (
-            <ExpandableStep 
-              step={5}
-              title={t('booking.step5.searching_driver', 'Searching Driver')}
-              subtitle={t('booking.step5.finding_nearby', 'Finding nearby drivers...')}
-              isExpanded={expandedSteps[5]}
-              onToggle={() => toggleStepExpansion(5)}
-            >
+           
               <SearchDrivers goBack={goBack} formData={formData} />
-            </ExpandableStep>
+            
           )}
         </View>
       </Animated.View>
@@ -1002,7 +985,7 @@ if (activeDateStr) setActivationDate(activeDateStr);
             }}
             mode='DRIVING'
             apikey={API_GOOGLE}
-            strokeWidth={7}
+            strokeWidth={3}
             strokeColor="#999"
             onReady={result => {
               if (backInterval.current) {
@@ -1021,7 +1004,7 @@ if (activeDateStr) setActivationDate(activeDateStr);
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} style={localStyles.container}>
+    <TouchableWithoutFeedback   style={localStyles.container}>
       <View 
         style={{flex: 1}}  
         onLayout={(event) => {
@@ -1038,6 +1021,10 @@ if (activeDateStr) setActivationDate(activeDateStr);
           });
         }}
       >
+
+
+
+
         {activationDate && <ActivationCountdown targetDate={activationDate} />}  
         {renderMap()}
         
@@ -1091,7 +1078,15 @@ if (activeDateStr) setActivationDate(activeDateStr);
         />  
         
         {renderStep()}
+        <TouchableOpacity 
+            style={localStyles.uberHeaderButton}
+            onPress={() => navigation.openDrawer()}
+            activeOpacity={0.7}
+          >
+            <Icon name="menu" size={24} color="#000" />
+          </TouchableOpacity>
       </View>
+      
     </TouchableWithoutFeedback>
   );
 };

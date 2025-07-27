@@ -208,46 +208,41 @@ const DropoffLocation = ({ formData, goNext, isMapDragging, onBack, animateToReg
 
       {/* Uber-style Search Input */}
       <View style={localStyles.uberContent}>
-        <View style={localStyles.searchContainer}>
-          <View style={localStyles.inputWrapper}>
-            <View style={localStyles.iconContainer}>
-              <MaterialCommunityIcons name="square" size={12} color="#000" />
-            </View>
             
             <GooglePlacesAutocomplete
               predefinedPlacesAlwaysVisible={false}
               placeholder={t('location.where_to', 'Where to?')}
-              debounce={300}
+              debounce={300} 
               onPress={handleLocationSelect}
-              ref={inputRef}
+              textInputContainer={localStyles.searchContainer}
+             
+               textInputProps={{
+                style:localStyles.inputWrapper,
+                placeholder:formData?.dropAddress?.address ? formData?.dropAddress?.address : t('location.where_to', 'Where to?'),
+                placeholderTextColor:"#8E8E93",
+               ref:inputRef, 
+                
+               }}
+               renderLeftButton={()=>{
+                return (
+                  <MaterialCommunityIcons style={localStyles.leftIcon} name="square" size={12} color="#000" />
+                )
+               }}
+            
               query={{
                 key: API_GOOGLE,
                 language: 'en',
                 components: 'country:tn',
               }}
-              textInputProps={{
-                placeholder: formData?.dropAddress?.address ? formData?.dropAddress?.address : t('location.where_to', 'Where to?'),
-                placeholderTextColor: "#8E8E93",
-                style: localStyles.textInput
-              }}
               styles={{
-                container: localStyles.autocompleteContainer,
-                textInputContainer: localStyles.textInputContainer,
-                listView: localStyles.listView,
-                textInput: localStyles.googleTextInput,
-                row: localStyles.row,
+               
+                 
                 description: localStyles.description,
               }}
               fetchDetails={true}
               enablePoweredByContainer={false}
               minLength={2}
             />
-            
-            <TouchableOpacity style={localStyles.searchIconContainer}>
-              <MaterialIcons name="search" size={20} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
-        </View>
         
         {/* Loading State */}
         {isCalculatingDistance && (
@@ -341,6 +336,7 @@ const localStyles = StyleSheet.create({
   },
   searchContainer: {
     marginBottom: 24,
+    flex: 1,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -350,9 +346,17 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 4,
     minHeight: 56,
+    flex:1,
+    marginBottom:15,
+    paddingLeft:30,
   },
-  iconContainer: {
+  leftIcon: {
     marginRight: 12,
+    position:"absolute",
+     left:10,
+     top:22,
+     zIndex:1000,
+    
   },
   autocompleteContainer: {
     flex: 1,
@@ -364,6 +368,7 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 0,
     marginHorizontal: 0,
     height: 48,
+    
   },
   googleTextInput: {
     backgroundColor: 'transparent',
@@ -437,11 +442,7 @@ const localStyles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 'auto',
     marginBottom: Platform.OS === 'ios' ? 34 : 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+  
   },
   uberButtonDisabled: {
     backgroundColor: '#E5E5EA',

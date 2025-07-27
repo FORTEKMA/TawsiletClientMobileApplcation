@@ -106,7 +106,7 @@ export const styles = StyleSheet.create({
   },
   uberUserInfoContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+ 
   },
   uberUserName: {
     fontSize: 28,
@@ -117,7 +117,10 @@ export const styles = StyleSheet.create({
   },
   uberUserDetails: {
     alignItems: 'center',
-    gap: 8,
+    
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   uberInfoRow: {
     flexDirection: 'row',
@@ -126,7 +129,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    minWidth: 200,
+   flex:1,
     justifyContent: 'center',
   },
   uberUserEmail: {

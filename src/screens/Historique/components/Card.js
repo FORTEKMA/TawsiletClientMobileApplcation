@@ -139,7 +139,7 @@ export const Card = ({ order, refresh, index }) => {
         <View style={styles.header}>
           <View style={styles.orderInfo}>
             <View style={styles.orderIconContainer}>
-              <MaterialCommunityIcons name="receipt" size={20} color={colors.primary} />
+              <MaterialCommunityIcons name="receipt" size={20} color="#000000" />
             </View>
             <View>
               <Text style={styles.orderNumber}>#{order.refNumber || order.id}</Text>
@@ -151,7 +151,7 @@ export const Card = ({ order, refresh, index }) => {
             <Ionicons 
               name={getStatusIcon(order.commandStatus)} 
               size={14} 
-              color="#fff" 
+              color="#FFFFFF" 
             />
             <Text style={styles.statusText} numberOfLines={1}>
               {getStatusTranslation(order.commandStatus)}
@@ -196,30 +196,30 @@ export const Card = ({ order, refresh, index }) => {
           <View style={styles.footerLeft}>
             {order?.driver?.firstName && (
               <View style={styles.driverInfo}>
-                <MaterialCommunityIcons name="account" size={16} color="#666" />
+                <MaterialCommunityIcons name="account" size={16} color="#666666" />
                 <Text style={styles.driverName}>
                   {order.driver.firstName} {order.driver.lastName}
                 </Text>
               </View>
             )}
             
-            <View style={styles.paymentInfo}>
+            {/* <View style={styles.paymentInfo}>
               <MaterialCommunityIcons 
                 name={order.payType === 'cash' ? 'cash' : 'credit-card'} 
                 size={16} 
-                color="#666" 
+                color="#666666" 
               />
               <Text style={styles.paymentMethod}>
                 {t(`payment.${order.payType || 'cash'}`)}
               </Text>
-            </View>
+            </View> */}
           </View>
           
           <View style={styles.footerRight}>
             <Text style={styles.price}>
-              {formatPrice(order.price)}
+              {formatPrice(order.totalPrice)}
             </Text>
-            <Ionicons name="chevron-forward" size={16} color="#C7C7CC" />
+            <Ionicons name="chevron-forward" size={16} color="#CCCCCC" />
           </View>
         </View>
       </TouchableOpacity>
@@ -233,10 +233,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     borderColor: '#F0F0F0',
   },
   activeCard: {
-    borderColor: colors.primary,
+    borderColor: '#000000',
     borderWidth: 2,
   },
   activeIndicator: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 8,
     alignSelf: 'flex-start',
   },
@@ -262,13 +262,13 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: '#000000',
     marginRight: 6,
   },
   activeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#000000',
   },
   header: {
     flexDirection: "row",
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -293,12 +293,12 @@ const styles = StyleSheet.create({
   orderNumber: {
     fontSize: 16,
     fontWeight: "700",
-    color: '#000',
+    color: '#000000',
     marginBottom: 2,
   },
   orderDate: {
     fontSize: 12,
-    color: '#666',
+    color: '#666666',
   },
   statusBadge: {
     flexDirection: "row",
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    color: "#fff",
+    color: "#FFFFFF",
     fontWeight: "600",
     marginLeft: 4,
   },
@@ -333,12 +333,12 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: colors.primary,
+    backgroundColor: '#000000',
   },
   dropoffDot: {
     width: 10,
     height: 10,
-    backgroundColor: '#FF3B30',
+    backgroundColor: '#666666',
   },
   locationDetails: {
     flex: 1,
@@ -346,12 +346,12 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#666',
+    color: '#666666',
     marginBottom: 2,
   },
   locationAddress: {
     fontSize: 14,
-    color: '#000',
+    color: '#000000',
     lineHeight: 18,
   },
   routeLine: {
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
   },
   driverName: {
     fontSize: 14,
-    color: '#666',
+    color: '#666666',
     marginLeft: 6,
   },
   paymentInfo: {
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   },
   paymentMethod: {
     fontSize: 14,
-    color: '#666',
+    color: '#666666',
     marginLeft: 6,
   },
   footerRight: {
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 16,
     fontWeight: "700",
-    color: colors.primary,
+    color: '#000000',
     marginRight: 8,
   },
 });

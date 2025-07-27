@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "loading_more": "Loading more...",
     "error": "An error occurred",
     "success": "Success",
     "cancel": "Cancel",
@@ -42,7 +43,10 @@
     "days": "Days",
     "hours": "Hours",
     "minutes": "Minutes",
-    "seconds": "Seconds"
+    "seconds": "Seconds",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "days_ago": "days ago"
   },
   "onboarding": {
     "login": "Login",
@@ -160,6 +164,17 @@
     "profile_update_failed": "Profile update failed. Please try again."
   },
   "history": {
+    "total_rides": "Total Rides",
+    "active": "Active",
+    "completed": "Completed",
+    "no_rides_title": "No Rides Yet",
+    "no_rides_subtitle": "You haven't taken any rides yet. Book your first ride to get started!",
+    "book_ride": "Book a Ride",
+    "rides_found": "rides found",
+    "active_ride": "Active Ride",
+    "pickup": "Pickup",
+    "dropoff": "Dropoff",
+    "address_not_available": "Address not available",
     "empty": {
       "no_orders": "No orders found"
     },
@@ -480,7 +495,12 @@
     },
     "outside_tunisia": "This location is outside of Tunisia. Please select a location within Tunisia.",
     "too_close": "The dropoff location must be at least 100 meters from the pickup location.",
-    "calculating_distance": "Calculating distance..."
+    "calculating_distance": "Calculating distance...",
+    "drag_map_instruction": "Drag map to move pin",
+    "set_destination": "Set your destination",
+    "set_pickup_location": "Set your pickup location",
+    "where_from": "Where from?",
+    "search_destination": "Search destination"
   },
   "Choose_location": "Choose a location",
   "save": "Save",
@@ -620,6 +640,47 @@
   },
   "choose_vehicle": {
     "account_under_validation": "Your account is under validation.",
-    "must_complete_women_validation": "You must complete the women validation process to select this vehicle."
+    "must_complete_women_validation": "You must complete the women validation process to select this vehicle.",
+    "select_vehicle_subtitle": "Select the vehicle that suits your needs",
+    "confirm_vehicle": "Confirm vehicle",
+    "scheduled_for": "Scheduled for",
+    "people": "people",
+    "standard_ride": "Standard ride"
+  },
+  "confirm_ride": {
+    "title": "Confirm Your Ride",
+    "subtitle": "Review your trip details",
+    "pickup": "Pickup",
+    "destination": "Destination",
+    "current_location": "Current location",
+    "total_price": "Total Price",
+    "confirm_ride": "Confirm Ride",
+    "calculating": "Calculating...",
+    "now": "Now",
+    "in_minutes": "In {{minutes}} minutes",
+    "in_hours": "In {{hours}} hour",
+    "in_hours_plural": "In {{hours}} hours",
+    "ride_confirmed": "Ride Confirmed!",
+    "searching_driver": "Searching for a driver...",
+    "request_failed": "Failed to create request",
+    "vehicle": "Vehicle",
+    "vehicle_economy_desc": "Affordable rides for everyday trips",
+    "vehicle_comfort_desc": "More space and comfort",
+    "vehicle_premium_desc": "Premium vehicles for special occasions",
+    "vehicle_standard_desc": "Standard ride"
+  },
+  "search_drivers": {
+    "preparing_search": "Preparing your request...",
+    "searching_drivers": "Searching for drivers",
+    "finding_best_driver": "Finding the best driver for you...",
+    "driver_found": "Driver Found!",
+    "redirecting_tracking": "Redirecting to tracking...",
+    "cancel_search": "Cancel Search",
+    "finding_driver": "Finding Driver",
+    "service_unavailable": "Service Unavailable",
+    "red_zone_description": "Pickup service is not available in this area. Please choose a different location.",
+    "choose_different_location": "Choose Different Location",
+    "red_zone_title": "Service Unavailable",
+    "red_zone_message": "Pickup service is not available in this area"
   }
 }

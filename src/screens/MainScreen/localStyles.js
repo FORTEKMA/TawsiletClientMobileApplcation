@@ -3,6 +3,17 @@ import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import {colors} from '../../utils/colors';
 const {width} = Dimensions.get('window');
 export const   localStyles = StyleSheet.create({
+  uberHeaderButton:{
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 20,
+    backgroundColor: 'white',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
     container: {
       flex: 1,
     },
@@ -16,9 +27,9 @@ export const   localStyles = StyleSheet.create({
       elevation: Platform.OS === 'android' ? 2000 : undefined,
     },
     stepContent: {
-      width: width,
-      backgroundColor: 'transparent',
-      flex: 1,
+      // width: width,
+      // backgroundColor: 'transparent',
+      // flex: 1,
     },
     drawerToggleButton: {
       position: 'absolute',

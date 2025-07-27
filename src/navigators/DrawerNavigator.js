@@ -12,6 +12,7 @@ import Notifications from '../screens/Notifications';
 import HisoryStackNavigator from './HisoryStackNavigator';
 import ProfileStack from './ProfileStack';
 import HomeStackNavigator from './HomeNavigation';
+import AllChatsScreen from '../screens/AllChatsScreen';
 import { colors } from '../utils/colors';
 import { logOut } from '../store/userSlice/userSlice';
 
@@ -38,6 +39,12 @@ const CustomDrawerContent = ({ navigation, state }) => {
       name: 'Home',
       label: t('drawer.home', 'Home'),
       icon: 'home',
+      iconType: 'MaterialCommunityIcons',
+    },
+    {
+      name: 'AllChats',
+      label: t('drawer.all_chats', 'All Chats'),
+      icon: 'message-text',
       iconType: 'MaterialCommunityIcons',
     },
     {
@@ -153,6 +160,13 @@ const DrawerNavigator = () => {
         component={HomeStackNavigator}
         options={{
           drawerLabel: 'Home',
+        }}
+      />
+      <Drawer.Screen
+        name="AllChats"
+        component={AllChatsScreen}
+        options={{
+          drawerLabel: 'All Chats',
         }}
       />
       <Drawer.Screen

@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
-import { ScrollView, SafeAreaView, View, Text } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text, TouchableOpacity } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigation } from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { getNotification } from '../../store/notificationSlice/notificationSlice';
 import { colors } from '../../utils/colors';
@@ -35,6 +37,7 @@ const EmptyState = () => {
 
 const Notifications = () => {
   const { t } = useTranslation();
+  const navigation = useNavigation();
   const currentId = useSelector((state) => state?.user?.currentUser?.documentId);
   const notifications = useSelector((state) => state?.notifications?.notifications);
   const dispatch = useDispatch();
@@ -76,7 +79,18 @@ const Notifications = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
+        <TouchableOpacity 
+          style={styles.drawerToggleButton}
+          onPress={() => navigation.openDrawer()}
+        >
+          <Ionicons name="menu" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
+        </View>
+        
+        <View style={styles.headerSpacer} />
       </View>
       {displayNotifications?.length !== 0 ? (
         <ScrollView style={styles.container}>

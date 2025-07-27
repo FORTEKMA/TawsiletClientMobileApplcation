@@ -222,6 +222,13 @@ const Historique = ({ navigation }) => {
       
       {/* Header */}
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+        <TouchableOpacity 
+          style={styles.drawerToggleButton}
+          onPress={() => navigation.openDrawer()}
+        >
+          <MaterialCommunityIcons name="menu" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>{t("common.Historique")}</Text>
           <Text style={styles.headerSubtitle}>
@@ -296,8 +303,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
   },
+  drawerToggleButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerContent: {
     flex: 1,
+    marginLeft: 12,
   },
   headerTitle: {
     fontSize: 24,

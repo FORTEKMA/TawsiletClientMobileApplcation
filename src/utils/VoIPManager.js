@@ -4,7 +4,7 @@ import AgoraConfig from './AgoraConfig';
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
 
 // NOTE: Uncomment when react-native-agora is installed
-// import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole } from 'react-native-agora';
+import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole } from 'react-native-agora';
 
 class VoIPManager {
   constructor() {
@@ -102,8 +102,6 @@ class VoIPManager {
         return false;
       }
 
-      // NOTE: Uncomment when react-native-agora is installed
-      /*
       // Create Agora Engine instance
       this.agoraEngine = await RtcEngine.create(AgoraConfig.AGORA_APP_ID);
       
@@ -112,7 +110,6 @@ class VoIPManager {
       
       // Configure engine for optimal performance
       await this.configureAgoraEngine();
-      */
       
       console.log('Agora Engine initialized (placeholder)');
       return true;
@@ -126,42 +123,40 @@ class VoIPManager {
   setupAgoraEventListeners() {
     if (!this.agoraEngine) return;
 
-    // NOTE: Uncomment when react-native-agora is installed
-    /*
     // Connection events
-    this.agoraEngine.addListener('Warning', (warn) => {
-      console.log('Agora Warning:', warn);
+    this.agoraEngine.addListener("Warning", (warn) => {
+      console.log("Agora Warning:", warn);
     });
     
-    this.agoraEngine.addListener('Error', (err) => {
-      console.error('Agora Error:', err);
+    this.agoraEngine.addListener("Error", (err) => {
+      console.error("Agora Error:", err);
       this.handleCallError(err);
     });
     
-    this.agoraEngine.addListener('JoinChannelSuccess', (channel, uid, elapsed) => {
-      console.log('Joined channel successfully:', channel, uid, elapsed);
+    this.agoraEngine.addListener("JoinChannelSuccess", (channel, uid, elapsed) => {
+      console.log("Joined channel successfully:", channel, uid, elapsed);
       this.localUid = uid;
       this.currentChannelName = channel;
       this.callState.isConnected = true;
-      this.updateCallStatus('connected');
+      this.updateCallStatus("connected");
     });
     
-    this.agoraEngine.addListener('LeaveChannel', (stats) => {
-      console.log('Left channel:', stats);
+    this.agoraEngine.addListener("LeaveChannel", (stats) => {
+      console.log("Left channel:", stats);
       this.callState.isConnected = false;
       this.currentChannelName = null;
       this.remoteUsers.clear();
     });
     
     // User events
-    this.agoraEngine.addListener('UserJoined', (uid, elapsed) => {
-      console.log('Remote user joined:', uid, elapsed);
+    this.agoraEngine.addListener("UserJoined", (uid, elapsed) => {
+      console.log("Remote user joined:", uid, elapsed);
       this.remoteUsers.set(uid, { uid, hasVideo: false, hasAudio: true });
       this.notifyRemoteUserJoined(uid);
     });
     
-    this.agoraEngine.addListener('UserOffline', (uid, reason) => {
-      console.log('Remote user left:', uid, reason);
+    this.agoraEngine.addListener("UserOffline", (uid, reason) => {
+      console.log("Remote user left:", uid, reason);
       this.remoteUsers.delete(uid);
       this.notifyRemoteUserLeft(uid, reason);
       
@@ -172,8 +167,8 @@ class VoIPManager {
     });
     
     // Audio events
-    this.agoraEngine.addListener('RemoteAudioStateChanged', (uid, state, reason, elapsed) => {
-      console.log('Remote audio state changed:', uid, state, reason, elapsed);
+    this.agoraEngine.addListener("RemoteAudioStateChanged", (uid, state, reason, elapsed) => {
+      console.log("Remote audio state changed:", uid, state, reason, elapsed);
       const user = this.remoteUsers.get(uid);
       if (user) {
         user.hasAudio = state === 2; // 2 means audio is enabled
@@ -182,8 +177,8 @@ class VoIPManager {
     });
     
     // Video events
-    this.agoraEngine.addListener('RemoteVideoStateChanged', (uid, state, reason, elapsed) => {
-      console.log('Remote video state changed:', uid, state, reason, elapsed);
+    this.agoraEngine.addListener("RemoteVideoStateChanged", (uid, state, reason, elapsed) => {
+      console.log("Remote video state changed:", uid, state, reason, elapsed);
       const user = this.remoteUsers.get(uid);
       if (user) {
         user.hasVideo = state === 2; // 2 means video is enabled
@@ -193,36 +188,35 @@ class VoIPManager {
     });
     
     // Network quality events
-    this.agoraEngine.addListener('NetworkQuality', (uid, txQuality, rxQuality) => {
+    this.agoraEngine.addListener("NetworkQuality", (uid, txQuality, rxQuality) => {
       const quality = uid === this.localUid ? txQuality : rxQuality;
       const qualityMap = {
-        1: 'excellent',
-        2: 'good',
-        3: 'poor',
-        4: 'bad',
-        5: 'very_bad',
-        6: 'down'
+        1: "excellent",
+        2: "good",
+        3: "poor",
+        4: "bad",
+        5: "very_bad",
+        6: "down"
       };
       
       if (uid === this.localUid) {
-        this.callState.networkQuality = qualityMap[quality] || 'unknown';
+        this.callState.networkQuality = qualityMap[quality] || "unknown";
         this.notifyNetworkQualityChanged(this.callState.networkQuality);
       }
     });
     
     // Statistics events
-    this.agoraEngine.addListener('RtcStats', (stats) => {
+    this.agoraEngine.addListener("RtcStats", (stats) => {
       // Update call statistics
       this.callState.callDuration = stats.totalDuration;
       this.notifyCallStatsUpdated(stats);
     });
     
     // Audio volume indication
-    this.agoraEngine.addListener('AudioVolumeIndication', (speakers, totalVolume) => {
+    this.agoraEngine.addListener("AudioVolumeIndication", (speakers, totalVolume) => {
       // Handle audio volume changes for UI feedback
       this.notifyAudioVolumeChanged(speakers, totalVolume);
     });
-    */
   }
 
   // Configure Agora Engine for optimal call quality
@@ -230,8 +224,6 @@ class VoIPManager {
     if (!this.agoraEngine) return;
 
     try {
-      // NOTE: Uncomment when react-native-agora is installed
-      /*
       // Set channel profile for 1-on-1 communication
       await this.agoraEngine.setChannelProfile(ChannelProfile.Communication);
       
@@ -264,10 +256,6 @@ class VoIPManager {
       // Enable dual stream mode for better network adaptation
       await this.agoraEngine.enableDualStreamMode(true);
       
-      // Configure encryption (if needed)
-      // await this.agoraEngine.enableEncryption(true, encryptionConfig);
-      */
-      
       console.log('Agora Engine configured (placeholder)');
     } catch (error) {
       console.error('Failed to configure Agora Engine:', error);
@@ -287,11 +275,8 @@ class VoIPManager {
       // Get token from backend (in production)
       const token = await AgoraConfig.getAgoraToken(channelName, uid);
       
-      // NOTE: Uncomment when react-native-agora is installed
-      /*
       // Join channel
       await this.agoraEngine.joinChannel(token, channelName, null, uid);
-      */
       
       console.log(`Joined Agora channel: ${channelName} (placeholder)`);
       this.currentChannelName = channelName;
@@ -307,10 +292,7 @@ class VoIPManager {
   async leaveAgoraChannel() {
     try {
       if (this.agoraEngine && this.currentChannelName) {
-        // NOTE: Uncomment when react-native-agora is installed
-        /*
         await this.agoraEngine.leaveChannel();
-        */
         
         console.log('Left Agora channel (placeholder)');
         this.currentChannelName = null;
@@ -328,10 +310,7 @@ class VoIPManager {
   async muteLocalAudio(muted) {
     try {
       if (this.agoraEngine) {
-        // NOTE: Uncomment when react-native-agora is installed
-        /*
         await this.agoraEngine.muteLocalAudioStream(muted);
-        */
         
         this.callState.isMuted = muted;
         console.log(`Local audio ${muted ? 'muted' : 'unmuted'} (placeholder)`);
@@ -348,10 +327,7 @@ class VoIPManager {
   async enableSpeaker(enabled) {
     try {
       if (this.agoraEngine) {
-        // NOTE: Uncomment when react-native-agora is installed
-        /*
         await this.agoraEngine.setEnableSpeakerphone(enabled);
-        */
         
         this.callState.isSpeakerOn = enabled;
         console.log(`Speaker ${enabled ? 'enabled' : 'disabled'} (placeholder)`);
@@ -368,8 +344,6 @@ class VoIPManager {
   async enableLocalVideo(enabled) {
     try {
       if (this.agoraEngine) {
-        // NOTE: Uncomment when react-native-agora is installed
-        /*
         if (enabled) {
           await this.agoraEngine.enableLocalVideo(true);
           await this.agoraEngine.startPreview();
@@ -377,7 +351,6 @@ class VoIPManager {
           await this.agoraEngine.enableLocalVideo(false);
           await this.agoraEngine.stopPreview();
         }
-        */
         
         this.callState.isVideoEnabled = enabled;
         console.log(`Local video ${enabled ? 'enabled' : 'disabled'} (placeholder)`);
@@ -394,10 +367,7 @@ class VoIPManager {
   async switchCamera() {
     try {
       if (this.agoraEngine && this.callState.isVideoEnabled) {
-        // NOTE: Uncomment when react-native-agora is installed
-        /*
         await this.agoraEngine.switchCamera();
-        */
         
         console.log('Camera switched (placeholder)');
         return true;

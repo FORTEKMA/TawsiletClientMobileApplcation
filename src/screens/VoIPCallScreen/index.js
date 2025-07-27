@@ -16,7 +16,9 @@ import {
 import Modal from 'react-native-modal';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
- import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole } from 'react-native-agora';
+import AgoraConfig from '../../utils/AgoraConfig';
  
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -93,40 +95,34 @@ const VoIPCallScreen = ({
 
   const initializeAgoraEngine = async () => {
     try {
-      // NOTE: This is a placeholder for actual Agora SDK initialization
-      // Actual implementation would be:
-      /*
-      const { RtcEngine } = require('react-native-agora');
-      
-      this.agoraEngine = await RtcEngine.create('YOUR_AGORA_APP_ID_HERE');
-      agoraEngineRef.current = this.agoraEngine;
+      agoraEngineRef.current = await RtcEngine.create(routeParams.appId || AgoraConfig.AGORA_APP_ID);
       
       // Set up comprehensive event handlers
-      this.agoraEngine.addListener('Warning', (warn) => {
-        console.log('Agora Warning:', warn);
+      agoraEngineRef.current.addListener("Warning", (warn) => {
+        console.log("Agora Warning:", warn);
       });
       
-      this.agoraEngine.addListener('Error', (err) => {
-        console.error('Agora Error:', err);
-        setCallStatus('error');
+      agoraEngineRef.current.addListener("Error", (err) => {
+        console.error("Agora Error:", err);
+        setCallStatus("error");
       });
       
-      this.agoraEngine.addListener('JoinChannelSuccess', (channel, uid, elapsed) => {
-        console.log('JoinChannelSuccess:', channel, uid, elapsed);
-        setCallStatus('connected');
-        setCallStartTime(Date.now());
+      agoraEngineRef.current.addListener("JoinChannelSuccess", (channel, uid, elapsed) => {
+        console.log("JoinChannelSuccess:", channel, uid, elapsed);
+        setCallStatus("connected");
+        callStartTime.current = Date.now();
       });
       
-      this.agoraEngine.addListener('UserJoined', (uid, elapsed) => {
-        console.log('UserJoined:', uid, elapsed);
+      agoraEngineRef.current.addListener("UserJoined", (uid, elapsed) => {
+        console.log("UserJoined:", uid, elapsed);
         setRemoteUid(uid);
         if (isVideoEnabled) {
           setIsRemoteVideoEnabled(true);
         }
       });
       
-      this.agoraEngine.addListener('UserOffline', (uid, reason) => {
-        console.log('UserOffline:', uid, reason);
+      agoraEngineRef.current.addListener("UserOffline", (uid, reason) => {
+        console.log("UserOffline:", uid, reason);
         setRemoteUid(null);
         setIsRemoteVideoEnabled(false);
         if (reason === 0) { // User left
@@ -134,41 +130,41 @@ const VoIPCallScreen = ({
         }
       });
       
-      this.agoraEngine.addListener('RemoteVideoStateChanged', (uid, state, reason, elapsed) => {
-        console.log('RemoteVideoStateChanged:', uid, state, reason, elapsed);
+      agoraEngineRef.current.addListener("RemoteVideoStateChanged", (uid, state, reason, elapsed) => {
+        console.log("RemoteVideoStateChanged:", uid, state, reason, elapsed);
         setIsRemoteVideoEnabled(state === 2);
       });
       
-      this.agoraEngine.addListener('NetworkQuality', (uid, txQuality, rxQuality) => {
+      agoraEngineRef.current.addListener("NetworkQuality", (uid, txQuality, rxQuality) => {
         const quality = Math.min(txQuality, rxQuality);
         const qualityMap = {
-          1: 'excellent',
-          2: 'good',
-          3: 'poor',
-          4: 'bad',
-          5: 'very_bad',
-          6: 'down'
+          1: "excellent",
+          2: "good",
+          3: "poor",
+          4: "bad",
+          5: "very_bad",
+          6: "down"
         };
-        setNetworkQuality(qualityMap[quality] || 'unknown');
+        setNetworkQuality(qualityMap[quality] || "unknown");
       });
       
-      this.agoraEngine.addListener('RtcStats', (stats) => {
+      agoraEngineRef.current.addListener("RtcStats", (stats) => {
         // Update call quality based on stats
         if (stats.txKBitRate > 0 || stats.rxKBitRate > 0) {
-          setCallQuality('HD');
+          setCallQuality("HD");
         }
       });
       
       // Configure engine for optimal call quality
-      await this.agoraEngine.setChannelProfile(1); // Communication
-      await this.agoraEngine.setClientRole(1); // Broadcaster
-      await this.agoraEngine.enableAudio();
-      await this.agoraEngine.setAudioProfile(1, 0); // Speech standard
-      await this.agoraEngine.enableAudioVolumeIndication(1000, 3, false);
+      await agoraEngineRef.current.setChannelProfile(ChannelProfile.Communication); // Communication
+      await agoraEngineRef.current.setClientRole(ClientRole.Broadcaster); // Broadcaster
+      await agoraEngineRef.current.enableAudio();
+      await agoraEngineRef.current.setAudioProfile(AgoraConfig.AUDIO_PROFILE.SPEECH_STANDARD, AgoraConfig.AUDIO_SCENARIO.DEFAULT); // Speech standard
+      await agoraEngineRef.current.enableAudioVolumeIndication(1000, 3, false);
       
       if (isVideoEnabled) {
-        await this.agoraEngine.enableVideo();
-        await this.agoraEngine.setVideoEncoderConfiguration({
+        await agoraEngineRef.current.enableVideo();
+        await agoraEngineRef.current.setVideoEncoderConfiguration({
           dimensions: { width: 640, height: 360 },
           frameRate: 15,
           bitrate: 400,
@@ -177,11 +173,10 @@ const VoIPCallScreen = ({
       }
       
       // Join channel
-      const token = null; // In production, get from your server
-      await this.agoraEngine.joinChannel(token, channelName.current, null, 0);
-      */
+      const token = await AgoraConfig.getAgoraToken(channelName.current, 0); // In production, get from your server
+      await agoraEngineRef.current.joinChannel(token, channelName.current, null, 0);
       
-      console.log('Agora Engine initialized (placeholder)');
+      console.log('Agora Engine initialized successfully');
       
       // Simulate connection for demo
       setTimeout(() => {
@@ -204,14 +199,11 @@ const VoIPCallScreen = ({
         timerRef.current = null;
       }
       
-      // NOTE: Actual Agora SDK cleanup would be:
-      /*
       if (agoraEngineRef.current) {
         await agoraEngineRef.current.leaveChannel();
         await agoraEngineRef.current.destroy();
         agoraEngineRef.current = null;
       }
-      */
       
       console.log('Agora Engine cleaned up (placeholder)');
     } catch (error) {
@@ -366,12 +358,9 @@ const VoIPCallScreen = ({
     const newMuteState = !isMuted;
     setIsMuted(newMuteState);
     
-    // NOTE: Actual Agora SDK integration would be:
-    /*
     if (agoraEngineRef.current) {
       await agoraEngineRef.current.muteLocalAudioStream(newMuteState);
     }
-    */
     
     console.log(`Audio ${newMuteState ? 'muted' : 'unmuted'} (placeholder)`);
   };
@@ -380,12 +369,9 @@ const VoIPCallScreen = ({
     const newSpeakerState = !isSpeakerOn;
     setIsSpeakerOn(newSpeakerState);
     
-    // NOTE: Actual Agora SDK integration would be:
-    /*
     if (agoraEngineRef.current) {
       await agoraEngineRef.current.setEnableSpeakerphone(newSpeakerState);
     }
-    */
     
     console.log(`Speaker ${newSpeakerState ? 'enabled' : 'disabled'} (placeholder)`);
   };
@@ -394,8 +380,6 @@ const VoIPCallScreen = ({
     const newVideoState = !isVideoEnabled;
     setIsVideoEnabled(newVideoState);
     
-    // NOTE: Actual Agora SDK integration would be:
-    /*
     if (agoraEngineRef.current) {
       if (newVideoState) {
         await agoraEngineRef.current.enableLocalVideo(true);
@@ -405,18 +389,14 @@ const VoIPCallScreen = ({
         await agoraEngineRef.current.stopPreview();
       }
     }
-    */
     
     console.log(`Video ${newVideoState ? 'enabled' : 'disabled'} (placeholder)`);
   };
 
   const switchCamera = async () => {
-    // NOTE: Actual Agora SDK integration would be:
-    /*
     if (agoraEngineRef.current && isVideoEnabled) {
       await agoraEngineRef.current.switchCamera();
     }
-    */
     
     console.log('Camera switched (placeholder)');
   };
@@ -463,12 +443,12 @@ const VoIPCallScreen = ({
         {isRemoteVideoEnabled && remoteUid && (
           <View style={styles.remoteVideoContainer}>
             {/* NOTE: Actual Agora SDK would render remote video here */}
-            {/* <RtcRemoteView.SurfaceView
+            <RtcRemoteView.SurfaceView
               style={styles.remoteVideo}
               uid={remoteUid}
               channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
-            /> */}
+            />
             <View
               colors={['#667eea', '#764ba2']}
               style={styles.placeholderVideo}
@@ -483,11 +463,11 @@ const VoIPCallScreen = ({
         {isVideoEnabled && (
           <View style={styles.localVideoContainer}>
             {/* NOTE: Actual Agora SDK would render local video here */}
-            {/* <RtcLocalView.SurfaceView
+            <RtcLocalView.SurfaceView
               style={styles.localVideo}
               channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
-            /> */}
+            />
             <View
               colors={['#11998e', '#38ef7d']}
               style={styles.placeholderLocalVideo}

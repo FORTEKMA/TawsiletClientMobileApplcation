@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   Linking,
   ActivityIndicator,
- 
+ Text,
+
   Keyboard,
   StatusBar
 } from 'react-native';
@@ -756,8 +757,8 @@ const MainScreen = () => {
       const coord = await mapRef.current.coordinateForPoint(screenPoint);
       handleRegionChange(coord);
       setTempMapRegion(region);
-      const newZoomLevel = getZoomLevel(region);
-    setCurrentZoomLevel(newZoomLevel);
+    //   const newZoomLevel = getZoomLevel(region);
+    // setCurrentZoomLevel(newZoomLevel);
       return coord;
     } catch (err) {
       console.warn("Failed to get coordinate for point:", err);
@@ -970,7 +971,7 @@ if (activeDateStr) setActivationDate(activeDateStr);
         ref={mapRef}
         style={styles.mapContainer}
         provider={PROVIDER_GOOGLE}
-        region={mapRegion}
+      region={mapRegion}
         zoomEnabled
         tracksViewChanges={false}
        

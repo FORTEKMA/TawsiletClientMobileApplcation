@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef, useMemo, useCallback} from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   TouchableWithoutFeedback,
@@ -12,6 +12,7 @@ import {
   Keyboard,
   StatusBar
 } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import {localStyles} from "./localStyles"
 import DriverMarker from '../../components/DriverMarker';
 import MapView, {Marker, PROVIDER_GOOGLE,Polyline} from 'react-native-maps';
@@ -1006,6 +1007,15 @@ if (activeDateStr) setActivationDate(activeDateStr);
       >
         {activationDate && <ActivationCountdown targetDate={activationDate} />}  
         {renderMap()}
+        
+        {/* Drawer Toggle Button */}
+        <TouchableOpacity
+          style={localStyles.drawerToggleButton}
+          onPress={() => navigation.openDrawer()}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="menu" size={24} color="#000" />
+        </TouchableOpacity>
         
         {(step === 1 || step === 2) && (
           <Animated.View

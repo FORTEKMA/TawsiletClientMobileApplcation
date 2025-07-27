@@ -142,13 +142,7 @@ const Help = () => {
             </View>
 
             <View style={styles.uberContactGrid}>
-              {renderContactOption(
-                'phone-outline',
-                t('help.contact.phone', 'Phone Support'),
-                '+216 36 848 020',
-                handleCall,
-                '#34C759'
-              )}
+            
 
               {renderContactOption(
                 'email-outline',
@@ -158,13 +152,7 @@ const Help = () => {
                 '#007AFF'
               )}
 
-              {renderContactOption(
-                'whatsapp',
-                t('help.contact.whatsapp', 'WhatsApp'),
-                t('help.contact.whatsapp_desc', 'Chat with us'),
-                handleWhatsApp,
-                '#25D366'
-              )}
+            
             </View>
           </View>
 

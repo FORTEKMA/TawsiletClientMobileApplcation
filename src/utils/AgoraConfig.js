@@ -12,7 +12,7 @@
 import { Platform } from 'react-native';
 
 // Replace with your actual Agora App ID from https://console.agora.io/
-export const AGORA_APP_ID = 'hkllkljgbh6uihkhkh87k';
+export const AGORA_APP_ID = '44e3bb6a05dd4fc18a0e34e3e653aff3';
 
 // Your backend server URL for token generation
 export const TOKEN_SERVER_URL = 'YOUR_BACKEND_URL';

@@ -49,7 +49,27 @@
     "days_ago": "days ago",
     "warning": "Warning",
     "please_wait": "Please wait",
-    "save_changes": "Save Changes"
+    "save_changes": "Save Changes",
+    "with_elevator": "With Elevator",
+    "floor": "floor",
+    "kb": "KB",
+    "attach_file": "Attach File",
+    "drop_address": "Drop Address",
+    "pickup_address": "Pickup Address",
+    "delivery_address": "Delivery Address",
+    "report_problem": "Report a Problem",
+    "problem": "Problem",
+    "message": "Message",
+    "attachment": "Attachment",
+    "submit_report": "Submit Report",
+    "thank_you_cooperation": "Thank you for your cooperation.",
+    "report_received": "We have received your report. Our team will examine the problem and contact you as soon as possible.",
+    "continue": "Continue",
+    "address_pickup_delivery": "Pickup / Delivery Address"
+  },
+  "errors": {
+    "title": "Error",
+    "phone_call": "Could not open phone app."
   },
   "onboarding": {
     "login": "Login",
@@ -348,9 +368,26 @@
       "current_password": "Current Password",
       "new_password": "New Password",
       "confirm_password": "Confirm Password",
+      "current_password_placeholder": "Enter current password",
+      "new_password_placeholder": "Enter new password",
+      "confirm_password_placeholder": "Confirm new password",
       "update_button": "Update Password",
       "update_success": "Password updated successfully!",
       "update_error": "Password update failed.",
+      "change_password": "Change Password",
+      "tips_title": "Security Tips",
+      "tip1_title": "Strong Password",
+      "tip1_desc": "Use at least 8 characters with uppercase, lowercase, numbers, and special characters.",
+      "tip2_title": "Regular Updates",
+      "tip2_desc": "Change your password regularly to maintain account security.",
+      "tip3_title": "Keep it Private",
+      "tip3_desc": "Never share your password with others or use it on multiple accounts.",
+      "strength": {
+        "weak": "Weak",
+        "medium": "Medium",
+        "good": "Good",
+        "strong": "Strong"
+      },
       "validation": {
         "title": "Validation Error",
         "current_required": "Current password is required",
@@ -396,6 +433,12 @@
   },
   "help": {
     "title": "Help and Support",
+    "subtitle": "Get support and find answers",
+    "quick_actions": "Quick Actions",
+    "contact_support": "Contact Support",
+    "contact": {
+      "email": "Email Support"
+    },
     "call_support": "Call Support",
     "send_email": "Send Email",
     "whatsapp": "WhatsApp",
@@ -404,7 +447,7 @@
       "whatsapp": "Could not open WhatsApp."
     },
     "faq": {
-      "title": "FAQ",
+      "title": "Frequently Asked Questions",
       "personal_info": {
         "question": "How can I edit my personal information?",
         "answer": "Go to the \"Information\" section and click on the \"Edit\" button."
@@ -412,8 +455,19 @@
       "password": {
         "question": "How can I update my password?",
         "answer": "Go to the \"Security\" section and follow the instructions to change your password."
+      },
+      "booking": {
+        "question": "How do I book a ride?",
+        "answer": "Open the app, set your pickup and destination, choose your vehicle type, and confirm your booking."
+      },
+      "payment": {
+        "question": "What payment methods are accepted?",
+        "answer": "We accept cash payments and various digital payment methods. You can manage your payment options in the app settings."
       }
-    }
+    },
+    "app_info": "App Information",
+    "app_version": "App Version",
+    "last_updated": "Last Updated"
   },
   "booking": {
     "step1": {
@@ -506,7 +560,10 @@
     "set_destination": "Set your destination",
     "set_pickup_location": "Set your pickup location",
     "where_from": "Where from?",
-    "search_destination": "Search destination"
+    "search_destination": "Search destination",
+    "drop_address": "Drop Address",
+    "pickup_address": "Pickup Address",
+    "delivery_address": "Delivery Address"
   },
   "Choose_location": "Choose a location",
   "save": "Save",
@@ -543,6 +600,7 @@
       "very_professional": "Very professional",
       "arrive_on_time": "Arrived on time",
       "package_handed_over_gently": "Package handed over gently",
+      "talk_to_much": "Talk too much",
       "other": "Other"
     },
     "very_bad": "Very Bad",
@@ -688,5 +746,11 @@
     "choose_different_location": "Choose Different Location",
     "red_zone_title": "Service Unavailable",
     "red_zone_message": "Pickup service is not available in this area"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "search_placeholder": "Search for a location",
+    "search_destination": "Search destination",
+    "search_orders": "Search orders..."
   }
 }

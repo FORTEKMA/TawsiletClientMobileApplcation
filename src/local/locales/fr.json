@@ -51,7 +51,27 @@
     "days_ago": "jours",
     "warning": "Avertissement",
     "please_wait": "Veuillez patienter",
-    "save_changes": "Enregistrer les modifications"
+    "save_changes": "Enregistrer les modifications",
+    "with_elevator": "Avec Ascenseur",
+    "floor": "étage",
+    "kb": "Ko",
+    "attach_file": "Joindre un fichier",
+    "drop_address": "Adresse de dépose",
+    "pickup_address": "Adresse de ramassage",
+    "delivery_address": "Adresse de livraison",
+    "report_problem": "Signaler un problème",
+    "problem": "Problème",
+    "message": "Message",
+    "attachment": "Pièce jointe",
+    "submit_report": "Soumettre le rapport",
+    "thank_you_cooperation": "Merci pour votre coopération.",
+    "report_received": "Nous avons reçu votre rapport. Notre équipe examinera le problème et vous contactera dès que possible.",
+    "continue": "Continuer",
+    "address_pickup_delivery": "Adresse de dépose / de ramassage"
+  },
+  "errors": {
+    "title": "Erreur",
+    "phone_call": "Impossible d'ouvrir l'application téléphone."
   },
   "auth": {
     "login": "Connexion",
@@ -385,9 +405,26 @@
       "current_password": "Mot de passe actuel",
       "new_password": "Nouveau mot de passe",
       "confirm_password": "Confirmer le mot de passe",
+      "current_password_placeholder": "Entrez le mot de passe actuel",
+      "new_password_placeholder": "Entrez le nouveau mot de passe",
+      "confirm_password_placeholder": "Confirmez le nouveau mot de passe",
       "update_button": "Mettre à jour le mot de passe",
       "update_success": "Mot de passe mis à jour avec succès!",
       "update_error": "Échec de la mise à jour du mot de passe.",
+      "change_password": "Changer le mot de passe",
+      "tips_title": "Conseils de sécurité",
+      "tip1_title": "Mot de passe fort",
+      "tip1_desc": "Utilisez au moins 8 caractères avec des majuscules, minuscules, chiffres et caractères spéciaux.",
+      "tip2_title": "Mises à jour régulières",
+      "tip2_desc": "Changez votre mot de passe régulièrement pour maintenir la sécurité du compte.",
+      "tip3_title": "Gardez-le privé",
+      "tip3_desc": "Ne partagez jamais votre mot de passe avec d'autres personnes ou ne l'utilisez pas sur plusieurs comptes.",
+      "strength": {
+        "weak": "Faible",
+        "medium": "Moyen",
+        "good": "Bon",
+        "strong": "Fort"
+      },
       "validation": {
         "title": "Erreur de validation",
         "current_required": "Le mot de passe actuel est requis",
@@ -435,6 +472,12 @@
   },
   "help": {
     "title": "Aide et Support",
+    "subtitle": "Obtenez de l'aide et trouvez des réponses",
+    "quick_actions": "Actions rapides",
+    "contact_support": "Contacter le support",
+    "contact": {
+      "email": "Support par email"
+    },
     "call_support": "Appeler le support",
     "send_email": "Envoyer un email",
     "whatsapp": "WhatsApp",
@@ -451,8 +494,19 @@
       "password": {
         "question": "Comment mettre à jour mon mot de passe?",
         "answer": "Allez dans la section \"Sécurité\" et suivez les instructions pour changer votre mot de passe."
+      },
+      "booking": {
+        "question": "Comment réserver une course?",
+        "answer": "Ouvrez l'application, définissez votre point de départ et votre destination, choisissez votre type de véhicule et confirmez votre réservation."
+      },
+      "payment": {
+        "question": "Quels modes de paiement sont acceptés?",
+        "answer": "Nous acceptons les paiements en espèces et diverses méthodes de paiement numériques. Vous pouvez gérer vos options de paiement dans les paramètres de l'application."
       }
-    }
+    },
+    "app_info": "Informations sur l'application",
+    "app_version": "Version de l'application",
+    "last_updated": "Dernière mise à jour"
   },
   "booking": {
     "step1": {
@@ -545,7 +599,10 @@
     "set_destination": "Définir votre destination",
     "set_pickup_location": "Définir votre point de départ",
     "where_from": "D'où partez-vous ?",
-    "search_destination": "Rechercher la destination"
+    "search_destination": "Rechercher la destination",
+    "drop_address": "Adresse de dépose",
+    "pickup_address": "Adresse de ramassage",
+    "delivery_address": "Adresse de livraison"
   },
   "Choose_location": "Choisir un lieu",
   "save": "Enregistrer",
@@ -725,5 +782,11 @@
     "choose_different_location": "Choisir un autre emplacement",
     "red_zone_title": "Service indisponible",
     "red_zone_message": "Le service de prise en charge n'est pas disponible dans cette zone"
+  },
+  "search": {
+    "placeholder": "Rechercher...",
+    "search_placeholder": "Rechercher un lieu",
+    "search_destination": "Rechercher la destination",
+    "search_orders": "Rechercher des commandes..."
   }
 } 

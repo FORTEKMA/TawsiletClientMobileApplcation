@@ -222,9 +222,6 @@ const Security = () => {
               
               <View style={styles.uberHeaderContent}>
                 <Text style={styles.uberSectionTitle}>{t('profile.security.title')}</Text>
-                <Text style={styles.uberSectionSubtitle}>
-                  {t('profile.security.subtitle', 'Update your password and security settings')}
-                </Text>
               </View>
               
               <View style={styles.uberHeaderSpacer} />

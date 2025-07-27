@@ -732,6 +732,9 @@ const VoIPCallScreen = ({
 const styles = StyleSheet.create({
   modal: {
     margin: 0,
+    backgroundColor: 'red',
+    height: '100%',
+    width: '100%',
   },
   safeArea: {
     flex: 1,

@@ -50,7 +50,27 @@
     "days_ago": "أيام",
     "warning": "تحذير",
     "please_wait": "يرجى الانتظار",
-    "save_changes": "حفظ التغييرات"
+    "save_changes": "حفظ التغييرات",
+    "with_elevator": "مع مصعد",
+    "floor": "طابق",
+    "kb": "كيلوبايت",
+    "attach_file": "إرفاق ملف",
+    "drop_address": "عنوان التسليم",
+    "pickup_address": "عنوان الاستلام",
+    "delivery_address": "عنوان التوصيل",
+    "report_problem": "الإبلاغ عن مشكلة",
+    "problem": "مشكلة",
+    "message": "رسالة",
+    "attachment": "مرفق",
+    "submit_report": "إرسال التقرير",
+    "thank_you_cooperation": "شكراً لتعاونكم.",
+    "report_received": "لقد تلقينا تقريركم. سيقوم فريقنا بفحص المشكلة والاتصال بكم في أقرب وقت ممكن.",
+    "continue": "متابعة",
+    "address_pickup_delivery": "عنوان الاستلام / التسليم"
+  },
+  "errors": {
+    "title": "خطأ",
+    "phone_call": "لا يمكن فتح تطبيق الهاتف."
   },
   "onboarding": {
     "login": "تسجيل الدخول",
@@ -342,9 +362,26 @@
       "current_password": "كلمة المرور الحالية",
       "new_password": "كلمة المرور الجديدة",
       "confirm_password": "تأكيد كلمة المرور",
+      "current_password_placeholder": "أدخل كلمة المرور الحالية",
+      "new_password_placeholder": "أدخل كلمة المرور الجديدة",
+      "confirm_password_placeholder": "تأكيد كلمة المرور الجديدة",
       "update_button": "تحديث كلمة المرور",
       "update_success": "تم تحديث كلمة المرور بنجاح!",
       "update_error": "فشل تحديث كلمة المرور.",
+      "change_password": "تغيير كلمة المرور",
+      "tips_title": "نصائح الأمان",
+      "tip1_title": "كلمة مرور قوية",
+      "tip1_desc": "استخدم 8 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام وأحرف خاصة.",
+      "tip2_title": "تحديثات منتظمة",
+      "tip2_desc": "غير كلمة المرور الخاصة بك بانتظام للحفاظ على أمان الحساب.",
+      "tip3_title": "احتفظ بها خاصة",
+      "tip3_desc": "لا تشارك كلمة المرور الخاصة بك مع الآخرين أو تستخدمها في حسابات متعددة.",
+      "strength": {
+        "weak": "ضعيف",
+        "medium": "متوسط",
+        "good": "جيد",
+        "strong": "قوي"
+      },
       "validation": {
         "title": "خطأ في التحقق",
         "current_required": "كلمة المرور الحالية مطلوبة",
@@ -390,6 +427,12 @@
   },
   "help": {
     "title": "المساعدة والدعم",
+    "subtitle": "احصل على الدعم واعثر على الإجابات",
+    "quick_actions": "الإجراءات السريعة",
+    "contact_support": "اتصل بالدعم",
+    "contact": {
+      "email": "دعم البريد الإلكتروني"
+    },
     "call_support": "الاتصال بالدعم",
     "send_email": "إرسال بريد إلكتروني",
     "whatsapp": "واتساب",
@@ -406,8 +449,19 @@
       "password": {
         "question": "كيف يمكنني تحديث كلمة المرور الخاصة بي؟",
         "answer": "انتقل إلى قسم \"الأمان\" واتبع التعليمات لتغيير كلمة المرور الخاصة بك."
+      },
+      "booking": {
+        "question": "كيف أحجز رحلة؟",
+        "answer": "افتح التطبيق، حدد نقطة الانطلاق والوجهة، اختر نوع المركبة، وتأكيد الحجز."
+      },
+      "payment": {
+        "question": "ما هي طرق الدفع المقبولة؟",
+        "answer": "نحن نقبل المدفوعات النقدية وطرق الدفع الرقمية المختلفة. يمكنك إدارة خيارات الدفع في إعدادات التطبيق."
       }
-    }
+    },
+    "app_info": "معلومات التطبيق",
+    "app_version": "إصدار التطبيق",
+    "last_updated": "آخر تحديث"
   },
   "booking": {
     "step1": {
@@ -500,11 +554,19 @@
     "set_destination": "حدد وجهتك",
     "set_pickup_location": "حدد نقطة الانطلاق",
     "where_from": "من أين؟",
-    "search_destination": "البحث عن الوجهة"
+    "search_destination": "البحث عن الوجهة",
+    "drop_address": "عنوان التسليم",
+    "pickup_address": "عنوان الاستلام",
+    "delivery_address": "عنوان التوصيل"
   },
   "Choose_location": "اختر مكاناً",
   "save": "حفظ",
-  "search_placeholder": "ابحث عن مكان",
+  "search": {
+    "placeholder": "بحث...",
+    "search_placeholder": "ابحث عن مكان",
+    "search_destination": "البحث عن الوجهة",
+    "search_orders": "البحث عن الطلبات..."
+  },
   "eco_description": "مركبة اقتصادية",
   "berline_description": "مركبة مريحة وواسعة",
   "van_description": "مركبة لنقل الركاب",

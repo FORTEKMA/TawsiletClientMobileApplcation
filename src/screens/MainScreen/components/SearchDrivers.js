@@ -7,7 +7,7 @@ import { OneSignal } from 'react-native-onesignal';
 import api from '../../../utils/api';
 import { sendNotificationToDrivers } from '../../../utils/CalculateDistanceAndTime';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useSelector } from 'react-redux';
 import db from '../../../utils/firebase';
 import { ref, update, off, onValue, get, child, remove, push, set } from 'firebase/database';
@@ -21,6 +21,7 @@ import {
   trackDriverFound
 } from '../../../utils/analytics';
 import { isPointInPolygon } from '../../../utils/helpers/mapUtils';
+import { colors } from '../../../utils/colors';
 
 const avatarUrls = [
   'https://randomuser.me/api/portraits/men/32.jpg',
@@ -534,246 +535,188 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     }
   }, [parameters, redZonesChecked, inRedZone]);
 
-  // Swipe overlay logic
- 
- 
-  
-
- 
-
   return (
-    <View style={localStyles.container}>
-    {/* Status Header */}
-    <View style={{ alignItems: 'center', marginTop: hp(2) }}>
-      <View style={localStyles.statusIconWrapper}>
-        <MaterialCommunityIcons name="progress-clock" size={32} color="#030303" />
-      </View>
-      <Text style={localStyles.statusTitle}>{t("booking.step3.searching_ride")}</Text>
-      <Text style={localStyles.statusSubtitle}>{t("booking.step3.it_may_take_some_time")}</Text>
-    </View>
-
-    {/* Waves */}
-    <View style={localStyles.animationWrapper}>
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-      }}
-    >
-     <Ring delay={0} />
-      <Ring delay={1000} />
-      <Ring delay={2000} />
-      <Ring delay={2500} />
-      <Ring delay={3000} />
+    <View style={localStyles.bottomSheet}>
+      <View style={localStyles.bottomSheetHandle} />
       
-    </View>
-
-     
-      
-    </View>
- 
-
-
-<Slider
- 
-  onEndReached={handleCancel}
-  containerStyle={{
-    
-    backgroundColor: '#ddd',
-    borderRadius: 10,
-    overflow: 'hidden',
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '95%',
-    zIndex:9999999
-  }}
-  sliderElement={
-    <View
-      style={{
-        width: 50,
-       // margin: 4,
-        borderRadius: 5,
-        height: 60,
-        backgroundColor:"#0c0c0c",
-        alignItems:"center",
-        justifyContent:"center"
-      }}
-      
-    >
-        <MaterialCommunityIcons name={I18nManager.isRTL?"arrow-left":"arrow-right"} size={32} color="#fff" />
-    </View>
-  }
-  
->
-  <Text>{I18nManager.isRTL ? t('booking.step3.swipe_left_to_cancel') : t('booking.step3.swipe_right_to_cancel')}</Text>
-</Slider>
-
-    {/* Add 4 fake drivers with avatars in random positions */}
-    <View style={{ position: 'absolute', width: '100%', height: '100%', }}>
-      {drivers.map(driver => (
-        <View key={driver.key} style={[localStyles.driverAvatar, driver]}>
-          <Image source={{ uri: driver.avatar }} style={localStyles.avatarImg} />
+      {/* Status Header */}
+      <View style={localStyles.header}>
+        <View style={localStyles.statusIconWrapper}>
+          <MaterialCommunityIcons name="progress-clock" size={hp(3.5)} color={colors.uberBlue} />
         </View>
-      ))}
+        <Text style={localStyles.statusTitle}>{t("booking.step3.searching_ride")}</Text>
+        <Text style={localStyles.statusSubtitle}>{t("booking.step3.it_may_take_some_time")}</Text>
+      </View>
+
+      {/* Animation Area */}
+      <View style={localStyles.animationWrapper}>
+        <View style={localStyles.animationContainer}>
+          <Ring delay={0} />
+          <Ring delay={1000} />
+          <Ring delay={2000} />
+          <Ring delay={2500} />
+          <Ring delay={3000} />
+        </View>
+      </View>
+
+      {/* Cancel Slider */}
+      <View style={localStyles.sliderContainer}>
+        <Slider
+          onEndReached={handleCancel}
+          containerStyle={localStyles.sliderStyle}
+          sliderElement={
+            <View style={localStyles.sliderElement}>
+              <MaterialCommunityIcons 
+                name={I18nManager.isRTL ? "arrow-left" : "arrow-right"} 
+                size={hp(3)} 
+                color={colors.textInverse} 
+              />
+            </View>
+          }
+        >
+          <Text style={localStyles.sliderText}>
+            {I18nManager.isRTL ? t('booking.step3.swipe_left_to_cancel') : t('booking.step3.swipe_right_to_cancel')}
+          </Text>
+        </Slider>
+      </View>
+
+      {/* Fake driver avatars */}
+      <View style={localStyles.driversOverlay}>
+        {drivers.map(driver => (
+          <View key={driver.key} style={[localStyles.driverAvatar, { top: driver.top, left: driver.left }]}>
+            <Image source={{ uri: driver.avatar }} style={localStyles.avatarImg} />
+          </View>
+        ))}
+      </View>
     </View>
-  </View>
   );
 };
 
 const localStyles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 18,
-    margin: 16,
-     flex:1,
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+  bottomSheet: {
+    backgroundColor: colors.backgroundPrimary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
-    
+    elevation: 10,
+    paddingBottom: hp(3),
+    flex: 1,
+  },
+  bottomSheetHandle: {
+    width: wp(10),
+    height: 4,
+    backgroundColor: colors.borderMedium,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: hp(1),
+    marginBottom: hp(1),
+  },
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
   statusIconWrapper: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 8,
-    marginBottom: 8,
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: wp(6),
+    padding: wp(2),
+    marginBottom: hp(1),
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
   statusTitle: {
     fontWeight: '700',
     fontSize: hp(2.5),
-    color: '#fff',
-    marginTop: 4,
+    color: colors.textPrimary,
+    marginTop: hp(0.5),
   },
   statusSubtitle: {
-    color: '#BDBDBD',
+    color: colors.textSecondary,
     fontSize: hp(1.7),
-    marginTop: 2,
-    marginBottom: 10,
+    marginTop: hp(0.5),
+    textAlign: 'center',
   },
   animationWrapper: {
-    flex: 1.5, // Make animation area bigger
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: hp(2),
-    minHeight: 350,
+    paddingVertical: hp(3),
+    minHeight: hp(40),
   },
-  circle: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#000',
-    borderStyle: 'dashed',
-    borderRadius: 200,
+  animationContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
   },
-  circleLarge: {
-    width: 260,
-    height: 260,
-    top: '10%',
-    left: '50%',
-    marginLeft: -130,
+  sliderContainer: {
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
   },
-  circleMedium: {
-    width: 180,
-    height: 180,
-    top: '22%',
-    left: '50%',
-    marginLeft: -90,
-  },
-  circleSmall: {
-    width: 110,
-    height: 110,
-    top: '30%',
-    left: '50%',
-    marginLeft: -55,
-  },
-  carWrapper: {
-    position: 'absolute',
-    top: '48%',
-    left: '50%',
-    marginLeft: -24,
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    padding: 12,
-    zIndex: 2,
-    elevation: 2,
-  },
-  avatarWrapper: {
-    position: 'absolute',
-    zIndex: 3,
+  sliderStyle: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    overflow: 'hidden',
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: hp(7),
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
-  driverBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    position: 'absolute',
-    top: 50,
-    left: -30,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
+  sliderElement: {
+    width: wp(12),
+    borderRadius: 8,
+    height: hp(6),
+    backgroundColor: colors.uberBlack,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  driverName: {
-    fontWeight: '700',
-    color: '#fff',
-    fontSize: hp(1.7),
-  },
-  driverDistance: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-  },
-  cancelWrapper: {
-    alignItems: 'center',
-    marginBottom: hp(4),
-    zIndex:1000,
-  },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    minWidth: 220,
-  },
-  cancelText: {
-    color: '#BDBDBD',
+  sliderText: {
+    color: colors.textSecondary,
+    fontSize: hp(1.8),
     fontWeight: '600',
-    fontSize: hp(2),
-    marginLeft: 8,
   },
-  swipeHint: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-    marginTop: 8,
+  driversOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
   },
   driverAvatar: {
     position: 'absolute',
     zIndex: 10,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 2,
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: wp(6),
+    padding: wp(0.5),
     elevation: 3,
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: colors.backgroundPrimary,
   },
   avatarImg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
     resizeMode: 'cover',
   },
 });
 
-export default memo(SearchDriversComponent); 
+export default memo(SearchDriversComponent);
+

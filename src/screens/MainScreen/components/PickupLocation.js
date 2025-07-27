@@ -14,6 +14,8 @@ import {
   trackBookingStepCompleted,
   trackPickupLocationSelected
 } from '../../../utils/analytics';
+import { colors } from '../../../utils/colors';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 const isInTunisia = (latitude, longitude) => {
   const TUNISIA_BOUNDS = {
@@ -95,16 +97,18 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
   if (!isLocationInTunisia) {
     return (
       <View style={[styles.step1Wrapper, isMapDragging && { opacity: 0.5 }]}>
-        <View style={localStyles.header}>
-          <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={localStyles.content}>
-          <View style={localStyles.errorContainer}>
-            <MaterialIcons name="error-outline" size={40} color="#ff3b30" />
-            <Text style={localStyles.errorText}>
-              {t('location.outside_tunisia') || 'This location is outside of Tunisia. Please select a location within Tunisia.'}
-            </Text>
+        <View style={localStyles.bottomSheet}>
+          <View style={localStyles.bottomSheetHandle} />
+          <View style={localStyles.header}>
+            <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
+          </View>
+          <View style={localStyles.content}>
+            <View style={localStyles.errorContainer}>
+              <MaterialIcons name="error-outline" size={hp(5)} color={colors.error} />
+              <Text style={localStyles.errorText}>
+                {t('location.outside_tunisia') || 'This location is outside of Tunisia. Please select a location within Tunisia.'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -113,111 +117,186 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
 
   return (
     <View style={[styles.step1Wrapper, isMapDragging && { opacity: 0.5 }]}>
-      <View style={localStyles.header}>
-        <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <View style={localStyles.bottomSheet}>
+        <View style={localStyles.bottomSheetHandle} />
+        <View style={localStyles.header}>
+          <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
+        </View>
 
-      <View style={localStyles.content}>
-        <GooglePlacesAutocomplete
-          predefinedPlacesAlwaysVisible={false}
-          placeholder={t('location.pickUp')}
-          debounce={300} 
-          onPress={handleLocationSelect}
-          ref={inputRef}
-          textInputProps={{
-            placeholder: formData?.pickupAddress?.address ? formData?.pickupAddress?.address : "",
-            placeholderTextColor: "#ccc",
-            style: {
-              width: "100%",
-              color:"#000"
-            }
-          }}
-          query={{
-            key: API_GOOGLE,
-            language: 'en',
-            components: 'country:tn',
-          }}
-          styles={{
-            container: {
-              width: "100%"
-            },
-            textInputContainer: {
-              borderWidth: 3,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              backgroundColor: '#fff',
-              color: "#000",
-              height: 50,
-              paddingHorizontal: 10,
-            },
-            listView: {
-              marginTop: 15,
-            },
-            textInput: {
-              height: 50,
-              color: '#000',
-              fontSize: 16,
-              placeholderTextColor: "#ccc",
-              width: "100%"
-            },
-            row: {
-              width: "100%"
-            },
-            description: {
-              color: '#000',
-            },
-          }}
-          fetchDetails={true}
-          enablePoweredByContainer={false}
-          minLength={2}
-        />
-      </View>
+        <View style={localStyles.content}>
+          <View style={localStyles.searchContainer}>
+            <View style={localStyles.locationDots}>
+              <View style={localStyles.pickupDot} />
+            </View>
+            <GooglePlacesAutocomplete
+              predefinedPlacesAlwaysVisible={false}
+              placeholder={t('location.pickUp')}
+              debounce={300} 
+              onPress={handleLocationSelect}
+              ref={inputRef}
+              textInputProps={{
+                placeholder: formData?.pickupAddress?.address ? formData?.pickupAddress?.address : t('location.pickUp'),
+                placeholderTextColor: colors.textSecondary,
+                style: {
+                  width: "100%",
+                  color: colors.textPrimary,
+                  fontSize: hp(1.8),
+                }
+              }}
+              query={{
+                key: API_GOOGLE,
+                language: 'en',
+                components: 'country:tn',
+              }}
+              styles={{
+                container: {
+                  flex: 1,
+                },
+                textInputContainer: {
+                  borderWidth: 0,
+                  backgroundColor: 'transparent',
+                  height: hp(6),
+                  paddingHorizontal: 0,
+                },
+                listView: {
+                  backgroundColor: colors.backgroundPrimary,
+                  borderRadius: 12,
+                  marginTop: hp(1),
+                  shadowColor: colors.uberBlack,
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 8,
+                  elevation: 5,
+                },
+                textInput: {
+                  height: hp(6),
+                  color: colors.textPrimary,
+                  fontSize: hp(1.8),
+                  backgroundColor: 'transparent',
+                  paddingHorizontal: 0,
+                },
+                row: {
+                  backgroundColor: colors.backgroundPrimary,
+                  paddingHorizontal: wp(4),
+                  paddingVertical: hp(1.5),
+                  borderBottomWidth: 1,
+                  borderBottomColor: colors.borderLight,
+                },
+                description: {
+                  color: colors.textPrimary,
+                  fontSize: hp(1.7),
+                },
+                predefinedPlacesDescription: {
+                  color: colors.textSecondary,
+                },
+              }}
+              fetchDetails={true}
+              enablePoweredByContainer={false}
+              minLength={2}
+            />
+          </View>
+        </View>
 
-      <ConfirmButton
-        onPress={handleContinue}
-        text={t('location.continue')}
-        disabled={!pickupAddress.latitude}
-      />
+        <View style={localStyles.buttonContainer}>
+          <ConfirmButton
+            onPress={handleContinue}
+            text={t('location.continue')}
+            disabled={!pickupAddress.latitude}
+          />
+        </View>
+      </View>
     </View>
   );
 };
 
 const localStyles = StyleSheet.create({
+  bottomSheet: {
+    backgroundColor: colors.backgroundPrimary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+    paddingBottom: hp(3),
+  },
+  bottomSheetHandle: {
+    width: wp(10),
+    height: 4,
+    backgroundColor: colors.borderMedium,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: hp(1),
+    marginBottom: hp(1),
+  },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: "100%"
+    borderBottomColor: colors.borderLight,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: hp(2.5),
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
   content: {
-    padding: 16,
-    width: "100%"
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
+  },
+  searchContainer: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.5),
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  locationDots: {
+    marginRight: wp(3),
+    alignItems: 'center',
+  },
+  pickupDot: {
+    width: wp(2.5),
+    height: wp(2.5),
+    borderRadius: wp(1.25),
+    backgroundColor: colors.uberBlack,
   },
   errorContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: hp(3),
+    backgroundColor: colors.errorLight,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ff3b30',
+    borderColor: colors.error,
   },
   errorText: {
-    marginTop: 10,
-    color: '#ff3b30',
+    marginTop: hp(1.5),
+    color: colors.error,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: hp(1.8),
+    fontWeight: '600',
+  },
+  buttonContainer: {
+    paddingHorizontal: wp(5),
+    paddingTop: hp(2),
   },
 });
 
-export default PickupLocation; 
+export default PickupLocation;
+

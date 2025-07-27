@@ -30,6 +30,7 @@ import {
 import LoginModal from '../screens/LoginModal';
 import LanguageModal from '../screens/Profile/components/LanguageModal';
 import LanguageConfirmationModal from '../screens/Profile/components/LanguageConfirmationModal';
+import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 const screenHideTabs = [ "ForgotPassword","ResetCodeScreen", "ResetPassword", "confirmation","NewTicketScreen","TicketScreen","Register","OrderDetails","Rating","PersonalInfo","Security","Help"];
 
@@ -191,7 +192,7 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
 
 const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, getTabBarVisible]);
   return (
-    <SafeAreaView edges={['bottom']} style={[styles.safeArea,{backgroundColor:token?"#fff":"transparent"}]} >
+    <SafeAreaView edges={['bottom']} style={[styles.safeArea,{backgroundColor:token?colors.backgroundPrimary:"transparent"}]} >
       {/* Login banner at the top of the tab bar */}
       {hideTabBar && !token && mainScreenStep !== 4.5&& <>
           <Animated.View
@@ -220,7 +221,7 @@ const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, 
                 {isGoogleLoading ? (
                   <ActivityIndicator size="small" color="#EA4335" />
                 ) : (
-                  <Ionicons name="logo-google" size={17} color="#EA4335" />
+                  <Ionicons name="logo-google" size={hp(2.2)} color="#EA4335" />
                 )}
               </TouchableOpacity>
               {Platform.OS === 'ios' && (
@@ -231,9 +232,9 @@ const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, 
                   disabled={isAppleLoading}
                 >
                   {isAppleLoading ? (
-                    <ActivityIndicator size="small" color="#222" />
+                    <ActivityIndicator size="small" color={colors.uberBlack} />
                   ) : (
-                    <Ionicons name="logo-apple" size={17} color="#222" />
+                    <Ionicons name="logo-apple" size={hp(2.2)} color={colors.uberBlack} />
                   )}
                 </TouchableOpacity>
               )}
@@ -246,7 +247,7 @@ const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, 
                   activeOpacity={0.8}
                   accessibilityLabel={t('profile.language.title')}
                 >
-                  <MaterialCommunityIcons name="translate" size={17} color={colors.primary || '#222'} />
+                  <MaterialCommunityIcons name="translate" size={hp(2.2)} color={colors.uberBlue} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -305,12 +306,12 @@ const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, 
 
             const scale = animatedValues[index].interpolate({
               inputRange: [0, 1],
-              outputRange: [1, 1.1],
+              outputRange: [1, 1.05],
             });
 
             const translateY = animatedValues[index].interpolate({
               inputRange: [0, 1],
-              outputRange: [0, -5],
+              outputRange: [0, -2],
             });
 
             return (
@@ -328,13 +329,13 @@ const hideTabBar = useMemo(() => getTabBarVisible(currentRoute), [currentRoute, 
                   ]}>
                   <Ionicons
                     name={iconName}
-                    size={24}
-                    color={isFocused ? '#030303' : '#666'}
+                    size={hp(2.8)}
+                    color={isFocused ? colors.uberBlack : colors.textSecondary}
                   />
                   <Text
                     style={[
                       styles.tabLabel,
-                      {color: isFocused ? '#030303' : '#666'},
+                      {color: isFocused ? colors.uberBlack : colors.textSecondary},
                     ]}>
                     {t("common."+label)}
                   </Text>
@@ -360,12 +361,17 @@ const styles = StyleSheet.create({
   },
   tabBarContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    height: 70,
-    borderTopColor: '#ccc',
-    paddingBottom: Platform.OS === 'ios' ? 5 : 0,
-    paddingTop: 25,
-    borderTopWidth: 1
+    backgroundColor: colors.backgroundPrimary,
+    height: hp(9),
+    borderTopColor: colors.borderLight,
+    paddingBottom: Platform.OS === 'ios' ? hp(0.5) : 0,
+    paddingTop: hp(2.5),
+    borderTopWidth: 1,
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
   },
   tabItem: {
     flex: 1,
@@ -375,36 +381,38 @@ const styles = StyleSheet.create({
   tabItemContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 20,
+    paddingVertical: hp(0.5),
+    paddingHorizontal: wp(2.5),
+    borderRadius: 12,
   },
   activeTab: {
     width: "100%",
+    backgroundColor: colors.backgroundSecondary,
   },
   tabLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '500',
+    fontSize: hp(1.5),
+    marginTop: hp(0.5),
+    fontWeight: '600',
   },
   // Login banner styles
   loginBanner: {
-    backgroundColor: '#fff',
-    paddingVertical: 1,
-    paddingHorizontal: 9,
-    borderColor: '#e0e0e0',
+    backgroundColor: colors.backgroundPrimary,
+    paddingVertical: hp(0.5),
+    paddingHorizontal: wp(2.5),
+    borderColor: colors.borderLight,
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    borderRadius: 17,
-    marginHorizontal: 15,
+    borderRadius: 16,
+    marginHorizontal: wp(4),
     marginTop: 0,
-    marginBottom: 8,
-    shadowColor: '#000',
+    marginBottom: hp(1),
+    shadowColor: colors.uberBlack,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 8,
+    borderWidth: 1,
   },
   loginBannerContent: {
     flexDirection: 'row',
@@ -416,38 +424,38 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   loginButton: {
-    backgroundColor: colors.primary || '#0c0c0c',
-    paddingHorizontal: 22,
-    paddingVertical: 10,
+    backgroundColor: colors.uberBlack,
+    paddingHorizontal: wp(6),
+    paddingVertical: hp(1.2),
     borderRadius: 24,
-    marginRight: 10,
-    marginBottom: 10,
-    minWidth: 110,
+    marginRight: wp(2.5),
+    marginBottom: hp(1.2),
+    minWidth: wp(28),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.primary || '#0c0c0c',
+    shadowColor: colors.uberBlack,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 2,
   },
   loginButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: colors.textInverse,
+    fontWeight: '700',
+    fontSize: hp(1.8),
     letterSpacing: 0.2
   },
   socialButton: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundPrimary,
     borderColor: '#EA4335',
     borderWidth: 1.5,
-    padding: 10,
+    padding: wp(2.5),
     borderRadius: 24,
-    marginRight: 10,
-    marginBottom: 10,
-    width: 40,
-    height: 40,
+    marginRight: wp(2.5),
+    marginBottom: hp(1.2),
+    width: wp(10),
+    height: wp(10),
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#EA4335',
@@ -457,18 +465,18 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   appleButton: {
-    backgroundColor: '#fff',
-    borderColor: '#222',
+    backgroundColor: colors.backgroundPrimary,
+    borderColor: colors.uberBlack,
     borderWidth: 1.5,
-    padding: 10,
+    padding: wp(2.5),
     borderRadius: 24,
-    marginRight: 10,
-    marginBottom: 10,
-    width: 40,
-    height: 40,
+    marginRight: wp(2.5),
+    marginBottom: hp(1.2),
+    width: wp(10),
+    height: wp(10),
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#222',
+    shadowColor: colors.uberBlack,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.10,
     shadowRadius: 4,
@@ -482,24 +490,29 @@ const styles = StyleSheet.create({
   },
   separator: {
     width: 2,
-    height: 30,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 18,
+    height: hp(3.5),
+    backgroundColor: colors.borderLight,
+    marginHorizontal: wp(4.5),
     alignSelf: 'center',
     borderRadius: 1
   },
   languageButton: {
-    padding: 9,
+    padding: wp(2.2),
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundPrimary,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#222',
-    width: 40,
-    height: 40,
+    shadowColor: colors.uberBlue,
+    width: wp(10),
+    height: wp(10),
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });
 
-export default React.memo(CustomTabBar); 
+export default React.memo(CustomTabBar);
+

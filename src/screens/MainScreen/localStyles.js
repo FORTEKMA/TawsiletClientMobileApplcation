@@ -1,91 +1,205 @@
 import {StyleSheet,Platform,Dimensions} from 'react-native';
-import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import {heightPercentageToDP as hp, widthPercentageToDP as wp} from 'react-native-responsive-screen';
 import {colors} from '../../utils/colors';
 const {width} = Dimensions.get('window');
-export const   localStyles = StyleSheet.create({
-    container: {
-      flex: 1,
+
+export const localStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.backgroundPrimary,
+  },
+  stepContainer: {
+    backgroundColor: 'transparent',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    flex: 1,
+    zIndex: 2000,
+    elevation: Platform.OS === 'android' ? 2000 : undefined,
+  },
+  stepContent: {
+    width: width,
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    right: wp(5),
+    backgroundColor: colors.backgroundPrimary,
+    width: wp(12),
+    height: wp(12),
+    borderRadius: wp(6),
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    stepContainer: {
-      backgroundColor: 'transparent',
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      flex: 1,
-      zIndex: 2000,
-      elevation: Platform.OS === 'android' ? 2000 : undefined,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  currentLocationButtonInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickupMarker: {
+    width: wp(6), 
+    height: wp(6), 
+    borderRadius: wp(3),
+    backgroundColor: colors.uberBlack,
+    borderWidth: 3,
+    borderColor: colors.backgroundPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    stepContent: {
-      width: width,
-      backgroundColor: 'transparent',
-      flex: 1,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  pickupMarkerInner: {
+    width: wp(2),
+    height: wp(2),
+    borderRadius: wp(1),
+    backgroundColor: colors.backgroundPrimary,
+  },
+  dropoffMarker: {
+    width: wp(6), 
+    height: wp(6), 
+    backgroundColor: colors.uberBlack,
+    borderWidth: 3,
+    borderColor: colors.backgroundPrimary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    currentLocationButton: {
-      position: 'absolute',
-      right: 20,
-      backgroundColor: 'white',
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 3.84,
-      elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  dropoffMarkerInner: {
+    width: wp(2),
+    height: wp(2),
+    backgroundColor: colors.backgroundPrimary,
+  },
+  clusterMarker: {
+    width: wp(6),
+    height: wp(6),
+    backgroundColor: colors.uberBlack,
+    borderRadius: wp(3),
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.backgroundPrimary,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    currentLocationButtonInner: {
-      width: '100%',
-      height: '100%',
-      justifyContent: 'center',
-      alignItems: 'center',
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },  
+  clusterText: {
+    color: colors.textInverse,
+    fontWeight: '700',
+    textAlign: 'center',
+    fontSize: hp(1.4),
+  },
+  // New Uber-style bottom sheet container
+  bottomSheetContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.backgroundPrimary,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: -4,
     },
-    pickupMarker: {
-      width: 20, 
-      height: 20, 
-      borderRadius: 10,
-      backgroundColor: '#030303',
-      borderWidth: 2,
-      borderColor: 'white',
-      justifyContent: 'center',
-      alignItems: 'center'
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  bottomSheetHandle: {
+    width: wp(10),
+    height: 4,
+    backgroundColor: colors.borderMedium,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: hp(1),
+    marginBottom: hp(1),
+  },
+  // Uber-style search input container
+  searchContainer: {
+    backgroundColor: colors.backgroundPrimary,
+    paddingHorizontal: wp(5),
+    paddingVertical: hp(2),
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  searchInputContainer: {
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.5),
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: colors.uberBlack,
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    pickupMarkerInner: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: 'white'
-    },
-    dropoffMarker: {
-      width: 20, 
-      height: 20, 
-      backgroundColor: '#030303',
-      borderWidth: 2,
-      borderColor: 'white',
-      justifyContent: 'center',
-      alignItems: 'center'
-    },
-    dropoffMarkerInner: {
-      width: 8,
-      height: 8,
-      backgroundColor: 'white'
-    },
-    clusterMarker: {
-      width: 20,
-      height: 20,
-      backgroundColor: '#030303',
-      borderRadius: 10,
-      justifyContent: 'center',
-      alignItems: 'center'
-    },  
-    clusterText: {
-      color: 'white',
-      fontWeight: 'bold',
-      textAlign: 'center'
-    }
-  });
-  
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: hp(1.8),
+    color: colors.textPrimary,
+    marginLeft: wp(3),
+  },
+  // Uber-style location dots
+  locationDots: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginRight: wp(3),
+  },
+  pickupDot: {
+    width: wp(2.5),
+    height: wp(2.5),
+    borderRadius: wp(1.25),
+    backgroundColor: colors.uberBlack,
+    marginBottom: hp(0.5),
+  },
+  routeLine: {
+    width: 2,
+    height: hp(3),
+    backgroundColor: colors.borderMedium,
+    marginBottom: hp(0.5),
+  },
+  dropoffDot: {
+    width: wp(2.5),
+    height: wp(2.5),
+    backgroundColor: colors.uberBlack,
+  },
+});
+

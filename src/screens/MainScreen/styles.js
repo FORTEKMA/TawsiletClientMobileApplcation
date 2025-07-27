@@ -1,19 +1,102 @@
-import {StyleSheet} from 'react-native';
+import {StyleSheet, Dimensions} from 'react-native';
 import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import {colors} from '../../utils/colors';
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 export const styles = StyleSheet.create({
   container: {
-    
     paddingHorizontal: 0,
- zIndex:999999999,
-height:50,
- 
+    zIndex: 999999999,
+    height: 50,
   },
   stepContainer: {
     flex: 1,
     backgroundColor: '#fff',
-   
+  },
+  
+  // Enhanced step wrapper with Uber-like styling
+  step1Wrapper: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    minHeight: SCREEN_HEIGHT * 0.4,
+    maxHeight: SCREEN_HEIGHT * 0.8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 20,
+    zIndex: 1000,
+  },
+  
+  // Map container with enhanced styling
+  mapContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  
+  // Enhanced animations for step transitions
+  stepTransition: {
+    transform: [
+      {
+        translateY: 0,
+      },
+      {
+        scale: 1,
+      }
+    ],
+    opacity: 1,
+  },
+  
+  stepTransitionHidden: {
+    transform: [
+      {
+        translateY: SCREEN_HEIGHT * 0.5,
+      },
+      {
+        scale: 0.95,
+      }
+    ],
+    opacity: 0,
+  },
+  
+  // Floating elements styling
+  floatingButton: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 12,
+    zIndex: 999,
+  },
+  
+  // Enhanced backdrop for step overlays
+  stepBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    zIndex: 500,
   },
   header: {
     height: 50,

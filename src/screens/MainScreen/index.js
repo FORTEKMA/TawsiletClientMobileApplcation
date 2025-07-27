@@ -870,11 +870,33 @@ if (activeDateStr) setActivationDate(activeDateStr);
       }
     };
 
+    // Enhanced step transition with spring animation
+    const stepTransitionStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          {
+            translateY: withTiming(0, {
+              duration: 400,
+            }),
+          },
+          {
+            scale: withTiming(1, {
+              duration: 300,
+            }),
+          }
+        ],
+        opacity: withTiming(1, {
+          duration: 250,
+        }),
+      };
+    });
+
     return (
       <Animated.View
         style={[
           localStyles.stepContainer,
           stepAnimatedStyle,
+          stepTransitionStyle,
           {
             bottom: bottomOffset,
           },

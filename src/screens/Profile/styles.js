@@ -1,4 +1,4 @@
-import { I18nManager, StyleSheet } from 'react-native';
+import { I18nManager, StyleSheet, Platform } from 'react-native';
 import { colors } from "../../utils/colors";
 import {
   widthPercentageToDP as wp,
@@ -6,6 +6,278 @@ import {
 } from "react-native-responsive-screen";
 
 export const styles = StyleSheet.create({
+  // Modern Uber-like styles
+  uberContainer: {
+    flex: 1,
+    backgroundColor: '#F8F8F8',
+  },
+  uberHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberHeaderButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uberHeaderContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  uberHeaderTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+  },
+  uberHeaderSpacer: {
+    width: 40,
+  },
+  uberScrollView: {
+    flex: 1,
+  },
+  uberProfileSection: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    marginBottom: 16,
+  },
+  uberProfileImageContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  uberProfileImageWrapper: {
+    position: 'relative',
+  },
+  uberProfileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 4,
+    borderColor: '#F0F0F0',
+  },
+  uberProfileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: '#F0F0F0',
+  },
+  uberProfileImageInitials: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#666',
+  },
+  uberUploadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uberEditIconContainer: {
+    position: 'absolute',
+    bottom: 5,
+    right: 5,
+    backgroundColor: '#000',
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  uberUserInfoContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  uberUserName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  uberUserDetails: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  uberInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 200,
+    justifyContent: 'center',
+  },
+  uberUserEmail: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginLeft: 8,
+  },
+  uberUserPhone: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginLeft: 8,
+  },
+  uberStatsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  uberStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  uberStatIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  uberStatNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberStatLabel: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  uberStatDivider: {
+    width: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 16,
+  },
+  uberMenuSection: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    marginBottom: 16,
+  },
+  uberSectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 20,
+  },
+  uberMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberMenuItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  uberMenuIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F8F8F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  uberMenuTextContainer: {
+    flex: 1,
+  },
+  uberMenuItemTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberMenuItemDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  uberActionSection: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  uberLogoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  uberLogoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  uberDeleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#FF3B30',
+  },
+  uberDeleteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF3B30',
+    marginLeft: 8,
+  },
+  uberBottomSpacing: {
+    height: Platform.OS === 'ios' ? 34 : 24,
+  },
+
+  // Legacy styles (keeping for compatibility)
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -319,63 +591,10 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#fff',
   },
-  header: {
-    backgroundColor: colors.general_1,
-    marginTop: -50,
-    height: hp(38),
-    width: "100%",
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 30,
-  },
   settingsButton: {
     position: "absolute",
     top: 20,
     right: 20,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginTop: 20,
-    objectFit: "cover",
-    position: "relative",
-  },
-  userName: {
-    color: "#000",
-    fontSize: hp(2.5),
-    fontWeight: "700",
-    marginTop: 10,
-  },
-  userPhone: {
-    color: "#000",
-    fontSize: hp(2.1),
-    fontWeight: "500",
-    marginTop: 5,
-  },
-  userEmail: {
-    color: colors.general_3,
-    fontSize: hp(2.1),
-    fontWeight: "500",
-    marginTop: 5,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    backgroundColor: '#F8F8F8',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 3,
-    borderColor: '#ccc',
-    marginHorizontal: 20,
-  
-  },
-  statItem: {
-  //  alignItems: "center",
-  //  padding: 10,
-  //  borderRadius: 15,
-   // minWidth: 90,
   },
   statIcon: {
     width: 45,
@@ -387,13 +606,6 @@ export const styles = StyleSheet.create({
     fontSize: hp(2.2),
     fontWeight: "700",
     marginTop: 5,
-    textAlign: 'center',
-  },
-  statLabel: {
-    color: "#000",
-    fontSize: hp(1.6),
-    fontWeight: "500",
-    marginTop: 4,
     textAlign: 'center',
   },
   // Tab Navigation Styles
@@ -425,26 +637,10 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 20,
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
   inputLabel: {
     color: '#000',
     fontSize: hp(1.8),
     marginBottom: 8,
-  },
-  input: {
-   // backgroundColor: '#2A2A2A',
-    borderWidth: 1,
-    borderColor: '#000',
-    borderRadius: 10,
-    padding: 15,
-    color: '#000',
-    fontSize: hp(1.8),
-    flex:1
-  },
-  inputError: {
-    borderColor: '#D21313',
   },
   saveButton: {
     backgroundColor: '#0c0c0c',
@@ -533,12 +729,6 @@ export const styles = StyleSheet.create({
   },
   modalButtonTextSecondary: {
     color: "#666666",
-  },
-  // Error Styles
-  errorText: {
-    color: "#D21313",
-    fontSize: hp(1.5),
-    marginTop: 5,
   },
   // Help Section Styles
   helpOptionsContainer: {

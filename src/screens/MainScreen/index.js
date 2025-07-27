@@ -195,15 +195,15 @@ const MainScreen = () => {
   }, []);
 
   // Update existing location selection handlers
-  useEffect(() => {
-    if (formData?.pickupAddress?.latitude && formData?.dropAddress?.latitude) {
-      displayRouteWithAnimation(formData.pickupAddress, formData.dropAddress);
-    } else if (formData?.pickupAddress?.latitude && step === 2) {
-      handleLocationSelected(formData.pickupAddress, true);
-    } else if (formData?.dropAddress?.latitude && step === 3) {
-      handleLocationSelected(formData.dropAddress, false);
-    }
-  }, [formData?.pickupAddress, formData?.dropAddress, step, handleLocationSelected, displayRouteWithAnimation]);
+  // useEffect(() => {
+  //   if (formData?.pickupAddress?.latitude && formData?.dropAddress?.latitude) {
+  //     displayRouteWithAnimation(formData.pickupAddress, formData.dropAddress);
+  //   } else if (formData?.pickupAddress?.latitude && step === 2) {
+  //     handleLocationSelected(formData.pickupAddress, true);
+  //   } else if (formData?.dropAddress?.latitude && step === 3) {
+  //     handleLocationSelected(formData.dropAddress, false);
+  //   }
+  // }, [formData?.pickupAddress, formData?.dropAddress, step, handleLocationSelected, displayRouteWithAnimation]);
 
 
   const throttle = (func, limit) => {
@@ -600,14 +600,9 @@ const MainScreen = () => {
           dispatch(setMainScreenStep(nextStep));
         }
         
-        if (step === 1) {
-          setFormData(prev => ({
-            ...prev,
-            dropAddress: formData?.pickupAddress,
-          }));
-        }
+       
         
-        if (step === 2 || step === 3) {
+        if ( step === 3) {
           if (formData?.pickupAddress?.latitude && formData?.pickupAddress?.longitude && 
               formData?.dropAddress?.latitude && formData?.dropAddress?.longitude) {
             mapRef?.current?.fitToCoordinates([{
@@ -862,7 +857,7 @@ if (activeDateStr) setActivationDate(activeDateStr);
   }, []);
 
   const renderStep = () => {
-    const bottomOffset = getBottomOffset(step, token, isKeyboardVisible, keyboardHeight);
+  
 
     const handleStepLayout = (event) => {
       const { height } = event.nativeEvent.layout;
@@ -871,13 +866,35 @@ if (activeDateStr) setActivationDate(activeDateStr);
       }
     };
 
+    // Enhanced step transition with spring animation
+    const stepTransitionStyle = useAnimatedStyle(() => {
+      return {
+        transform: [
+          {
+            translateY: withTiming(0, {
+              duration: 400,
+            }),
+          },
+          {
+            scale: withTiming(1, {
+              duration: 300,
+            }),
+          }
+        ],
+        opacity: withTiming(1, {
+          duration: 250,
+        }),
+      };
+    });
+
     return (
       <Animated.View
         style={[
           localStyles.stepContainer,
           stepAnimatedStyle,
+          stepTransitionStyle,
           {
-            bottom: bottomOffset,
+            bottom: 0,
           },
         ]}>
         <View style={localStyles.stepContent} onLayout={handleStepLayout}>

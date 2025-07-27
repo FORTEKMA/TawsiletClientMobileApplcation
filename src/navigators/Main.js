@@ -9,6 +9,7 @@ import Onboarding from '../screens/Onboarding';
 import Rating from "../screens/Rating"
 import Login from '../screens/Login';
 import ChatScreen from '../screens/ChatScreen'; // Import ChatScreen
+import TrackingScreen from '../screens/TrackingScreen'; // Import TrackingScreen
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { startTrackingUserLocation } from "../utils/userLocationTracker"
 
@@ -57,6 +58,7 @@ const MainNavigator = ({onReady}) => {
         }}
       />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="TrackingScreen" component={TrackingScreen} />
  
       </Stack.Navigator>
     </NavigationContainer>

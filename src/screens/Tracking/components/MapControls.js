@@ -5,8 +5,8 @@ import { styles } from '../styles';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
-import ChatModal from '../../../components/ChatModal';
-import VoIPCallScreen from '../../../components/VoIPCallScreen';
+import { useNavigation } from '@react-navigation/native';
+import VoIPCallScreen from '../../../screens/VoIPCallScreen';
 import voipManager from '../../../utils/VoIPManager';
 
 const MapControls = ({
@@ -18,9 +18,9 @@ const MapControls = ({
 }) => {
   const { t } = useTranslation();
   const user = useSelector(state => state.user.currentUser);
-  const [showChat, setShowChat] = useState(false);
+  const navigation = useNavigation();
   const [showCall, setShowCall] = useState(false);
-  const [callType, setCallType] = useState('outgoing');
+  const [callType, setCallType] = useState("outgoing");
   const [currentCallId, setCurrentCallId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -51,8 +51,11 @@ const MapControls = ({
   }, [user?.id]);
 
   const handleChatPress = () => {
-    setShowChat(true);
-    setUnreadCount(0); // Clear unread count when opening chat
+    navigation.navigate('ChatScreen', {
+      driverData,
+      requestId,
+      userType: 'user'
+    });
   };
 
   const handleCallPress = async () => {
@@ -164,15 +167,6 @@ const MapControls = ({
           <MaterialCommunityIcons name="phone" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
-
-      {/* Chat Modal */}
-      <ChatModal
-        visible={showChat}
-        onClose={() => setShowChat(false)}
-        driverData={driverData}
-        requestId={requestId}
-        userType="user"
-      />
 
       {/* VoIP Call Screen */}
       <VoIPCallScreen

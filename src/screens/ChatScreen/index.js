@@ -12,72 +12,38 @@ import {
   Platform,
   Dimensions,
   Image,
+  SafeAreaView,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import { useSelector } from 'react-redux';
 import { ref, push, onValue, off, serverTimestamp, query, orderByChild } from 'firebase/database';
-import db from '../utils/firebase';
+import db from '../../utils/firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const { height: screenHeight } = Dimensions.get('window');
 
-const ChatModal = ({ 
-  visible, 
-  onClose, 
-  driverData, 
-  requestId,
-  userType = 'user' // 'user' or 'driver'
-}) => {
+const ChatScreen = () => {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { driverData, requestId, userType = 'user' } = route.params;
+
   const { t } = useTranslation();
   const user = useSelector(state => state.user.currentUser);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [driverTyping, setDriverTyping] = useState(false);
+  const [otherUserTyping, setOtherUserTyping] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const slideAnimation = useRef(new Animated.Value(screenHeight)).current;
-  const fadeAnimation = useRef(new Animated.Value(0)).current;
   const typingAnimation = useRef(new Animated.Value(0)).current;
-
-  // Initialize animations when modal opens
-  useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(slideAnimation, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnimation, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnimation, {
-          toValue: screenHeight,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnimation, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible]);
 
   // Typing indicator animation
   useEffect(() => {
-    if (driverTyping) {
+    if (otherUserTyping) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(typingAnimation, {
@@ -96,7 +62,7 @@ const ChatModal = ({
       typingAnimation.stopAnimation();
       typingAnimation.setValue(0);
     }
-  }, [driverTyping]);
+  }, [otherUserTyping]);
 
   // Keyboard listeners
   useEffect(() => {
@@ -115,7 +81,7 @@ const ChatModal = ({
 
   // Firebase listeners
   useEffect(() => {
-    if (!visible || !requestId) return;
+    if (!requestId) return;
 
     const chatRef = ref(db, `chats/${requestId}/messages`);
     const messagesQuery = query(chatRef, orderByChild('timestamp'));
@@ -143,7 +109,7 @@ const ChatModal = ({
       const data = snapshot.val();
       if (data) {
         const otherUserType = userType === 'user' ? 'driver' : 'user';
-        setDriverTyping(data[otherUserType] || false);
+        setOtherUserTyping(data[otherUserType] || false);
       }
     });
 
@@ -151,7 +117,7 @@ const ChatModal = ({
       off(chatRef, 'value', unsubscribe);
       off(typingRef, 'value', typingUnsubscribe);
     };
-  }, [visible, requestId, userType]);
+  }, [requestId, userType]);
 
   const sendMessage = async () => {
     if (!inputText.trim() || !requestId) return;
@@ -174,7 +140,7 @@ const ChatModal = ({
       
       // Clear typing indicator
       const typingRef = ref(db, `chats/${requestId}/typing/${userType}`);
-      await push(typingRef, false);
+      push(typingRef, false);
       
     } catch (error) {
       console.error('Error sending message:', error);
@@ -248,7 +214,7 @@ const ChatModal = ({
   };
 
   const renderTypingIndicator = () => {
-    if (!driverTyping) return null;
+    if (!otherUserTyping) return null;
 
     return (
       <View style={styles.typingContainer}>
@@ -287,26 +253,13 @@ const ChatModal = ({
   };
 
   return (
-    <Modal
-      isVisible={visible}
-      style={styles.modal}
-      backdropOpacity={0.5}
-      onBackdropPress={onClose}
-      onSwipeComplete={onClose}
-      swipeDirection="down"
-      propagateSwipe
-    >
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [{ translateY: slideAnimation }],
-            opacity: fadeAnimation,
-          },
-        ]}
-      >
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
           <View style={styles.headerLeft}>
             <Image
               source={{ uri: driverData?.avatar || 'https://via.placeholder.com/40' }}
@@ -321,10 +274,6 @@ const ChatModal = ({
               </Text>
             </View>
           </View>
-          
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <MaterialCommunityIcons name="close" size={24} color="#000" />
-          </TouchableOpacity>
         </View>
 
         {/* Messages List */}
@@ -373,34 +322,32 @@ const ChatModal = ({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </Animated.View>
-    </Modal>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: {
-    margin: 0,
-    justifyContent: 'flex-end',
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
   },
   container: {
+    flex: 1,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: screenHeight * 0.9,
-    minHeight: screenHeight * 0.6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E9ECEF',
     backgroundColor: '#F8F9FA',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 8,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -425,11 +372,6 @@ const styles = StyleSheet.create({
   headerStatus: {
     fontSize: hp(1.4),
     color: '#6C757D',
-  },
-  closeButton: {
-    padding: 8,
-    borderRadius: 20,
-    backgroundColor: '#E9ECEF',
   },
   chatContainer: {
     flex: 1,
@@ -558,5 +500,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatModal;
+export default ChatScreen;
 

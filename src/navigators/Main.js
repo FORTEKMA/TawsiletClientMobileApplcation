@@ -8,6 +8,7 @@ import {createStackNavigator} from '@react-navigation/stack';
 import Onboarding from '../screens/Onboarding';
 import Rating from "../screens/Rating"
 import Login from '../screens/Login';
+import ChatScreen from '../screens/ChatScreen'; // Import ChatScreen
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { startTrackingUserLocation } from "../utils/userLocationTracker"
 
@@ -55,6 +56,7 @@ const MainNavigator = ({onReady}) => {
           cardStyle: { backgroundColor: 'transparent' },
         }}
       />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
  
       </Stack.Navigator>
     </NavigationContainer>
@@ -62,3 +64,5 @@ const MainNavigator = ({onReady}) => {
 };
 
 export default MainNavigator;
+
+

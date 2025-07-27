@@ -191,6 +191,41 @@ const Order = ({ route }) => {
                 </View>
               </View>
             </View>
+            
+            {/* Chat and Call Actions */}
+            {canTrack && (
+              <View style={styles.driverActionsContainer}>
+                <TouchableOpacity 
+                  style={styles.chatButton}
+                  onPress={() => navigation.navigate('ChatScreen', { 
+                    requestId: order.id,
+                    driverData: driver 
+                  })}
+                >
+                  <MaterialCommunityIcons name="message-text" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>{t('order.chat')}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.callButton}
+                  onPress={() => {
+                    // Handle VoIP call or regular phone call
+                    Alert.alert(
+                      t('order.call_driver'),
+                      t('order.call_driver_message'),
+                      [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        { text: t('order.voice_call'), onPress: () => {} },
+                        { text: t('order.video_call'), onPress: () => {} },
+                      ]
+                    );
+                  }}
+                >
+                  <MaterialCommunityIcons name="phone" size={20} color="#fff" />
+                  <Text style={styles.actionButtonText}>{t('order.call')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
 
@@ -584,6 +619,48 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 32,
+  },
+  driverActionsContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    gap: 12,
+  },
+  chatButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#34C759',
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#34C759',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  callButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
   },
 });
 

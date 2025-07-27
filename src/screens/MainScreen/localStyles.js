@@ -1,8 +1,19 @@
-import {StyleSheet,Platform,Dimensions} from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import {colors} from '../../utils/colors';
 const {width} = Dimensions.get('window');
 export const   localStyles = StyleSheet.create({
+  uberHeaderButton:{
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 20,
+    backgroundColor: 'white',
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
     container: {
       flex: 1,
     },
@@ -16,9 +27,29 @@ export const   localStyles = StyleSheet.create({
       elevation: Platform.OS === 'android' ? 2000 : undefined,
     },
     stepContent: {
-      width: width,
-      backgroundColor: 'transparent',
-      flex: 1,
+      // width: width,
+      // backgroundColor: 'transparent',
+      // flex: 1,
+    },
+    drawerToggleButton: {
+      position: 'absolute',
+      top: Platform.OS === 'ios' ? 60 : 40,
+      left: 20,
+      backgroundColor: 'white',
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      zIndex: 1000,
     },
     currentLocationButton: {
       position: 'absolute',
@@ -73,6 +104,34 @@ export const   localStyles = StyleSheet.create({
       width: 8,
       height: 8,
       backgroundColor: 'white'
+    },
+    routeInfoContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    routeInfoBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'white',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    routeInfoText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#007AFF',
+      marginLeft: 4,
     },
     clusterMarker: {
       width: 20,

@@ -1,21 +1,22 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Dimensions } from "react-native";
 import { colors } from "../../../utils/colors";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useTranslation } from 'react-i18next';
 
-export const Card = ({ order ,refresh}) => {
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+export const Card = ({ order, refresh, index }) => {
   const { t } = useTranslation();
   const scaleValue = new Animated.Value(1);
   const navigation = useNavigation();
-  
- 
 
   const handlePressIn = () => {
     Animated.spring(scaleValue, {
-      toValue: 0.98,
+      toValue: 0.96,
       useNativeDriver: true,
     }).start();
   };
@@ -23,177 +24,202 @@ export const Card = ({ order ,refresh}) => {
   const handlePressOut = () => {
     Animated.spring(scaleValue, {
       toValue: 1,
-      friction: 3,
-      tension: 40,
+      friction: 4,
+      tension: 100,
       useNativeDriver: true,
     }).start();
   };
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return "#F1C40F";
-      case "dispatched_to_partner":
-        return "#4A90E2"; // Blue
-      case "assigned_to_driver":
-        return "#9B59B6"; // Purple
-      case "driver_on_route_to_pickup":
-        return "#3498DB"; // Light Blue
-      case "arrived_at_pickup":
-        return "#FFA500"; // Green
-      case "picked_up":
-        return "#FFA500"; // Dark Green
-      case "on_route_to_delivery":
-        return "#FFA500"; // Light Blue
-      case "arrived_at_delivery":
-        return "#FFA500"; // Green
-      case "delivered":
-        return "#27AE60"; // Dark Green
-      case "completed":
-        return "#27AE60"; // Dark Green
-      case "canceled_by_client":
-      case "canceled_by_partner":
-        return "red"; // Red
-      case "failed_pickup":
-      case "failed_delivery":
-        return "#C0392B"; // Dark Red
-      case "go_to_pickup":
-        return "#FFA500"; // Yellow
-      default:
-        return colors.gray;
-    }
+    const statusColors = {
+      'pending': '#FFA500',
+      'dispatched_to_partner': '#007AFF',
+      'assigned_to_driver': '#007AFF',
+      'driver_on_route_to_pickup': '#007AFF',
+      'arrived_at_pickup': '#FF9500',
+      'picked_up': '#34C759',
+      'on_route_to_delivery': '#34C759',
+      'arrived_at_delivery': '#FF9500',
+      'delivered': '#34C759',
+      'completed': '#34C759',
+      'canceled_by_client': '#FF3B30',
+      'canceled_by_partner': '#FF3B30',
+      'failed_pickup': '#FF3B30',
+      'failed_delivery': '#FF3B30',
+      'go_to_pickup': '#FF9500',
+    };
+    return statusColors[status.toLowerCase()] || '#8E8E93';
   };
 
   const getStatusIcon = (status) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return "time-outline";
-      case "dispatched_to_partner":
-        return "send-outline";
-      case "assigned_to_driver":
-        return "person-outline";
-      case "driver_on_route_to_pickup":
-        return "car-outline";
-      case "arrived_at_pickup":
-        return "location-outline";
-      case "picked_up":
-        return "cube-outline";
-      case "on_route_to_delivery":
-        return "car-outline";
-      case "arrived_at_delivery":
-        return "location-outline";
-      case "delivered":
-        return "checkmark-done-circle-outline";
-      case "completed":
-        return "checkmark-circle-outline";
-      case "canceled_by_client":
-        return "close-circle-outline";
-      case "canceled_by_partner":
-        return "close-circle-outline";
-      case "failed_pickup":
-        return "alert-circle-outline";
-      case "failed_delivery":
-        return "alert-circle-outline";
-      case "go_to_pickup":
-        return "navigate-outline";
-      default:
-        return "help-circle-outline";
-    }
+    const statusIcons = {
+      'pending': 'clock-outline',
+      'dispatched_to_partner': 'send-outline',
+      'assigned_to_driver': 'person-outline',
+      'driver_on_route_to_pickup': 'car-outline',
+      'arrived_at_pickup': 'location-outline',
+      'picked_up': 'checkmark-outline',
+      'on_route_to_delivery': 'car-outline',
+      'arrived_at_delivery': 'location-outline',
+      'delivered': 'checkmark-done-outline',
+      'completed': 'checkmark-circle-outline',
+      'canceled_by_client': 'close-circle-outline',
+      'canceled_by_partner': 'close-circle-outline',
+      'failed_pickup': 'alert-circle-outline',
+      'failed_delivery': 'alert-circle-outline',
+      'go_to_pickup': 'navigate-outline',
+    };
+    return statusIcons[status.toLowerCase()] || 'help-circle-outline';
   };
 
   const getStatusTranslation = (status) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return t('history.status.pending');
-      case "dispatched_to_partner":
-        return t('history.status.dispatched_to_partner');
-      case "assigned_to_driver":
-        return t('history.status.assigned_to_driver');
-      case "driver_on_route_to_pickup":
-        return t('history.status.driver_on_route_to_pickup');
-      case "arrived_at_pickup":
-        return t('history.status.arrived_at_pickup');
-      case "picked_up":
-        return t('history.status.picked_up');
-      case "on_route_to_delivery":
-        return t('history.status.on_route_to_delivery');
-      case "arrived_at_delivery":
-        return t('history.status.arrived_at_delivery');
-      case "delivered":
-        return t('history.status.delivered');
-      case "completed":
-        return t('history.status.completed');
-      case "canceled_by_client":
-        return t('history.status.canceled_by_client');
-      case "canceled_by_partner":
-        return t('history.status.canceled_by_partner');
-      case "failed_pickup":
-        return t('history.status.failed_pickup');
-      case "failed_delivery":
-        return t('history.status.failed_delivery');
-      case "go_to_pickup":
-        return t('history.status.go_to_pickup');
-      default:
-        return t('history.status.unknown');
+    return t(`history.status.${status.toLowerCase()}`, status.replace(/_/g, ' '));
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      return t('common.today');
+    } else if (diffDays === 2) {
+      return t('common.yesterday');
+    } else if (diffDays <= 7) {
+      return `${diffDays - 1} ${t('common.days_ago')}`;
+    } else {
+      return date.toLocaleDateString();
     }
   };
 
-  
-   return (
-    <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+  const formatPrice = (price) => {
+    return `${price?.toFixed(2) || '0.00'} TND`;
+  };
+
+  const isActiveOrder = () => {
+    const activeStatuses = ['pending', 'dispatched_to_partner', 'assigned_to_driver', 'driver_on_route_to_pickup', 'arrived_at_pickup', 'picked_up', 'on_route_to_delivery', 'arrived_at_delivery', 'go_to_pickup'];
+    return activeStatuses.includes(order.commandStatus.toLowerCase());
+  };
+
+  const handleCardPress = () => {
+    if (isActiveOrder()) {
+      navigation.navigate("TrackingScreen", { id: order.documentId });
+    } else {
+      navigation.navigate("OrderDetails", { id: order.documentId, refresh });
+    }
+  };
+
+  return (
+    <Animated.View 
+      style={[
+        styles.cardContainer, 
+        { 
+          transform: [{ scale: scaleValue }],
+          marginTop: index === 0 ? 8 : 4,
+        }
+      ]}
+    >
       <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate("OrderDetails", { id: order.documentId,refresh })}
+        style={[styles.card, isActiveOrder() && styles.activeCard]}
+        onPress={handleCardPress}
         activeOpacity={0.9}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
       >
+        {/* Active Order Indicator */}
+        {isActiveOrder() && (
+          <View style={styles.activeIndicator}>
+            <View style={styles.pulseIndicator} />
+            <Text style={styles.activeText}>{t('history.active_ride')}</Text>
+          </View>
+        )}
+
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.orderInfo}>
-            <Ionicons name="receipt-outline" size={hp(2.5)} color={colors.primary} />
-            <Text style={styles.title}>#{order.refNumber}</Text>
+            <View style={styles.orderIconContainer}>
+              <MaterialCommunityIcons name="receipt" size={20} color="#000000" />
+            </View>
+            <View>
+              <Text style={styles.orderNumber}>#{order.refNumber || order.id}</Text>
+              <Text style={styles.orderDate}>{formatDate(order.createdAt)}</Text>
+            </View>
           </View>
+          
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.commandStatus) }]}>
             <Ionicons 
               name={getStatusIcon(order.commandStatus)} 
-              size={hp(1.8)} 
-              color={"#fff"} 
-              style={styles.statusIcon}
+              size={14} 
+              color="#FFFFFF" 
             />
-            <Text style={styles.statusText}>{getStatusTranslation(order.commandStatus)}</Text>
+            <Text style={styles.statusText} numberOfLines={1}>
+              {getStatusTranslation(order.commandStatus)}
+            </Text>
           </View>
         </View>
 
-        {/* Body */}
-        <View style={styles.body}>
-          <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={hp(2)} color={colors.primary} />
-            <Text style={styles.label}>
-              {order?.driver?.firstName} {order?.driver?.lastName}
-            </Text>
+        {/* Route Information */}
+        <View style={styles.routeContainer}>
+          {/* Pickup */}
+          <View style={styles.locationRow}>
+            <View style={styles.locationIcon}>
+              <View style={styles.pickupDot} />
+            </View>
+            <View style={styles.locationDetails}>
+              <Text style={styles.locationLabel}>{t('history.pickup')}</Text>
+              <Text style={styles.locationAddress} numberOfLines={1}>
+                {order?.pickUpAddress?.Address?.replace(/"/g, '') || t('history.address_not_available')}
+              </Text>
+            </View>
           </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={hp(2)} color={colors.primary} />
-            <Text style={styles.label} numberOfLines={1}>
-              {order?.dropOfAddress?.Address?.replace(/"/g, '')}
-            </Text>
-          </View>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="card-outline" size={hp(2)} color={colors.primary} />
-            <Text style={styles.label}>
-              {t(order.payType)}
-            </Text>
+
+          {/* Route Line */}
+          <View style={styles.routeLine} />
+
+          {/* Dropoff */}
+          <View style={styles.locationRow}>
+            <View style={styles.locationIcon}>
+              <View style={styles.dropoffDot} />
+            </View>
+            <View style={styles.locationDetails}>
+              <Text style={styles.locationLabel}>{t('history.dropoff')}</Text>
+              <Text style={styles.locationAddress} numberOfLines={1}>
+                {order?.dropOfAddress?.Address?.replace(/"/g, '') || t('history.address_not_available')}
+              </Text>
+            </View>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={hp(1.8)} color={colors.primary} />
-            <Text style={styles.date}>{new Date(order.createdAt).toLocaleString()}</Text>
+          <View style={styles.footerLeft}>
+            {order?.driver?.firstName && (
+              <View style={styles.driverInfo}>
+                <MaterialCommunityIcons name="account" size={16} color="#666666" />
+                <Text style={styles.driverName}>
+                  {order.driver.firstName} {order.driver.lastName}
+                </Text>
+              </View>
+            )}
+            
+            {/* <View style={styles.paymentInfo}>
+              <MaterialCommunityIcons 
+                name={order.payType === 'cash' ? 'cash' : 'credit-card'} 
+                size={16} 
+                color="#666666" 
+              />
+              <Text style={styles.paymentMethod}>
+                {t(`payment.${order.payType || 'cash'}`)}
+              </Text>
+            </View> */}
+          </View>
+          
+          <View style={styles.footerRight}>
+            <Text style={styles.price}>
+              {formatPrice(order.totalPrice)}
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color="#CCCCCC" />
           </View>
         </View>
       </TouchableOpacity>
@@ -202,82 +228,178 @@ export const Card = ({ order ,refresh}) => {
 };
 
 const styles = StyleSheet.create({
+  cardContainer: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: hp(2),
-    padding: hp(2.5),
-    marginVertical: hp(1),
-    marginHorizontal: hp(2),
-    borderWidth: 3,
-    borderColor: "#ccc",
-   
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  activeCard: {
+    borderColor: '#000000',
+    borderWidth: 2,
+  },
+  activeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  pulseIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#000000',
+    marginRight: 6,
+  },
+  activeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#000000',
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: hp(2),
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
   orderInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp(2),
-    
+    flex: 1,
   },
-  title: {
-    fontSize: hp(2.2),
-    fontWeight: "bold",
-    color: colors.primary,
+  orderIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  orderNumber: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: '#000000',
+    marginBottom: 2,
+  },
+  orderDate: {
+    fontSize: 12,
+    color: '#666666',
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: hp(0.5),
-    paddingHorizontal: wp(2),
-    borderRadius: hp(1.5),
-    gap: wp(1),
-    width:110
-  },
-  statusIcon: {
-    marginRight: wp(1),
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    maxWidth: 120,
   },
   statusText: {
-    fontSize: hp(1.5),
-    color: "#fff",
-    textTransform: "capitalize",
+    fontSize: 12,
+    color: "#FFFFFF",
     fontWeight: "600",
-    maxWidth: wp(40),
+    marginLeft: 4,
   },
-  body: {
-    gap: hp(1.5),
-    backgroundColor: colors.lightPrimary + '10',
-    padding: hp(1.5),
-    borderRadius: hp(1),
+  routeContainer: {
+    marginBottom: 16,
   },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: wp(2),
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
-  label: {
-    fontSize: hp(1.7),
-    color: colors.darkGray,
+  locationIcon: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  pickupDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#000000',
+  },
+  dropoffDot: {
+    width: 10,
+    height: 10,
+    backgroundColor: '#666666',
+  },
+  locationDetails: {
     flex: 1,
   },
-  footer: {
-    borderTopWidth:3,
-    borderTopColor: "#ccc",
-   // marginTop: hp(1),
-    paddingTop: hp(1.5),
+  locationLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666666',
+    marginBottom: 2,
   },
-  dateContainer: {
+  locationAddress: {
+    fontSize: 14,
+    color: '#000000',
+    lineHeight: 18,
+  },
+  routeLine: {
+    width: 2,
+    height: 16,
+    backgroundColor: '#E0E0E0',
+    marginLeft: 11,
+    marginVertical: 4,
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  footerLeft: {
+    flex: 1,
+  },
+  driverInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp(2),
+    marginBottom: 4,
   },
-  date: {
-    fontSize: hp(1.5),
-    color: "#0c0c0c",
-    fontWeight: "500",
+  driverName: {
+    fontSize: 14,
+    color: '#666666',
+    marginLeft: 6,
+  },
+  paymentInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  paymentMethod: {
+    fontSize: 14,
+    color: '#666666',
+    marginLeft: 6,
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: '#000000',
+    marginRight: 8,
   },
 });
+

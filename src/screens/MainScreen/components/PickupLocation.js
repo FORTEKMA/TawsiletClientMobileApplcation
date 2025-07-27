@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform,TextInput } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
-import { styles } from '../styles';
-import ConfirmButton from './ConfirmButton';
-import Geolocation from 'react-native-geolocation-service';
-import { getAddressFromCoordinates } from '../../../utils/helpers/mapUtils';
-import { Spinner, Toast } from 'native-base';
+ 
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { API_GOOGLE } from "@env";
 import { 
@@ -94,12 +91,13 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
 
   if (!isLocationInTunisia) {
     return (
-      <View style={[styles.step1Wrapper, isMapDragging && { opacity: 0.5 }]}>
-        <View style={localStyles.header}>
-          <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
-          <View style={{ width: 24 }} />
+      <View style={[localStyles.container, isMapDragging && { opacity: 0.5 }]}>
+        <View style={localStyles.uberHeader}>
+          <Text style={localStyles.uberTitle}>{t('location.where_are_you')}</Text>
+          <Text style={localStyles.uberSubtitle}>{t('location.drag_map_instruction')}</Text>
         </View>
-        <View style={localStyles.content}>
+        
+        <View style={localStyles.uberContent}>
           <View style={localStyles.errorContainer}>
             <MaterialIcons name="error-outline" size={40} color="#ff3b30" />
             <Text style={localStyles.errorText}>
@@ -112,112 +110,210 @@ const PickupLocation = ({ formData, goNext, isMapDragging, animateToRegion }) =>
   }
 
   return (
-    <View style={[styles.step1Wrapper, isMapDragging && { opacity: 0.5 }]}>
-      <View style={localStyles.header}>
-        <Text style={localStyles.headerTitle}>{t('location.where_are_you')}</Text>
-        <View style={{ width: 24 }} />
+    <View style={[localStyles.container, isMapDragging && { opacity: 0.5 }]}>
+      {/* Uber-style Header */}
+      <View style={localStyles.uberHeader}>
+        <Text style={localStyles.uberTitle}>{t('location.set_pickup_location', 'Set your pickup location')}</Text>
+        <Text style={localStyles.uberSubtitle}>{t('location.drag_map_instruction', 'Drag map to move pin')}</Text>
       </View>
 
-      <View style={localStyles.content}>
-        <GooglePlacesAutocomplete
-          predefinedPlacesAlwaysVisible={false}
-          placeholder={t('location.pickUp')}
-          debounce={300} 
-          onPress={handleLocationSelect}
-          ref={inputRef}
-          textInputProps={{
-            placeholder: formData?.pickupAddress?.address ? formData?.pickupAddress?.address : "",
-            placeholderTextColor: "#ccc",
-            style: {
-              width: "100%",
-              color:"#000"
-            }
-          }}
-          query={{
-            key: API_GOOGLE,
-            language: 'en',
-            components: 'country:tn',
-          }}
-          styles={{
-            container: {
-              width: "100%"
-            },
-            textInputContainer: {
-              borderWidth: 3,
-              borderColor: '#ccc',
-              borderRadius: 8,
-              backgroundColor: '#fff',
-              color: "#000",
-              height: 50,
-              paddingHorizontal: 10,
-            },
-            listView: {
-              marginTop: 15,
-            },
-            textInput: {
-              height: 50,
-              color: '#000',
-              fontSize: 16,
-              placeholderTextColor: "#ccc",
-              width: "100%"
-            },
-            row: {
-              width: "100%"
-            },
-            description: {
-              color: '#000',
-            },
-          }}
-          fetchDetails={true}
-          enablePoweredByContainer={false}
-          minLength={2}
-        />
-      </View>
-
-      <ConfirmButton
-        onPress={handleContinue}
-        text={t('location.continue')}
-        disabled={!pickupAddress.latitude}
-      />
+      {/* Uber-style Search Input */}
+      <View style={localStyles.uberContent}>
+            
+            <GooglePlacesAutocomplete
+              predefinedPlacesAlwaysVisible={false}
+              placeholder={t('location.where_from', 'Where from?')}
+              debounce={300} 
+              onPress={handleLocationSelect}
+              textInputContainer={localStyles.searchContainer}
+             
+               textInputProps={{
+                style:localStyles.inputWrapper,
+                placeholder:formData?.pickupAddress?.address ? formData?.pickupAddress?.address : t('location.where_from', 'Where from?'),
+                placeholderTextColor:"#8E8E93",
+               ref:inputRef, 
+                
+               }}
+               renderLeftButton={()=>{
+                return (
+                  <MaterialCommunityIcons style={localStyles.leftIcon} name="circle" size={12} color="#000" />
+                )
+               }}
+            
+              query={{
+                key: API_GOOGLE,
+                language: 'en',
+                components: 'country:tn',
+              }}
+              styles={{
+               
+                 
+                description: localStyles.description,
+              }}
+              fetchDetails={true}
+              enablePoweredByContainer={false}
+              minLength={2}
+            />
+            
+            
+        {/* Uber-style Continue Button */}
+        <TouchableOpacity
+          style={[
+            localStyles.uberButton,
+            !pickupAddress.latitude && localStyles.uberButtonDisabled
+          ]}
+          onPress={handleContinue}
+          disabled={!pickupAddress.latitude}
+        >
+          <Text style={[
+            localStyles.uberButtonText,
+            !pickupAddress.latitude && localStyles.uberButtonTextDisabled
+          ]}>
+            {t('location.set_pickup_location', 'Set pickup location')}
+          </Text>
+        </TouchableOpacity>
+        </View>
     </View>
   );
 };
 
 const localStyles = StyleSheet.create({
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
+  },
+  uberHeader: {
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    alignItems: 'center',
+  },
+  uberTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  uberSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
+  },
+  searchContainer: {
+    marginBottom: 24,
+    flex: 1,
+  },
+  inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    minHeight: 56,
+    flex:1,
+    marginBottom:15,
+    paddingLeft:30,
+  },
+  leftIcon: {
+    marginRight: 12,
+    position:"absolute",
+     left:10,
+     top:22,
+     zIndex:1000,
+    
+  },
+  autocompleteContainer: {
+    flex: 1,
+  },
+  textInputContainer: {
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+    height: 48,
+    
+  },
+  googleTextInput: {
+    backgroundColor: 'transparent',
+    height: 48,
+    fontSize: 16,
+    color: '#000',
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+  },
+  textInput: {
+    fontSize: 16,
+    color: '#000',
+    flex: 1,
+  },
+  listView: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  row: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: "100%"
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  description: {
     color: '#000',
+    fontSize: 16,
   },
-  content: {
-    padding: 16,
-    width: "100%"
+  searchIconContainer: {
+    marginLeft: 12,
+  },
+  uberButton: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: Platform.OS === 'ios' ? 34 : 24,
+   
+  },
+  uberButtonDisabled: {
+    backgroundColor: '#E5E5EA',
+  },
+  uberButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  uberButtonTextDisabled: {
+    color: '#8E8E93',
   },
   errorContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#ff3b30',
+    marginTop: 24,
   },
   errorText: {
-    marginTop: 10,
+    marginTop: 12,
     color: '#ff3b30',
     textAlign: 'center',
     fontSize: 16,
+    lineHeight: 22,
   },
 });
 
-export default PickupLocation; 
+export default PickupLocation;
+

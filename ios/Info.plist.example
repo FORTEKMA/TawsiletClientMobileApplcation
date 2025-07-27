@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Your existing Info.plist content -->
+    
+    <!-- VoIP Call Permissions -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>This app needs access to microphone for voice calls with drivers</string>
+    
+    <key>NSCameraUsageDescription</key>
+    <string>This app needs access to camera for video calls with drivers</string>
+    
+    <!-- Optional: For background VoIP -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>voip</string>
+        <string>audio</string>
+    </array>
+    
+    <!-- App Transport Security (for development) -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <!-- In production, use specific domains instead -->
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>agora.io</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.0</string>
+            </dict>
+        </dict>
+    </dict>
+    
+    <!-- Audio Session Category -->
+    <key>AVAudioSessionCategoryPlayAndRecord</key>
+    <true/>
+    
+    <!-- Required device capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>microphone</string>
+        <!-- Remove camera if you only need voice calls -->
+        <string>camera-flash</string>
+    </array>
+    
+    <!-- Your existing Info.plist content continues... -->
+    
+</dict>
+</plist>
+
+<!-- 
+IMPORTANT NOTES FOR iOS VOIP INTEGRATION:
+
+1. Add these permissions to your actual Info.plist file
+2. For iOS 10+, permission descriptions are required
+3. Test on real devices, not simulators, for best VoIP performance
+4. Consider implementing CallKit for native iOS call experience
+5. Background VoIP requires special Apple approval for App Store
+
+PODFILE SETUP (add to ios/Podfile):
+pod 'react-native-agora', path: '../node_modules/react-native-agora'
+
+Then run:
+cd ios && pod install
+
+ADDITIONAL iOS SETUP:
+1. Enable "Voice over IP" capability in Xcode project settings
+2. Configure audio session properly in your app
+3. Handle interruptions (incoming calls, etc.)
+4. Test with different iOS versions and devices
+-->
+

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { View, TextInput, Image } from "react-native";
+import { View, TextInput, StyleSheet } from "react-native";
 import { colors } from "../../../utils/colors";
 import { useTranslation } from "react-i18next";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 export const SearchInput = ({ setFilter }) => {
   const [searchText, setSearchText] = useState("");
@@ -13,22 +14,47 @@ export const SearchInput = ({ setFilter }) => {
   };
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-      {/* <Image
-        source={require("../../../assets/search.png")}
-        style={{ width: 20, height: 20, marginRight: 10 }}
-      /> */}
-      <TextInput
-        style={{
-          flex: 1,
-          color: "#fff",
-          fontSize: 16,
-        }}
-        placeholder={t("common.search_orders")}
-        placeholderTextColor={colors.gray}
-        value={searchText}
-        onChangeText={handleSearch}
-      />
+    <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.input}
+          placeholder={t("common.search_orders")}
+          placeholderTextColor="#999"
+          value={searchText}
+          onChangeText={handleSearch}
+        />
+      </View>
     </View>
   );
-}; 
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: "#000",
+    fontSize: 16,
+    paddingVertical: 0,
+  },
+}); 

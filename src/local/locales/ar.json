@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "جارٍ التحميل...",
+    "loading_more": "جارٍ تحميل المزيد...",
     "error": "حدث خطأ",
     "success": "نجاح",
     "cancel": "إلغاء",
@@ -43,7 +44,13 @@
     "days": "أيام",
     "hours": "ساعات",
     "minutes": "دقائق",
-    "seconds": "ثواني"
+    "seconds": "ثواني",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "days_ago": "أيام",
+    "warning": "تحذير",
+    "please_wait": "يرجى الانتظار",
+    "save_changes": "حفظ التغييرات"
   },
   "onboarding": {
     "login": "تسجيل الدخول",
@@ -154,6 +161,17 @@
     "profile_update_failed": "فشل تحديث الملف الشخصي. يرجى المحاولة مرة أخرى."
   },
   "history": {
+    "total_rides": "إجمالي الرحلات",
+    "active": "نشط",
+    "completed": "مكتمل",
+    "no_rides_title": "لا توجد رحلات بعد",
+    "no_rides_subtitle": "لم تقم بأي رحلات بعد. احجز رحلتك الأولى للبدء!",
+    "book_ride": "احجز رحلة",
+    "rides_found": "رحلة تم العثور عليها",
+    "active_ride": "رحلة نشطة",
+    "pickup": "نقطة الانطلاق",
+    "dropoff": "نقطة الوصول",
+    "address_not_available": "العنوان غير متاح",
     "empty": {
       "no_orders": "لم يتم العثور على طلبات"
     },
@@ -340,6 +358,7 @@
     },
     "personal_info": {
       "title": "المعلومات الشخصية",
+      "section_title": "المعلومات الشخصية",
       "first_name": "الاسم الأول",
       "last_name": "اسم العائلة",
       "email": "البريد الإلكتروني",
@@ -353,7 +372,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "رقم الهاتف",
       "otp_title": "أدخل رمز التحقق",
-      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}"
+      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}",
+      "please_wait": "يرجى الانتظار {{time}} قبل المحاولة مرة أخرى",
+      "notice": "ستتطلب التغييرات في رقم هاتفك التحقق عبر الرسائل النصية."
     },
     "first_name": "الاسم الأول",
     "last_name": "اسم العائلة",
@@ -474,7 +495,12 @@
     },
     "outside_tunisia": "هذا الموقع خارج تونس. يرجى اختيار موقع داخل تونس.",
     "too_close": "يجب أن تكون نقطة الوصول على بُعد 100 متر على الأقل من نقطة الانطلاق.",
-    "calculating_distance": "حساب المسافة..."
+    "calculating_distance": "حساب المسافة...",
+    "drag_map_instruction": "اسحب الخريطة لتحريك الدبوس",
+    "set_destination": "حدد وجهتك",
+    "set_pickup_location": "حدد نقطة الانطلاق",
+    "where_from": "من أين؟",
+    "search_destination": "البحث عن الوجهة"
   },
   "Choose_location": "اختر مكاناً",
   "save": "حفظ",
@@ -640,6 +666,47 @@
   },
   "choose_vehicle": {
     "account_under_validation": "حسابك قيد المراجعة.",
-    "must_complete_women_validation": "يجب عليك إكمال عملية توثيق النساء لاختيار هذه المركبة."
+    "must_complete_women_validation": "يجب عليك إكمال عملية توثيق النساء لاختيار هذه المركبة.",
+    "select_vehicle_subtitle": "اختر المركبة التي تناسب احتياجاتك",
+    "confirm_vehicle": "تأكيد المركبة",
+    "scheduled_for": "مجدول لـ",
+    "people": "أشخاص",
+    "standard_ride": "رحلة عادية"
+  },
+  "confirm_ride": {
+    "title": "تأكيد رحلتك",
+    "subtitle": "راجع تفاصيل رحلتك",
+    "pickup": "نقطة الانطلاق",
+    "destination": "الوجهة",
+    "current_location": "الموقع الحالي",
+    "total_price": "السعر الإجمالي",
+    "confirm_ride": "تأكيد الرحلة",
+    "calculating": "جاري الحساب...",
+    "now": "الآن",
+    "in_minutes": "خلال {{minutes}} دقيقة",
+    "in_hours": "خلال {{hours}} ساعة",
+    "in_hours_plural": "خلال {{hours}} ساعات",
+    "ride_confirmed": "تم تأكيد الرحلة!",
+    "searching_driver": "البحث عن سائق...",
+    "request_failed": "فشل في إنشاء الطلب",
+    "vehicle": "مركبة",
+    "vehicle_economy_desc": "رحلات اقتصادية للرحلات اليومية",
+    "vehicle_comfort_desc": "مساحة أكبر وراحة أكثر",
+    "vehicle_premium_desc": "مركبات فاخرة للمناسبات الخاصة",
+    "vehicle_standard_desc": "رحلة قياسية"
+  },
+  "search_drivers": {
+    "preparing_search": "جاري إعداد طلبك...",
+    "searching_drivers": "البحث عن سائقين",
+    "finding_best_driver": "البحث عن أفضل سائق لك...",
+    "driver_found": "تم العثور على سائق!",
+    "redirecting_tracking": "جاري التوجيه إلى التتبع...",
+    "cancel_search": "إلغاء البحث",
+    "finding_driver": "البحث عن سائق",
+    "service_unavailable": "الخدمة غير متاحة",
+    "red_zone_description": "خدمة الاستلام غير متاحة في هذه المنطقة. يرجى اختيار موقع مختلف.",
+    "choose_different_location": "اختر موقعاً مختلفاً",
+    "red_zone_title": "الخدمة غير متاحة",
+    "red_zone_message": "خدمة الاستلام غير متاحة في هذه المنطقة"
   }
 }

@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Chargement...",
+    "loading_more": "Chargement de plus...",
     "error": "Une erreur est survenue",
     "success": "Succès",
     "cancel": "Annuler",
@@ -44,7 +45,13 @@
     "days": "Jours",
     "hours": "Heures",
     "minutes": "Minutes",
-    "seconds": "Secondes"
+    "seconds": "Secondes",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "days_ago": "jours",
+    "warning": "Avertissement",
+    "please_wait": "Veuillez patienter",
+    "save_changes": "Enregistrer les modifications"
   },
   "auth": {
     "login": "Connexion",
@@ -196,6 +203,17 @@
     "profile_update_failed": "La mise à jour du profil a échoué. Veuillez réessayer."
   },
   "history": {
+    "total_rides": "Total des courses",
+    "active": "En cours",
+    "completed": "Terminé",
+    "no_rides_title": "Aucune course encore",
+    "no_rides_subtitle": "Vous n'avez pas encore fait de courses. Réservez votre première course pour commencer !",
+    "book_ride": "Réserver une course",
+    "rides_found": "courses trouvées",
+    "active_ride": "Course active",
+    "pickup": "Point de départ",
+    "dropoff": "Point d'arrivée",
+    "address_not_available": "Adresse non disponible",
     "empty": {
       "no_orders": "Aucune commande trouvée"
     },
@@ -383,6 +401,7 @@
     },
     "personal_info": {
       "title": "Informations Personnelles",
+      "section_title": "Informations Personnelles",
       "first_name": "Prénom",
       "last_name": "Nom",
       "email": "Email",
@@ -396,7 +415,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "Numéro de téléphone",
       "otp_title": "Entrez le code OTP",
-      "otp_message": "Un code OTP a été envoyé à {{phoneNumber}}"
+      "otp_message": "Un code OTP a été envoyé à {{phoneNumber}}",
+      "please_wait": "Veuillez patienter {{time}} avant de réessayer",
+      "notice": "Les modifications de votre numéro de téléphone nécessiteront une vérification par SMS."
     },
 
     "first_name": "Prénom",
@@ -519,7 +540,12 @@
     },
     "outside_tunisia":"Cet emplacement est situé hors de Tunisie. Veuillez choisir un emplacement en Tunisie.",
     "too_close": "Le point d'arrivée doit être à au moins 100 mètres du point de départ.",
-    "calculating_distance": "Calcul de la distance..."
+    "calculating_distance": "Calcul de la distance...",
+    "drag_map_instruction": "Faites glisser la carte pour déplacer l'épingle",
+    "set_destination": "Définir votre destination",
+    "set_pickup_location": "Définir votre point de départ",
+    "where_from": "D'où partez-vous ?",
+    "search_destination": "Rechercher la destination"
   },
   "Choose_location": "Choisir un lieu",
   "save": "Enregistrer",
@@ -657,6 +683,47 @@
   },
   "choose_vehicle": {
     "account_under_validation": "Votre compte est en cours de validation.",
-    "must_complete_women_validation": "Vous devez compléter le processus de validation pour les femmes afin de sélectionner ce véhicule."
+    "must_complete_women_validation": "Vous devez compléter le processus de validation pour les femmes afin de sélectionner ce véhicule.",
+    "select_vehicle_subtitle": "Sélectionnez le véhicule qui correspond à vos besoins",
+    "confirm_vehicle": "Confirmer le véhicule",
+    "scheduled_for": "Programmé pour",
+    "people": "personnes",
+    "standard_ride": "Trajet standard"
+  },
+  "confirm_ride": {
+    "title": "Confirmer votre trajet",
+    "subtitle": "Vérifiez les détails de votre trajet",
+    "pickup": "Point de départ",
+    "destination": "Destination",
+    "current_location": "Emplacement actuel",
+    "total_price": "Prix total",
+    "confirm_ride": "Confirmer le trajet",
+    "calculating": "Calcul en cours...",
+    "now": "Maintenant",
+    "in_minutes": "Dans {{minutes}} minutes",
+    "in_hours": "Dans {{hours}} heure",
+    "in_hours_plural": "Dans {{hours}} heures",
+    "ride_confirmed": "Trajet confirmé !",
+    "searching_driver": "Recherche d'un chauffeur...",
+    "request_failed": "Échec de la création de la demande",
+    "vehicle": "Véhicule",
+    "vehicle_economy_desc": "Trajets abordables pour les déplacements quotidiens",
+    "vehicle_comfort_desc": "Plus d'espace et de confort",
+    "vehicle_premium_desc": "Véhicules premium pour les occasions spéciales",
+    "vehicle_standard_desc": "Trajet standard"
+  },
+  "search_drivers": {
+    "preparing_search": "Préparation de votre demande...",
+    "searching_drivers": "Recherche de chauffeurs",
+    "finding_best_driver": "Recherche du meilleur chauffeur pour vous...",
+    "driver_found": "Chauffeur trouvé !",
+    "redirecting_tracking": "Redirection vers le suivi...",
+    "cancel_search": "Annuler la recherche",
+    "finding_driver": "Recherche de chauffeur",
+    "service_unavailable": "Service indisponible",
+    "red_zone_description": "Le service de prise en charge n'est pas disponible dans cette zone. Veuillez choisir un autre emplacement.",
+    "choose_different_location": "Choisir un autre emplacement",
+    "red_zone_title": "Service indisponible",
+    "red_zone_message": "Le service de prise en charge n'est pas disponible dans cette zone"
   }
 } 

@@ -1,5 +1,5 @@
 import React, { useState,useEffect, useRef, memo } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing,I18nManager, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing,I18nManager, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { styles } from '../styles';
@@ -45,6 +45,7 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
     cinBack: null,
   });
   const [womanValidationLoading, setWomanValidationLoading] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   
   // Track step view
   useEffect(() => {
@@ -107,6 +108,19 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
       default:
         return vehicle.name_en || 'Vehicle';
     }
+  };
+
+  // Get displayed vehicle options based on minimized state
+  const getDisplayedVehicleOptions = () => {
+    if (isMinimized && vehicleOptions.length > 0) {
+      return [vehicleOptions[0]];
+    }
+    return vehicleOptions;
+  };
+
+  // Toggle minimize state
+  const toggleMinimize = () => {
+    setIsMinimized(!isMinimized);
   };
 
  
@@ -230,6 +244,10 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
   const handleDateConfirm = (date) => {
     setSelectedDate(date);
     hideDatePicker();
+  };
+  
+  const clearSelectedDate = () => {
+    setSelectedDate(null);
   };
 
   const formatDate = (date) => {
@@ -385,327 +403,405 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
     <>
       {/* Main UI */}
       <View style={localStyles.container}>
-        <View style={{
-          
-        }}>
-
-          <View style={{gap:10, marginBottom: 18, marginTop: 10 ,flexDirection: 'row', alignItems: 'center',width:"100%" }}>
+        {/* Uber-style Header */}
+        <View style={localStyles.uberHeader}>
           <TouchableOpacity
-        style={{  backgroundColor: '#fff', borderRadius: 20, padding: 6, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}
-        onPress={handleBack}
-      >
-        <MaterialCommunityIcons name={I18nManager.isRTL?"arrow-right": "arrow-left"} size={28} color="#030303" />
-      </TouchableOpacity>
-      <Text style={{ fontWeight: '700', fontSize: hp(2.2), color: '#030303', }}>{t('booking.step3.select_car')}</Text>
+            style={localStyles.backButton}
+            onPress={handleBack}
+          >
+            <MaterialCommunityIcons name={I18nManager.isRTL?"chevron-right": "chevron-left"} size={28} color="#000" />
+          </TouchableOpacity>
+          
+                      <View style={localStyles.headerContent}>
+              <Text style={localStyles.uberTitle}>{t('booking.step3.select_car', 'Choose a ride')}</Text>
+              <Text style={localStyles.uberSubtitle}>{t('choose_vehicle.select_vehicle_subtitle', 'Select the vehicle that suits your needs')}</Text>
+            </View>
 
-          </View>
-         
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 18 }}>
-            {vehicleOptions.map((option, index) => {
+          {/* Minimize Button */}
+          <TouchableOpacity
+            style={localStyles.minimizeButton}
+            onPress={toggleMinimize}
+          >
+            <MaterialCommunityIcons
+              name={isMinimized ? "arrow-expand-all" : "arrow-collapse-all"}
+              size={24}
+              color="#000"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Uber-style Content */}
+        <View style={localStyles.uberContent}>
+          {/* Vehicle Options - Vertical Layout like Uber */}
+          <ScrollView 
+            style={localStyles.vehicleOptionsContainer}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={localStyles.vehicleOptionsContent}
+          >
+            {getDisplayedVehicleOptions().map((option, index) => {
                // Safety check for animations - render without animations if not ready
-              if (!animations[index]) {
+             
                 return (
-                  <View key={option.id} style={{ flex: 1, marginHorizontal: 6 }}>
+                  <View key={option.id} style={localStyles.vehicleOptionWrapper}>
                     <TouchableOpacity
-                      style={{
-                        alignItems: 'center',
-                        backgroundColor: option.soon ? '#F0F0F0' : (selected?.id === option.id ? '#F6F6F6' : '#fff'),
-                        borderRadius: 14,
-                        paddingVertical: 12,
-                        borderWidth: selected?.id === option.id ? 3 : 1,
-                        borderColor: option.soon ? '#E0E0E0' : (selected?.id === option.id ? '#030303' : '#E0E0E0'),
-                        opacity: option.soon ? 0.6 : 1,
-                       
-                      }}
+                      style={[
+                        localStyles.vehicleOptionCard,
+                        option.soon && localStyles.vehicleOptionDisabled,
+                        selected?.id === option.id && localStyles.vehicleOptionSelected
+                      ]}
                       onPress={() => handleVehicleSelect(option, index)}
                       disabled={option.soon}
                     >
-                      <View style={{backgroundColor:"red", borderRadius: 12, padding: 8, marginBottom: 6,}}>
-                      {showLoader[option.id] ? (
-                          <LottieView
-                            source={loaderAnimation}
-                            autoPlay
-                            loop
-
-                            speed={4}
-                            resizeMode="contain"
-                            style={{height:140,width:140}}
+                      <View style={localStyles.vehicleOptionContent}>
+                        <View style={localStyles.vehicleImageContainer}>
+                          {showLoader[option.id] ? (
+                            <LottieView
+                              source={loaderAnimation}
+                              autoPlay
+                              loop
+                              speed={4}
+                              resizeMode="contain"
+                              style={localStyles.loaderAnimation}
+                            />
+                          ) : null}
+                          <Image 
+                            source={option.icon} 
+                            style={[
+                              localStyles.vehicleImage,
+                              option.soon && localStyles.vehicleImageDisabled,
+                              showLoader[option.id] && localStyles.vehicleImageHidden
+                            ]} 
+                            onLoadStart={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: true }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: true }));
+                            }}
+                            onLoadEnd={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: false }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
+                            }}
+                            onError={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: false }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
+                            }}
                           />
-                        ) : null}
-                        <Image 
-                          source={option.icon} 
-                          style={{ 
-                            width: 72, 
-                            height: 72,
-                            resizeMode: "cover",
-                            opacity: option.soon ? 0.5 : 1,
-                            position: showLoader[option.id] ? 'absolute' : 'relative',
-                            zIndex: showLoader[option.id] ? -1 : 1,
-                          }} 
-                          onLoadStart={() => {
-                            setLoadingImages(prev => ({ ...prev, [option.id]: true }));
-                            setShowLoader(prev => ({ ...prev, [option.id]: true }));
-                          }}
-                          onLoadEnd={() => {
-                            setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                         
-                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                            
-                          }}
-                          onError={() => {
-                            setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                            
-                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                           
-                          }}
-                        />
-                      </View>
-                      <Text style={{ 
-                        fontWeight: '700', 
-                        color: option.soon ? '#999' : '#000', 
-                        fontSize: hp(1.8) 
-                      }}>
-                        {option.label}
-                      </Text>
-                      {option.soon ? (
-                        <View style={{ 
-                          backgroundColor: '#FFA500', 
-                          paddingHorizontal: 8, 
-                          paddingVertical: 2, 
-                          borderRadius: 8, 
-                          marginTop: 4 
-                        }}>
-                          <Text style={{ 
-                            color: '#fff', 
-                            fontSize: hp(1.2), 
-                            fontWeight: '600' 
-                          }}>
-                            {t('common.coming_soon')}
+                        </View>
+                        
+                        <View style={localStyles.vehicleInfo}>
+                          <Text style={[
+                            localStyles.vehicleLabel,
+                            option.soon && localStyles.vehicleLabelDisabled
+                          ]}>
+                            {option.label}
                           </Text>
+                          <Text style={[
+                            localStyles.vehicleNearby,
+                            option.soon && localStyles.vehicleNearbyDisabled
+                          ]}>
+                            {option.soon ? t('common.coming_soon', 'Coming Soon') : (
+                              <Text>
+                                <MaterialCommunityIcons name="account" size={14} color="#8E8E93" />
+                                {' '}{option.nearby} {t('choose_vehicle.people', 'people')}
+                              </Text>
+                            )}
+                          </Text>
+                          
                         </View>
-                      ) : (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 2 }}>
-                          <MaterialCommunityIcons name="account" size={14} color="#BDBDBD" style={{ marginRight: 4 }} />
-                          <Text style={{ color: '#BDBDBD', fontSize: hp(1.4) }}>{option.nearby} {t('booking.step3.nearby')}</Text>
+                        
+                        <View style={localStyles.vehicleRightSection}>
+                          
+                          
+                          {selected?.id === option.id && !option.soon && (
+                            <View style={localStyles.selectedIndicator}>
+                              <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                            </View>
+                          )}
                         </View>
-                      )}
+                      </View>
                     </TouchableOpacity>
                   </View>
                 );
-              }
-
-              const glowColor = animations[index].glow.interpolate({
-                inputRange: [0, 1],
-                outputRange: ['rgba(3, 3, 3, 0)', 'rgba(3, 3, 3, 0.15)']
-              });
-
-              return (
-                <Animated.View
-                  key={option.id}
-                  style={{
-                    flex: 1,
-                    transform: [
-                      { translateY: animations[index].slide },
-                      { scale: animations[index].pulse }
-                    ],
-                   // opacity: animations[index].fade,
-                  }}
-                >
-                  <TouchableOpacity
-                    style={{
-                      alignItems: 'center',
-                      backgroundColor: option.soon ? '#F0F0F0' : (selected?.id === option.id ? '#F6F6F6' : '#fff'),
-                      borderRadius: 14,
-                      marginHorizontal: 6,
-                      paddingVertical: 12,
-                      borderWidth: selected?.id === option.id ? 3 : 1,
-                      borderColor: option.soon ? '#E0E0E0' : (selected?.id === option.id ? '#030303' : '#E0E0E0'),
-                      opacity: option.soon ? 0.6 : 1,
-                    }}
-                    onPress={() => handleVehicleSelect(option, index)}
-                    disabled={option.soon}
-                  >
-                    <Animated.View
-                      style={{
-                        //backgroundColor: glowColor,
-                        borderRadius: 12,
-                        padding: 8,
-                        marginBottom: 6,
-                        width: 72,
-                        height: 72,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      {showLoader[option.id] ? (
-                        <LottieView
-                          source={loaderAnimation}
-                          autoPlay
-                          speed={4}
-                          loop
-                          style={{ width: 140, height: 140 }}
-                        />
-                      ) : null}
-                      <Image 
-                        source={option.icon} 
-                        style={{ 
-                          width: 72, 
-                          height: 72,
-                          resizeMode: "cover",
-                          opacity: option.soon ? 0.5 : 1,
-                          position: showLoader[option.id] ? 'absolute' : 'relative',
-                          zIndex: showLoader[option.id] ? -1 : 1,
-                        }} 
-                        onLoadStart={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: true }));
-                          setShowLoader(prev => ({ ...prev, [option.id]: true }));
-                        }}
-                        onLoadEnd={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                          
-                            setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                        
-                        }}
-                        onError={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                        
-                            setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                  
-                        }}
-                      />
-                    </Animated.View>
-                    <Text style={{ 
-                      fontWeight: '700', 
-                      color: option.soon ? '#999' : '#000', 
-                      fontSize: hp(1.8) 
-                    }}>
-                      {option.label}
-                    </Text>
-                    {option.soon ? (
-                      <View style={{ 
-                        backgroundColor: '#FFA500', 
-                        paddingHorizontal: 8, 
-                        paddingVertical: 2, 
-                        borderRadius: 8, 
-                        marginTop: 4 
-                      }}>
-                        <Text style={{ 
-                          color: '#fff', 
-                          fontSize: hp(1.2), 
-                          fontWeight: '600' 
-                        }}>
-                          {t('common.coming_soon')}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 2 }}>
-                        <MaterialCommunityIcons name="account" size={14} color="#BDBDBD" style={{ marginRight: 4 }} />
-                        <Text style={{ color: '#BDBDBD', fontSize: hp(1.4) }}>{option.nearby} {t('booking.step3.nearby')}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                </Animated.View>
-              );
+             
             })}
-          </View>  
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '95%', backgroundColor: selectedDate?"#0c0c0c": '#F6F6F6', borderRadius: 12, padding: 12, marginBottom: 18 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name="map-marker" size={18} color={selectedDate ? "#fff":"#BDBDBD"} style={{ marginRight: 4 }} />
-              <Text style={{ color: selectedDate ? "#fff":'#BDBDBD', fontSize: hp(1.6) }}>{ isLoading ? "..." : (tripDetails?.distance/1000).toFixed(2)+" km"}</Text>
+          </ScrollView>
+
+          {/* Schedule Ride Option */}
+          {selectedDate && (
+            <View style={localStyles.scheduleContainer}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
+              <Text style={localStyles.scheduleText}>
+                {t('choose_vehicle.scheduled_for')}: {formatDate(selectedDate)}
+              </Text>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <MaterialCommunityIcons name="clock-outline" size={18} color={selectedDate ? "#fff":"#BDBDBD"} style={{ marginRight: 4 }} />
-              <Text style={{ color: selectedDate ? "#fff":'#BDBDBD', fontSize: hp(1.6) }}>{ isLoading ? "..." : tripDetails?.time}</Text>
-            </View>
-            {selectedDate && (
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons name="calendar" size={18} color={selectedDate ? "#fff":"#BDBDBD"} style={{ marginRight: 4 }} />
-                <Text style={{ color: selectedDate ? "#fff":'#BDBDBD', fontSize: hp(1.6) }}>{ isLoading ? "..." : formatDate(selectedDate)}</Text>
-              </View>
-            )}
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 8, alignItems: 'center' }}>
+          )}
+
+          {/* Bottom Row with Date Picker and Confirm Button */}
+          <View style={localStyles.bottomRow}>
+            {/* Date Picker Icon Button */}
             <TouchableOpacity
-            disabled={true}
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                backgroundColor: selectedDate ? '#FF6B6B' : '#CCC',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 8,
-                flexDirection: 'row',
-              }}
-              onPress={selectedDate ? () => setSelectedDate(null) : showDatePicker}
+              style={localStyles.datePickerIconButton}
+              onPress={selectedDate ? clearSelectedDate : showDatePicker}
             >
-              <Ionicons 
-                name={selectedDate ? "close" : "calendar-number-outline"} 
+              <MaterialCommunityIcons 
+                name={selectedDate ? "calendar-remove" : "calendar"} 
                 size={24} 
-                color={selectedDate ? "#FFF" : "#000"} 
+                color="#000" 
               />
             </TouchableOpacity>
-           
-            <ConfirmButton
-           onPress={handleConfirm}
-          text={!selectedDate ? t("location.continue"): t('booking.step3.book_now')}
-          disabled={isLoading || !selected}
-        />
 
-
+            {/* Uber-style Continue Button */}
+            <TouchableOpacity
+              style={[
+                localStyles.uberButton,
+                !selected && localStyles.uberButtonDisabled
+              ]}
+              onPress={handleConfirm}
+              disabled={!selected}
+            >
+              <Text style={[
+                localStyles.uberButtonText,
+                !selected && localStyles.uberButtonTextDisabled
+              ]}>
+                {t('choose_vehicle.confirm_vehicle', 'Confirm vehicle')}
+              </Text>
+            </TouchableOpacity>
           </View>
-          <DateTimePickerModal
-            isVisible={isDatePickerVisible}
-            mode="datetime"
-            confirmTextIOS={t("confirm")}
-            cancelTextIOS={t("cancel")}
-            display="spinner"
-            minimumDate={new Date(Date.now() + 60 * 60 * 1000)}
-            locale={i18n.language}
-            onConfirm={handleDateConfirm}
-            onCancel={hideDatePicker}
-          />
         </View>
       </View>
+      {/* Date Picker Modal */}
+      <DateTimePickerModal
+        isVisible={isDatePickerVisible}
+        mode="datetime"
+        onConfirm={handleDateConfirm}
+        onCancel={hideDatePicker}
+        minimumDate={new Date()}
+      />
+
+      {/* Woman Validation Modal */}
       <WomanValidationModal
         visible={showWomanValidationModal}
         onClose={() => setShowWomanValidationModal(false)}
-        onSubmit={() => {
-          setWomanValidationLoading(true);
-          // TODO: handle submit logic (API call)
-          setTimeout(() => {
-            setWomanValidationLoading(false);
-            setShowWomanValidationModal(false);
-            Toast.show({
-              type: 'success',
-              text1: 'Validation info submitted! Your account is under review.',
-              visibilityTime: 2500,
-            });
-          }, 1200);
-        }}
-        form={womanValidationForm}
-        setForm={setWomanValidationForm}
+        formData={womanValidationForm}
+        setFormData={setWomanValidationForm}
         loading={womanValidationLoading}
+        setLoading={setWomanValidationLoading}
+        onSuccess={() => {
+          setShowWomanValidationModal(false);
+          // Auto-select the women vehicle after successful validation
+          const womenVehicle = vehicleOptions.find(v => v.id === 4);
+          if (womenVehicle) {
+            const index = vehicleOptions.findIndex(v => v.id === 4);
+            handleVehicleSelect(womenVehicle, index);
+          }
+        }}
       />
-      <LoginModal visible={showLoginModal} onClose={() => setShowLoginModal(false)} />
+
+      {/* Login Modal */}
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </>
   );
 };
 
 const localStyles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    flex: 1,
+    backgroundColor:"#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
+  },
+  uberHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 18,
-    margin: 16,
-    
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerContent: {
+    flex: 1,
+    marginRight: 16,
+  },
+  uberTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
+  },
+  vehicleOptionsContainer: {
+    flex: 1,
+    marginBottom: 24,
+  },
+  vehicleOptionsContent: {
+    paddingBottom: 16,
+  },
+  vehicleOptionWrapper: {
+    marginBottom: 12,
+  },
+  vehicleOptionCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#F0F0F0',
+   
+  },
+  vehicleOptionSelected: {
+    borderColor: '#000',
+    backgroundColor: '#FAFAFA',
+  },
+  vehicleOptionDisabled: {
+    opacity: 0.5,
+    backgroundColor: '#F8F8F8',
+  },
+  vehicleOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vehicleImageContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  vehicleImage: {
+    width: 48,
+    height: 48,
+    resizeMode: 'contain',
+  },
+  vehicleImageDisabled: {
+    opacity: 0.5,
+  },
+  vehicleImageHidden: {
+    position: 'absolute',
+    zIndex: -1,
+  },
+  loaderAnimation: {
+    width: 60,
+    height: 60,
+  },
+  vehicleInfo: {
+    flex: 1,
+    marginRight: 16,
+  },
+  vehicleLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  vehicleLabelDisabled: {
+    color: '#BDBDBD',
+  },
+  vehicleNearby: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 2,
+  },
+  vehicleNearbyDisabled: {
+    color: '#BDBDBD',
+  },
+  vehicleDescription: {
+    fontSize: 13,
+    color: '#BDBDBD',
+    lineHeight: 18,
+  },
+  vehicleRightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  vehiclePrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
+  },
+  selectedIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scheduleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  scheduleText: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: Platform.OS === 'ios' ? 34 : 24,
+    gap: 12,
+  },
+  datePickerIconButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+   
+  },
+  uberButton: {
+    flex: 1,
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+   
+  },
+  uberButtonDisabled: {
+    backgroundColor: '#E5E5EA',
+  },
+  uberButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  uberButtonTextDisabled: {
+    color: '#8E8E93',
+  },
+  minimizeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 16,
   },
 });
+
 export default memo(ChooseVehicleComponent); 

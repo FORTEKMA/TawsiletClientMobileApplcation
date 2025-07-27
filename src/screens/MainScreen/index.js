@@ -30,6 +30,7 @@ import { ref , onValue, off, query, orderByChild, equalTo } from 'firebase/datab
 import db from '../../utils/firebase';
  import PickupLocation from './components/PickupLocation';
 import DropoffLocation from './components/DropoffLocation';
+import ExpandableStep from './components/ExpandableStep';
 import LottieView from 'lottie-react-native';
 import {API_GOOGLE} from "@env"
 import axios from 'axios';
@@ -108,6 +109,19 @@ const MainScreen = () => {
   const [shouldRepositionLottie, setShouldRepositionLottie] = useState(false);
   const [stepComponentHeight, setStepComponentHeight] = useState(0);
   const [activationDate, setActivationDate] = useState(null);
+  const [expandedSteps, setExpandedSteps] = useState({
+    3: true, // ChooseVehicle starts expanded
+    4: true, // ConfirmRide starts expanded
+    5: true, // SearchDrivers starts expanded
+  });
+
+  // Toggle step expansion
+  const toggleStepExpansion = (stepNumber) => {
+    setExpandedSteps(prev => ({
+      ...prev,
+      [stepNumber]: !prev[stepNumber]
+    }));
+  };
 
   // Map region state
   const [mapRegion, setMapRegion] = useState({
@@ -833,10 +847,26 @@ if (activeDateStr) setActivationDate(activeDateStr);
             />
           )}
           {step === 3 && (
-            <ChooseVehicle formData={formData} goNext={goNext} goBack={goBack} />
+            <ExpandableStep 
+              step={3}
+              title={t('booking.step3.choose_vehicle', 'Choose Vehicle')}
+              subtitle={t('booking.step3.select_vehicle_subtitle', 'Select the vehicle that suits your needs')}
+              isExpanded={expandedSteps[3]}
+              onToggle={() => toggleStepExpansion(3)}
+            >
+              <ChooseVehicle formData={formData} goNext={goNext} goBack={goBack} />
+            </ExpandableStep>
           )}
           {step === 4 && (
-            <ConfirmRide handleReset={handleReset} formData={formData} goNext={goNext} goBack={goBack} />
+            <ExpandableStep 
+              step={4}
+              title={t('booking.step4.confirm_ride', 'Confirm Ride')}
+              subtitle={t('booking.step4.review_details', 'Review your trip details')}
+              isExpanded={expandedSteps[4]}
+              onToggle={() => toggleStepExpansion(4)}
+            >
+              <ConfirmRide handleReset={handleReset} formData={formData} goNext={goNext} goBack={goBack} />
+            </ExpandableStep>
           )}
           {step === 4.5 && (
             <LoginStep 
@@ -846,7 +876,15 @@ if (activeDateStr) setActivationDate(activeDateStr);
             />
           )}
           {step === 5 && (
-            <SearchDrivers goBack={goBack} formData={formData} />
+            <ExpandableStep 
+              step={5}
+              title={t('booking.step5.searching_driver', 'Searching Driver')}
+              subtitle={t('booking.step5.finding_nearby', 'Finding nearby drivers...')}
+              isExpanded={expandedSteps[5]}
+              onToggle={() => toggleStepExpansion(5)}
+            >
+              <SearchDrivers goBack={goBack} formData={formData} />
+            </ExpandableStep>
           )}
         </View>
       </Animated.View>

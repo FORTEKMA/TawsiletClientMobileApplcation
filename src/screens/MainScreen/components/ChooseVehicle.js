@@ -402,7 +402,7 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
 
         {/* Uber-style Content */}
         <View style={localStyles.uberContent}>
-          {/* Vehicle Options */}
+          {/* Vehicle Options - Vertical Layout like Uber */}
           <View style={localStyles.vehicleOptionsContainer}>
             {vehicleOptions.map((option, index) => {
                // Safety check for animations - render without animations if not ready
@@ -418,6 +418,104 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
                       onPress={() => handleVehicleSelect(option, index)}
                       disabled={option.soon}
                     >
+                      <View style={localStyles.vehicleOptionContent}>
+                        <View style={localStyles.vehicleImageContainer}>
+                          {showLoader[option.id] ? (
+                            <LottieView
+                              source={loaderAnimation}
+                              autoPlay
+                              loop
+                              speed={4}
+                              resizeMode="contain"
+                              style={localStyles.loaderAnimation}
+                            />
+                          ) : null}
+                          <Image 
+                            source={option.icon} 
+                            style={[
+                              localStyles.vehicleImage,
+                              option.soon && localStyles.vehicleImageDisabled,
+                              showLoader[option.id] && localStyles.vehicleImageHidden
+                            ]} 
+                            onLoadStart={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: true }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: true }));
+                            }}
+                            onLoadEnd={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: false }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
+                            }}
+                            onError={() => {
+                              setLoadingImages(prev => ({ ...prev, [option.id]: false }));
+                              setShowLoader(prev => ({ ...prev, [option.id]: false }));
+                            }}
+                          />
+                        </View>
+                        
+                        <View style={localStyles.vehicleInfo}>
+                          <Text style={[
+                            localStyles.vehicleLabel,
+                            option.soon && localStyles.vehicleLabelDisabled
+                          ]}>
+                            {option.label}
+                          </Text>
+                          <Text style={[
+                            localStyles.vehicleNearby,
+                            option.soon && localStyles.vehicleNearbyDisabled
+                          ]}>
+                            {option.soon ? t('common.coming_soon', 'Coming Soon') : `${option.nearby} ${t('common.nearby', 'nearby')}`}
+                          </Text>
+                          <Text style={[
+                            localStyles.vehicleDescription,
+                            option.soon && localStyles.vehicleNearbyDisabled
+                          ]}>
+                            {option.description || t('vehicle.standard_ride', 'Standard ride')}
+                          </Text>
+                        </View>
+                        
+                        <View style={localStyles.vehicleRightSection}>
+                          <Text style={[
+                            localStyles.vehiclePrice,
+                            option.soon && localStyles.vehicleLabelDisabled
+                          ]}>
+                            {option.price || t('calculating', 'Calculating...')}
+                          </Text>
+                          
+                          {selected?.id === option.id && !option.soon && (
+                            <View style={localStyles.selectedIndicator}>
+                              <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                );
+              }
+
+              return (
+                <Animated.View
+                  key={option.id}
+                  style={[
+                    localStyles.vehicleOptionWrapper,
+                    {
+                      transform: [
+                        { translateY: animations[index].slide },
+                        { scale: animations[index].pulse }
+                      ],
+                      opacity: animations[index].fade,
+                    }
+                  ]}
+                >
+                  <TouchableOpacity
+                    style={[
+                      localStyles.vehicleOptionCard,
+                      option.soon && localStyles.vehicleOptionDisabled,
+                      selected?.id === option.id && localStyles.vehicleOptionSelected
+                    ]}
+                    onPress={() => handleVehicleSelect(option, index)}
+                    disabled={option.soon}
+                  >
+                    <View style={localStyles.vehicleOptionContent}>
                       <View style={localStyles.vehicleImageContainer}>
                         {showLoader[option.id] ? (
                           <LottieView
@@ -464,93 +562,29 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
                         ]}>
                           {option.soon ? t('common.coming_soon', 'Coming Soon') : `${option.nearby} ${t('common.nearby', 'nearby')}`}
                         </Text>
+                        <Text style={[
+                          localStyles.vehicleDescription,
+                          option.soon && localStyles.vehicleNearbyDisabled
+                        ]}>
+                          {option.description || t('vehicle.standard_ride', 'Standard ride')}
+                        </Text>
                       </View>
                       
-                      {selected?.id === option.id && !option.soon && (
-                        <View style={localStyles.selectedIndicator}>
-                          <MaterialCommunityIcons name="check" size={16} color="#fff" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                );
-              }
-
-              return (
-                <Animated.View
-                  key={option.id}
-                  style={[
-                    localStyles.vehicleOptionWrapper,
-                    {
-                      transform: [
-                        { translateY: animations[index].slide },
-                        { scale: animations[index].pulse }
-                      ],
-                      opacity: animations[index].fade,
-                    }
-                  ]}
-                >
-                  <TouchableOpacity
-                    style={[
-                      localStyles.vehicleOptionCard,
-                      option.soon && localStyles.vehicleOptionDisabled,
-                      selected?.id === option.id && localStyles.vehicleOptionSelected
-                    ]}
-                    onPress={() => handleVehicleSelect(option, index)}
-                    disabled={option.soon}
-                  >
-                    <View style={localStyles.vehicleImageContainer}>
-                      {showLoader[option.id] ? (
-                        <LottieView
-                          source={loaderAnimation}
-                          autoPlay
-                          loop
-                          speed={4}
-                          resizeMode="contain"
-                          style={localStyles.loaderAnimation}
-                        />
-                      ) : null}
-                      <Image 
-                        source={option.icon} 
-                        style={[
-                          localStyles.vehicleImage,
-                          option.soon && localStyles.vehicleImageDisabled,
-                          showLoader[option.id] && localStyles.vehicleImageHidden
-                        ]} 
-                        onLoadStart={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: true }));
-                          setShowLoader(prev => ({ ...prev, [option.id]: true }));
-                        }}
-                        onLoadEnd={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                          setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                        }}
-                        onError={() => {
-                          setLoadingImages(prev => ({ ...prev, [option.id]: false }));
-                          setShowLoader(prev => ({ ...prev, [option.id]: false }));
-                        }}
-                      />
-                    </View>
-                    
-                    <View style={localStyles.vehicleInfo}>
-                      <Text style={[
-                        localStyles.vehicleLabel,
-                        option.soon && localStyles.vehicleLabelDisabled
-                      ]}>
-                        {option.label}
-                      </Text>
-                      <Text style={[
-                        localStyles.vehicleNearby,
-                        option.soon && localStyles.vehicleNearbyDisabled
-                      ]}>
-                        {option.soon ? t('common.coming_soon', 'Coming Soon') : `${option.nearby} ${t('common.nearby', 'nearby')}`}
-                      </Text>
-                    </View>
-                    
-                    {selected?.id === option.id && !option.soon && (
-                      <View style={localStyles.selectedIndicator}>
-                        <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                      <View style={localStyles.vehicleRightSection}>
+                        <Text style={[
+                          localStyles.vehiclePrice,
+                          option.soon && localStyles.vehicleLabelDisabled
+                        ]}>
+                          {option.price || t('calculating', 'Calculating...')}
+                        </Text>
+                        
+                        {selected?.id === option.id && !option.soon && (
+                          <View style={localStyles.selectedIndicator}>
+                            <MaterialCommunityIcons name="check" size={16} color="#fff" />
+                          </View>
+                        )}
                       </View>
-                    )}
+                    </View>
                   </TouchableOpacity>
                 </Animated.View>
               );
@@ -674,20 +708,15 @@ const localStyles = StyleSheet.create({
     flex: 1,
   },
   vehicleOptionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 24,
   },
   vehicleOptionWrapper: {
-    flex: 1,
-    marginHorizontal: 6,
+    marginBottom: 12,
   },
   vehicleOptionCard: {
-    alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
+    padding: 16,
     borderWidth: 2,
     borderColor: '#F0F0F0',
     shadowColor: '#000',
@@ -695,7 +724,6 @@ const localStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    position: 'relative',
   },
   vehicleOptionSelected: {
     borderColor: '#000',
@@ -705,18 +733,22 @@ const localStyles = StyleSheet.create({
     opacity: 0.5,
     backgroundColor: '#F8F8F8',
   },
+  vehicleOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   vehicleImageContainer: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
     borderRadius: 12,
     backgroundColor: '#f8f8f8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 16,
   },
   vehicleImage: {
-    width: 64,
-    height: 64,
+    width: 48,
+    height: 48,
     resizeMode: 'contain',
   },
   vehicleImageDisabled: {
@@ -727,17 +759,17 @@ const localStyles = StyleSheet.create({
     zIndex: -1,
   },
   loaderAnimation: {
-    width: 80,
-    height: 80,
+    width: 60,
+    height: 60,
   },
   vehicleInfo: {
-    alignItems: 'center',
+    flex: 1,
+    marginRight: 16,
   },
   vehicleLabel: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#000',
-    textAlign: 'center',
     marginBottom: 4,
   },
   vehicleLabelDisabled: {
@@ -746,15 +778,27 @@ const localStyles = StyleSheet.create({
   vehicleNearby: {
     fontSize: 14,
     color: '#8E8E93',
-    textAlign: 'center',
+    marginBottom: 2,
   },
   vehicleNearbyDisabled: {
     color: '#BDBDBD',
   },
+  vehicleDescription: {
+    fontSize: 13,
+    color: '#BDBDBD',
+    lineHeight: 18,
+  },
+  vehicleRightSection: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  vehiclePrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
+  },
   selectedIndicator: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
     width: 24,
     height: 24,
     borderRadius: 12,

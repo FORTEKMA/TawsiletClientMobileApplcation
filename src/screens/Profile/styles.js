@@ -277,6 +277,364 @@ export const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 34 : 24,
   },
 
+  // Profile Section Screens Styles
+  uberMainContainer: {
+    flex: 1,
+  },
+  uberSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uberSectionSubtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  uberScrollContainer: {
+    paddingBottom: 24,
+  },
+  uberFormSection: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  uberSectionHeaderInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  uberSectionHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 12,
+  },
+
+  // Input Styles
+  uberInputContainer: {
+    marginBottom: 20,
+  },
+  uberInputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  uberInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  uberInputIconContainer: {
+    marginRight: 12,
+  },
+  uberInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    paddingVertical: 16,
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
+  },
+  uberInputDisabled: {
+    backgroundColor: '#F0F0F0',
+  },
+  uberInputLockContainer: {
+    marginLeft: 12,
+  },
+  uberInputError: {
+    borderColor: '#FF3B30',
+  },
+  uberPhoneInput: {
+    flex: 1,
+    height: 56,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
+
+  // Password Input Styles
+  uberPasswordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    minHeight: 56,
+  },
+  uberPasswordInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000',
+    paddingVertical: 16,
+    textAlign: I18nManager.isRTL ? 'right' : 'left',
+  },
+  uberPasswordToggle: {
+    marginLeft: 12,
+    padding: 4,
+  },
+  uberPasswordStrengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  uberPasswordStrengthBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  uberPasswordStrengthFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  uberPasswordStrengthText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  // Error Styles
+  uberErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  uberErrorText: {
+    fontSize: 14,
+    color: '#FF3B30',
+    marginLeft: 8,
+    flex: 1,
+  },
+
+  // Notice Styles
+  uberNoticeContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#E3F2FD',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+  },
+  uberNoticeIconContainer: {
+    marginRight: 12,
+  },
+  uberNoticeText: {
+    fontSize: 14,
+    color: '#1976D2',
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  // Security Tips Styles
+  uberSecurityTip: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberSecurityTipIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E3F2FD',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  uberSecurityTipContent: {
+    flex: 1,
+  },
+  uberSecurityTipTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberSecurityTipDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 20,
+  },
+
+  // Help Screen Styles
+  uberHelpOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberHelpOptionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  uberHelpOptionContent: {
+    flex: 1,
+  },
+  uberHelpOptionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberHelpOptionDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+
+  // Contact Options Styles
+  uberContactGrid: {
+    gap: 12,
+  },
+  uberContactOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  uberContactIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  uberContactContent: {
+    flex: 1,
+  },
+  uberContactTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  uberContactSubtitle: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+
+  // FAQ Styles
+  uberFAQItem: {
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  uberFAQHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  uberFAQQuestion: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 12,
+    flex: 1,
+  },
+  uberFAQAnswer: {
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 20,
+    marginLeft: 32,
+  },
+
+  // App Info Styles
+  uberAppInfoContainer: {
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    padding: 16,
+  },
+  uberAppInfoItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  uberAppInfoLabel: {
+    fontSize: 16,
+    color: '#000',
+    fontWeight: '500',
+  },
+  uberAppInfoValue: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  uberAppInfoDivider: {
+    height: 1,
+    backgroundColor: '#E0E0E0',
+    marginVertical: 8,
+  },
+
+  // Action Button Styles
+  uberActionContainer: {
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  uberActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  uberActionButtonDisabled: {
+    backgroundColor: '#8E8E93',
+    opacity: 0.6,
+  },
+  uberActionButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+
   // Legacy styles (keeping for compatibility)
   container: {
     flex: 1,

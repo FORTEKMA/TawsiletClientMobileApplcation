@@ -3,6 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Animated, Easing,I18nM
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { styles } from '../styles';
+import { colors } from '../../../utils/colors';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import Ionicons from "react-native-vector-icons/Ionicons"
@@ -694,18 +695,152 @@ const ChooseVehicleComponent = ({ goNext, goBack, formData }) => {
 
 const localStyles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundPrimary,
     borderRadius: 20,
-    padding: 18,
+    padding: 20,
     margin: 16,
-    
     width: '92%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  vehicleCard: {
+    alignItems: 'center',
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: 16,
+    marginHorizontal: 6,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderWidth: 2,
+    borderColor: colors.borderLight,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  selectedVehicleCard: {
+    borderColor: colors.uberBlack,
+    backgroundColor: colors.backgroundSecondary,
+    shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
-  
+  },
+  vehicleImageContainer: {
+    borderRadius: 12,
+    padding: 8,
+    marginBottom: 8,
+    width: 80,
+    height: 80,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSecondary,
+  },
+  vehicleImage: {
+    width: 72,
+    height: 72,
+    resizeMode: "contain",
+  },
+  vehicleLabel: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontSize: hp(1.8),
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  vehicleInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  comingSoonBadge: {
+    backgroundColor: colors.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  comingSoonText: {
+    color: colors.textInverse,
+    fontSize: hp(1.2),
+    fontWeight: '600',
+  },
+  tripDetailsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '95%',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  scheduledTripContainer: {
+    backgroundColor: colors.uberBlack,
+  },
+  tripDetailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tripDetailText: {
+    color: colors.textSecondary,
+    fontSize: hp(1.6),
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  scheduledTripText: {
+    color: colors.textInverse,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  scheduleButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  removeScheduleButton: {
+    backgroundColor: colors.error,
+  },
+  backButton: {
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: 20,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  headerContainer: {
+    gap: 12,
+    marginBottom: 20,
+    marginTop: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: "100%",
+  },
+  headerTitle: {
+    fontWeight: '700',
+    fontSize: hp(2.4),
+    color: colors.textPrimary,
   },
 });
 export default memo(ChooseVehicleComponent); 

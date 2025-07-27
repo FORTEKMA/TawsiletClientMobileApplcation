@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing, I18nManager } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Easing, I18nManager, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { styles } from '../styles';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -102,24 +102,24 @@ const Step5 = ({
   return (
     <Animated.View 
       style={[
-        step5Styles.container,
+        localStyles.container,
         {
           transform: [{ translateY: slideAnim }],
           opacity: fadeAnim,
         }
       ]}
     >
-      {/* Header */}
+      {/* Uber-style Header */}
       <Animated.View 
         style={[
-          step5Styles.header,
+          localStyles.uberHeader,
           {
             transform: [{ scale: scaleAnim }],
           }
         ]}
       >
         <TouchableOpacity 
-          style={step5Styles.backButton}
+          style={localStyles.backButton}
           onPress={handleBack}
           activeOpacity={0.7}
         >
@@ -130,189 +130,194 @@ const Step5 = ({
           />
         </TouchableOpacity>
         
-        <View style={step5Styles.headerContent}>
-          <Text style={step5Styles.headerTitle}>
+        <View style={localStyles.headerContent}>
+          <Text style={localStyles.uberTitle}>
             {t('booking.step5.select_payment', 'Select Payment Method')}
           </Text>
-          <Text style={step5Styles.headerSubtitle}>
+          <Text style={localStyles.uberSubtitle}>
             {t('choose_payment_method', 'Choose how you want to pay')}
           </Text>
         </View>
       </Animated.View>
 
-      {/* Payment Options */}
-      <Animated.View 
-        style={[
-          step5Styles.optionsContainer,
-          {
-            transform: [{ scale: scaleAnim }],
-          }
-        ]}
-      >
-        {paymentOptions.map((option, index) => (
-          <Animated.View
-            key={option.key}
-            style={[
-              step5Styles.optionWrapper,
-              {
-                transform: [
-                  {
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 300],
-                      outputRange: [0, 50 * (index + 1)],
-                    }),
-                  },
-                ],
-              },
-            ]}
-          >
-            <TouchableOpacity
+      {/* Uber-style Content */}
+      <View style={localStyles.uberContent}>
+        {/* Payment Options */}
+        <Animated.View 
+          style={[
+            localStyles.optionsContainer,
+            {
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
+        >
+          {paymentOptions.map((option, index) => (
+            <Animated.View
+              key={option.key}
               style={[
-                step5Styles.optionCard,
-                selectedPayment === option.key && step5Styles.selectedOption,
-                option.disabled && step5Styles.disabledOption
+                localStyles.optionWrapper,
+                {
+                  transform: [
+                    {
+                      translateY: slideAnim.interpolate({
+                        inputRange: [0, 300],
+                        outputRange: [0, 50 * (index + 1)],
+                      }),
+                    },
+                  ],
+                },
               ]}
-              onPress={() => handlePaymentSelect(option.key)}
-              disabled={option.disabled}
-              activeOpacity={0.8}
             >
-              <View style={step5Styles.optionContent}>
-                <View style={step5Styles.optionLeft}>
-                  <View style={[
-                    step5Styles.iconContainer,
-                    selectedPayment === option.key && step5Styles.selectedIconContainer,
-                    option.disabled && step5Styles.disabledIconContainer
-                  ]}>
-                    <MaterialCommunityIcons 
-                      name={option.icon} 
-                      size={28} 
-                      color={
-                        option.disabled 
-                          ? '#BDBDBD' 
-                          : selectedPayment === option.key 
-                            ? '#fff' 
-                            : '#000'
-                      } 
-                    />
+              <TouchableOpacity
+                style={[
+                  localStyles.optionCard,
+                  selectedPayment === option.key && localStyles.selectedOption,
+                  option.disabled && localStyles.disabledOption
+                ]}
+                onPress={() => handlePaymentSelect(option.key)}
+                disabled={option.disabled}
+                activeOpacity={0.8}
+              >
+                <View style={localStyles.optionContent}>
+                  <View style={localStyles.optionLeft}>
+                    <View style={[
+                      localStyles.iconContainer,
+                      selectedPayment === option.key && localStyles.selectedIconContainer,
+                      option.disabled && localStyles.disabledIconContainer
+                    ]}>
+                      <MaterialCommunityIcons 
+                        name={option.icon} 
+                        size={28} 
+                        color={
+                          option.disabled 
+                            ? '#BDBDBD' 
+                            : selectedPayment === option.key 
+                              ? '#fff' 
+                              : '#000'
+                        } 
+                      />
+                    </View>
+                    
+                    <View style={localStyles.optionTextContainer}>
+                      <View style={localStyles.labelContainer}>
+                        <Text style={[
+                          localStyles.optionLabel,
+                          option.disabled && localStyles.disabledText
+                        ]}>
+                          {option.label}
+                        </Text>
+                        {option.comingSoon && (
+                          <View style={localStyles.comingSoonBadge}>
+                            <Text style={localStyles.comingSoonText}>
+                              {t('coming_soon', 'Coming Soon')}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[
+                        localStyles.optionDescription,
+                        option.disabled && localStyles.disabledText
+                      ]}>
+                        {option.description}
+                      </Text>
+                    </View>
                   </View>
                   
-                  <View style={step5Styles.optionTextContainer}>
-                    <View style={step5Styles.labelContainer}>
-                      <Text style={[
-                        step5Styles.optionLabel,
-                        option.disabled && step5Styles.disabledText
-                      ]}>
-                        {option.label}
-                      </Text>
-                      {option.comingSoon && (
-                        <View style={step5Styles.comingSoonBadge}>
-                          <Text style={step5Styles.comingSoonText}>
-                            {t('coming_soon', 'Coming Soon')}
-                          </Text>
-                        </View>
+                  <View style={localStyles.optionRight}>
+                    <View style={[
+                      localStyles.radioButton,
+                      selectedPayment === option.key && localStyles.selectedRadio,
+                      option.disabled && localStyles.disabledRadio
+                    ]}>
+                      {selectedPayment === option.key && !option.disabled && (
+                        <View style={localStyles.radioInner} />
                       )}
                     </View>
-                    <Text style={[
-                      step5Styles.optionDescription,
-                      option.disabled && step5Styles.disabledText
-                    ]}>
-                      {option.description}
-                    </Text>
                   </View>
                 </View>
-                
-                <View style={step5Styles.optionRight}>
-                  <View style={[
-                    step5Styles.radioButton,
-                    selectedPayment === option.key && step5Styles.selectedRadio,
-                    option.disabled && step5Styles.disabledRadio
-                  ]}>
-                    {selectedPayment === option.key && !option.disabled && (
-                      <View style={step5Styles.radioInner} />
-                    )}
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
-      </Animated.View>
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </Animated.View>
 
-      {/* Payment Summary */}
-      <Animated.View 
-        style={[
-          step5Styles.summaryCard,
-          {
-            transform: [{ scale: scaleAnim }],
-          }
-        ]}
-      >
-        <View style={step5Styles.summaryHeader}>
-          <Text style={step5Styles.summaryTitle}>
-            {t('payment_summary', 'Payment Summary')}
-          </Text>
-        </View>
-        
-        <View style={step5Styles.summaryContent}>
-          <View style={step5Styles.summaryRow}>
-            <Text style={step5Styles.summaryLabel}>
-              {t('selected_method', 'Selected Method')}
-            </Text>
-            <Text style={step5Styles.summaryValue}>
-              {paymentOptions.find(option => option.key === selectedPayment)?.label}
+        {/* Payment Summary */}
+        <Animated.View 
+          style={[
+            localStyles.summaryCard,
+            {
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
+        >
+          <View style={localStyles.summaryHeader}>
+            <Text style={localStyles.summaryTitle}>
+              {t('payment_summary', 'Payment Summary')}
             </Text>
           </View>
           
-          <View style={step5Styles.summaryRow}>
-            <Text style={step5Styles.summaryLabel}>
-              {t('estimated_fare', 'Estimated Fare')}
-            </Text>
-            <Text style={step5Styles.summaryValue}>
-              {rideData?.estimatedPrice ? `${rideData.estimatedPrice.toFixed(2)} ${t('currency', 'DT')}` : t('calculating', 'Calculating...')}
-            </Text>
+          <View style={localStyles.summaryContent}>
+            <View style={localStyles.summaryRow}>
+              <Text style={localStyles.summaryLabel}>
+                {t('selected_method', 'Selected Method')}
+              </Text>
+              <Text style={localStyles.summaryValue}>
+                {paymentOptions.find(option => option.key === selectedPayment)?.label}
+              </Text>
+            </View>
+            
+            <View style={localStyles.summaryRow}>
+              <Text style={localStyles.summaryLabel}>
+                {t('estimated_fare', 'Estimated Fare')}
+              </Text>
+              <Text style={localStyles.summaryValue}>
+                {rideData?.estimatedPrice ? `${rideData.estimatedPrice.toFixed(2)} ${t('currency', 'DT')}` : t('calculating', 'Calculating...')}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
 
-      {/* Confirm Button */}
-      <Animated.View 
-        style={[
-          step5Styles.buttonContainer,
-          {
-            transform: [{ scale: buttonScaleAnim }],
-          }
-        ]}
-      >
-        <TouchableOpacity
-          style={step5Styles.confirmButton}
-          onPress={handleConfirmPayment}
-          activeOpacity={0.8}
+        {/* Uber-style Confirm Button */}
+        <Animated.View 
+          style={[
+            localStyles.buttonContainer,
+            {
+              transform: [{ scale: buttonScaleAnim }],
+            }
+          ]}
         >
-          <Text style={step5Styles.confirmButtonText}>
-            {t('booking.step5.confirm_payment', 'Confirm Payment Method')}
-          </Text>
-          <MaterialCommunityIcons 
-            name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
-            size={24} 
-            color="#fff" 
-          />
-        </TouchableOpacity>
-      </Animated.View>
+          <TouchableOpacity
+            style={localStyles.uberButton}
+            onPress={handleConfirmPayment}
+            activeOpacity={0.8}
+          >
+            <Text style={localStyles.uberButtonText}>
+              {t('booking.step5.confirm_payment', 'Confirm Payment Method')}
+            </Text>
+            <MaterialCommunityIcons 
+              name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+              size={24} 
+              color="#fff" 
+            />
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
     </Animated.View>
   );
 };
 
-const step5Styles = StyleSheet.create({
+const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
   },
-  header: {
+  uberHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   backButton: {
     width: 40,
@@ -326,15 +331,19 @@ const step5Styles = StyleSheet.create({
   headerContent: {
     flex: 1,
   },
-  headerTitle: {
+  uberTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#000',
     marginBottom: 4,
   },
-  headerSubtitle: {
+  uberSubtitle: {
     fontSize: 16,
     color: '#8E8E93',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
   },
   optionsContainer: {
     marginBottom: 24,
@@ -349,10 +358,7 @@ const step5Styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F0F0F0',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -452,10 +458,7 @@ const step5Styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -487,9 +490,9 @@ const step5Styles = StyleSheet.create({
   },
   buttonContainer: {
     marginTop: 'auto',
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  confirmButton: {
+  uberButton: {
     backgroundColor: '#000',
     borderRadius: 12,
     paddingVertical: 16,
@@ -498,17 +501,14 @@ const step5Styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
   },
-  confirmButtonText: {
+  uberButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     marginRight: 8,
   },

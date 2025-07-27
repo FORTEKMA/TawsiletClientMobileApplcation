@@ -18,7 +18,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
-import LinearGradient from 'react-native-linear-gradient';
+//import LinearGradient from 'react-native-linear-gradient';
 import { BlurView } from '@react-native-community/blur';
 
 // NOTE: Agora SDK integration would be imported here
@@ -475,13 +475,13 @@ const VoIPCallScreen = ({
               channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
             /> */}
-            <LinearGradient
+            <View
               colors={['#667eea', '#764ba2']}
               style={styles.placeholderVideo}
             >
               <MaterialCommunityIcons name="video" size={60} color="rgba(255,255,255,0.7)" />
               <Text style={styles.placeholderText}>Remote Video</Text>
-            </LinearGradient>
+            </View>
           </View>
         )}
         

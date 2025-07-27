@@ -192,6 +192,22 @@ try {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with Drawer Toggle */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.drawerToggleButton}
+          onPress={() => navigation.openDrawer()}
+        >
+          <Ionicons name="menu" size={24} color={colors.primary} />
+        </TouchableOpacity>
+        
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>{t('profile.title')}</Text>
+        </View>
+        
+        <View style={styles.headerSpacer} />
+      </View>
+      
       <ScrollView>
         <ProfileHeader
           user={user}

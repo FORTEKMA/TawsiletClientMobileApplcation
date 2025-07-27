@@ -8,17 +8,35 @@ export const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: wp(5),
     paddingVertical: hp(2),
-    borderBottomWidth: 3,
-    borderBottomColor: "#ccc",
-    width:"90%",
-    alignSelf:"center"
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    backgroundColor: '#fff',
+  },
+  drawerToggleButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerContent: {
+    flex: 1,
+    marginLeft: 12,
   },
   headerTitle: {
     fontSize: hp(2.5),
     fontWeight: 'bold',
     color: colors.text,
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 40,
   },
   container: {
     flex: 1,

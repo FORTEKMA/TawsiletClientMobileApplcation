@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ScrollView, SafeAreaView, View, Text } from 'react-native';
+import { ScrollView, SafeAreaView, View, Text, RefreshControl } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
@@ -11,9 +11,6 @@ import {
   trackScreenView, 
   trackNotificationReceived 
 } from '../../utils/analytics';
-
-// Fake data for testing
- 
 
 const EmptyState = () => {
   const { t } = useTranslation();
@@ -37,6 +34,7 @@ const Notifications = () => {
   const { t } = useTranslation();
   const currentId = useSelector((state) => state?.user?.currentUser?.documentId);
   const notifications = useSelector((state) => state?.notifications?.notifications);
+  const isLoading = useSelector((state) => state?.notifications?.loading);
   const dispatch = useDispatch();
 
   // Track screen view on mount
@@ -48,7 +46,7 @@ const Notifications = () => {
     if (currentId) {
       dispatch(getNotification({ id: currentId }));
     }
-  }, []);
+  }, [currentId, dispatch]);
  
   // Track notifications received
   useEffect(() => {
@@ -62,8 +60,7 @@ const Notifications = () => {
     }
   }, [notifications]);
 
-  // Use fake data for testing
-  const displayNotifications =notifications;
+  const displayNotifications = notifications;
 
   // Group notifications by date
   const groupedNotifications = displayNotifications?.reduce((acc, notification) => {
@@ -73,25 +70,44 @@ const Notifications = () => {
     return acc;
   }, {});
 
+  const onRefresh = () => {
+    if (currentId) {
+      dispatch(getNotification({ id: currentId }));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
       </View>
       {displayNotifications?.length !== 0 ? (
-        <ScrollView style={styles.container}>
+        <ScrollView 
+          style={styles.container}
+          refreshControl={
+            <RefreshControl
+              refreshing={isLoading}
+              onRefresh={onRefresh}
+              colors={[colors.primary]}
+              tintColor={colors.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
           {groupedNotifications &&
-            Object.entries(groupedNotifications).map(([date, notifications]) => (
-              <NotificationGroup
-                key={date}
-                date={date}
-                notifications={notifications.map(notification => ({
-                  ...notification,
-                  title: notification.title
-                }))}
-              />
-            ))}
-                    <View style={{height:100}}/>
+            Object.entries(groupedNotifications)
+              .sort(([a], [b]) => new Date(b) - new Date(a)) // Sort by date descending
+              .map(([date, notifications]) => (
+                <NotificationGroup
+                  key={date}
+                  date={date}
+                  notifications={notifications.map(notification => ({
+                    ...notification,
+                    title: notification.title
+                  }))}
+                />
+              ))}
+          <View style={{height: 100}} />
         </ScrollView>
       ) : (
         <EmptyState />
@@ -100,4 +116,5 @@ const Notifications = () => {
   );
 };
 
-export default Notifications; 
+export default Notifications;
+

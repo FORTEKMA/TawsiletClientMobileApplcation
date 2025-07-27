@@ -5,50 +5,61 @@ import { colors } from '../../utils/colors';
 export const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: wp(5),
     paddingVertical: hp(2),
-    borderBottomWidth: 3,
-    borderBottomColor: "#ccc",
-    width:"90%",
-    alignSelf:"center"
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: hp(2.5),
+    fontSize: hp(2.8),
     fontWeight: 'bold',
-    color: colors.text,
+    color: colors.primary,
   },
   container: {
     flex: 1,
-    padding: wp(4),
+    paddingHorizontal: wp(4),
+    paddingTop: hp(2),
   },
   date: {
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginTop: hp(2),
     marginBottom: hp(1),
     color: colors.text,
-    fontSize: hp(1.8),
+    fontSize: hp(2),
     alignSelf: 'flex-start',
   },
   notificationContainer: {
     width: '100%',
-    minHeight: hp(8),
+    minHeight: hp(10),
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     padding: wp(4),
-    marginBottom: hp(1),
-    borderRadius: 12,
-    borderWidth: 3,
-    borderColor: "#ccc",
-   
+    marginBottom: hp(1.5),
+    borderRadius: 10,
+    backgroundColor: colors.white,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.20,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   notificationImage: {
-    width: wp(8),
-    height: wp(8),
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
     marginRight: wp(3),
+    backgroundColor: colors.lightGray,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   notificationContent: {
     flex: 1,
@@ -57,12 +68,12 @@ export const styles = StyleSheet.create({
   },
   notificationTitle: {
     color: colors.text,
-    fontSize: hp(1.8),
+    fontSize: hp(1.9),
     fontWeight: '600',
   },
   notificationDescription: {
     color: colors.textSecondary,
-    fontSize: hp(1.6),
+    fontSize: hp(1.7),
     fontWeight: '400',
   },
   emptyContainer: {
@@ -70,20 +81,24 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: wp(5),
+    backgroundColor: colors.background,
   },
   emptyIcon: {
     marginBottom: hp(3),
-    opacity: 0.7,
+    opacity: 0.6,
   },
   emptyTitle: {
-    fontSize: hp(2.2),
+    fontSize: hp(2.5),
     fontWeight: 'bold',
     color: colors.text,
     marginBottom: hp(1),
   },
   emptyDescription: {
-    fontSize: hp(1.8),
+    fontSize: hp(1.9),
     color: colors.textSecondary,
     textAlign: 'center',
+    lineHeight: hp(2.5),
   },
-}); 
+});
+
+

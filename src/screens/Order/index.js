@@ -121,7 +121,7 @@ const Order = ({ route }) => {
   const carPlate = driver?.vehicule?.matriculation || 'N/A';
   const driverRating = driver.rating || '5.0';
 
-  const canTrack = !["Canceled_by_client", "Canceled_by_partner", "Completed"].includes(order.commandStatus);
+  const canTrack = ["Canceled_by_client", "Canceled_by_partner", "Completed"].includes(order.commandStatus);
 
   return (
     <SafeAreaView style={styles.container}>

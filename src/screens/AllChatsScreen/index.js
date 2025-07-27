@@ -37,7 +37,7 @@ const AllChatsScreen = () => {
   // Track screen view on mount
   useEffect(() => {
     trackScreenView('AllChats');
-    trackChatListViewed();
+ //   trackChatListViewed();
     
     // Animate screen entrance
     Animated.timing(fadeAnim, {
@@ -101,11 +101,11 @@ const AllChatsScreen = () => {
   };
 
   const handleChatPress = (chat) => {
-    trackChatOpened(chat.id, {
-      driver_name: chat.driverName,
-      order_id: chat.orderId,
-      chat_status: chat.status
-    });
+    // trackChatOpened(chat.id, {
+    //   driver_name: chat.driverName,
+    //   order_id: chat.orderId,
+    //   chat_status: chat.status
+    // });
     
     navigation.navigate('ChatScreen', {
       requestId: chat.orderId,

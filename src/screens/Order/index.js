@@ -209,14 +209,36 @@ const Order = ({ route }) => {
                 <TouchableOpacity 
                   style={styles.callButton}
                   onPress={() => {
-                    // Handle VoIP call or regular phone call
+                    // Enhanced VoIP call functionality
                     Alert.alert(
                       t('order.call_driver'),
                       t('order.call_driver_message'),
                       [
                         { text: t('common.cancel'), style: 'cancel' },
-                        { text: t('order.voice_call'), onPress: () => {} },
-                        { text: t('order.video_call'), onPress: () => {} },
+                        { 
+                          text: t('order.voice_call'), 
+                          onPress: () => {
+                            // Navigate to VoIP call screen with voice call
+                            navigation.navigate('VoIPCallScreen', {
+                              callType: 'voice',
+                              driverData: driver,
+                              orderId: order.id,
+                              isIncoming: false
+                            });
+                          }
+                        },
+                        { 
+                          text: t('order.video_call'), 
+                          onPress: () => {
+                            // Navigate to VoIP call screen with video call
+                            navigation.navigate('VoIPCallScreen', {
+                              callType: 'video',
+                              driverData: driver,
+                              orderId: order.id,
+                              isIncoming: false
+                            });
+                          }
+                        },
                       ]
                     );
                   }}

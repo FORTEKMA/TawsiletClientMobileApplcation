@@ -135,10 +135,74 @@ const MainScreen = () => {
   // Additions: refs for debouncing and throttling
   const regionDebounceRef = useRef(null);
 
-  // Helper function to calculate zoom level from region
-  const getZoomLevel = (region) => {
-    return Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2);
-  };
+  // Enhanced map region animation with smooth transitions
+  const animateToRegion = useCallback((region, duration = 1000) => {
+    if (mapRef.current) {
+      mapRef.current.animateToRegion(region, duration);
+    }
+  }, []);
+
+  // Smooth zoom animation when selecting locations
+  const handleLocationSelected = useCallback((location, isPickup = true) => {
+    const newRegion = {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: 0.005, // Zoomed in view
+      longitudeDelta: 0.005,
+    };
+    
+    // Animate to the selected location
+    animateToRegion(newRegion, 800);
+    
+    // Update form data and trigger haptic feedback
+    ReactNativeHapticFeedback.trigger("impactMedium", HAPTIC_OPTIONS);
+    
+    if (isPickup) {
+      trackPickupLocationSelected(location.latitude, location.longitude);
+    } else {
+      trackDropoffLocationSelected(location.latitude, location.longitude);
+    }
+  }, [animateToRegion]);
+
+  // Enhanced route display with smooth camera transitions
+  const displayRouteWithAnimation = useCallback((pickupCoords, dropoffCoords) => {
+    if (mapRef.current && pickupCoords && dropoffCoords) {
+      const coordinates = [
+        {
+          latitude: pickupCoords.latitude,
+          longitude: pickupCoords.longitude
+        },
+        {
+          latitude: dropoffCoords.latitude,
+          longitude: dropoffCoords.longitude
+        }
+      ];
+      
+      // Smooth transition to show entire route
+      setTimeout(() => {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: {
+            top: 120,
+            right: 60,
+            bottom: 350,
+            left: 60,
+          },
+          animated: true,
+        });
+      }, 500);
+    }
+  }, []);
+
+  // Update existing location selection handlers
+  useEffect(() => {
+    if (formData?.pickupAddress?.latitude && formData?.dropAddress?.latitude) {
+      displayRouteWithAnimation(formData.pickupAddress, formData.dropAddress);
+    } else if (formData?.pickupAddress?.latitude && step === 2) {
+      handleLocationSelected(formData.pickupAddress, true);
+    } else if (formData?.dropAddress?.latitude && step === 3) {
+      handleLocationSelected(formData.dropAddress, false);
+    }
+  }, [formData?.pickupAddress, formData?.dropAddress, step, handleLocationSelected, displayRouteWithAnimation]);
 
 
   const throttle = (func, limit) => {
@@ -958,28 +1022,94 @@ if (activeDateStr) setActivationDate(activeDateStr);
         {renderDriverMarkers}
 
         {formData?.pickupAddress?.latitude && formData?.dropAddress?.latitude && !isMapDragging && (
-          <MapViewDirections
-            origin={{
-              latitude: formData.pickupAddress.latitude,
-              longitude: formData.pickupAddress.longitude
-            }}
-            destination={{
-              latitude: formData.dropAddress.latitude,
-              longitude: formData.dropAddress.longitude
-            }}
-            mode='DRIVING'
-            apikey={API_GOOGLE}
-            strokeWidth={7}
-            strokeColor="#999"
-            onReady={result => {
-              if (backInterval.current) {
-                setAnimatedCoords([]);
-                setRouteCoords([]);
-                clearInterval(backInterval.current);
-              }
-              setRouteCoords(result.coordinates);
-            }}
-          />
+          <>
+            {/* Main route line with Uber-style gradient effect */}
+            <MapViewDirections
+              origin={{
+                latitude: formData.pickupAddress.latitude,
+                longitude: formData.pickupAddress.longitude
+              }}
+              destination={{
+                latitude: formData.dropAddress.latitude,
+                longitude: formData.dropAddress.longitude
+              }}
+              mode='DRIVING'
+              apikey={API_GOOGLE}
+              strokeWidth={8}
+              strokeColor="rgba(0, 0, 0, 0.3)"
+              onReady={result => {
+                if (backInterval.current) {
+                  setAnimatedCoords([]);
+                  setRouteCoords([]);
+                  clearInterval(backInterval.current);
+                }
+                setRouteCoords(result.coordinates);
+                
+                // Auto-fit map to show entire route with padding
+                if (mapRef.current) {
+                  const coordinates = [
+                    {
+                      latitude: formData.pickupAddress.latitude,
+                      longitude: formData.pickupAddress.longitude
+                    },
+                    {
+                      latitude: formData.dropAddress.latitude,
+                      longitude: formData.dropAddress.longitude
+                    }
+                  ];
+                  
+                  mapRef.current.fitToCoordinates(coordinates, {
+                    edgePadding: {
+                      top: 100,
+                      right: 50,
+                      bottom: 300,
+                      left: 50,
+                    },
+                    animated: true,
+                  });
+                }
+              }}
+              onError={(errorMessage) => {
+                console.log('MapViewDirections Error: ', errorMessage);
+              }}
+            />
+            
+            {/* Secondary route line for enhanced visual effect */}
+            <MapViewDirections
+              origin={{
+                latitude: formData.pickupAddress.latitude,
+                longitude: formData.pickupAddress.longitude
+              }}
+              destination={{
+                latitude: formData.dropAddress.latitude,
+                longitude: formData.dropAddress.longitude
+              }}
+              mode='DRIVING'
+              apikey={API_GOOGLE}
+              strokeWidth={6}
+              strokeColor="#007AFF"
+              lineDashPattern={[]}
+              precision="high"
+            />
+            
+            {/* Route duration and distance overlay */}
+            {routeCoords.length > 0 && (
+              <Marker
+                coordinate={routeCoords[Math.floor(routeCoords.length / 2)]}
+                anchor={{ x: 0.5, y: 0.5 }}
+                tracksViewChanges={false}
+              >
+                <View style={localStyles.routeInfoContainer}>
+                  <View style={localStyles.routeInfoBox}>
+                    <MaterialCommunityIcons name="clock-outline" size={14} color="#007AFF" />
+                    <Text style={localStyles.routeInfoText}>
+                      {formData?.estimatedTime || '5 min'}
+                    </Text>
+                  </View>
+                </View>
+              </Marker>
+            )}
+          </>
         )}
  
         {routeCoords.length > 0 && <AnimatedPolyline coords={routeCoords} step={step} />}

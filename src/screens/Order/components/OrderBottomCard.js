@@ -1,5 +1,5 @@
 import React, { useRef, useMemo, useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, Modal, TextInput, ScrollView, PanResponder, Platform, AppState } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, Modal, TextInput, ScrollView, PanResponder, Platform, AppState, Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
@@ -99,6 +99,7 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
 
   const handleCallPress = useCallback(async () => {
     try {
+      // Enhanced VoIP call with fallback options
       const { callId } = await voipManager.initiateCall(
         driver?.id,
         'driver',
@@ -114,13 +115,52 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
       setCallType('outgoing');
       setShowCall(true);
     } catch (error) {
-      console.error('Error initiating call:', error);
-      // Fallback to original call handler
-      if (onCallDriver) {
-        onCallDriver();
-      }
+      console.error('Error initiating VoIP call:', error);
+      
+      // Enhanced fallback with call type selection
+      Alert.alert(
+        'Call Driver',
+        'Choose call type',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Voice Call', 
+            onPress: () => {
+              navigation.navigate('VoIPCallScreen', {
+                callType: 'voice',
+                driverData: {
+                  id: driver?.id,
+                  name: driverName,
+                  avatar: driverAvatar,
+                  vehicle_info: `${carModel} • ${carPlate}`,
+                  rating: driverRating,
+                },
+                orderId: order?.requestId,
+                isIncoming: false
+              });
+            }
+          },
+          { 
+            text: 'Video Call', 
+            onPress: () => {
+              navigation.navigate('VoIPCallScreen', {
+                callType: 'video',
+                driverData: {
+                  id: driver?.id,
+                  name: driverName,
+                  avatar: driverAvatar,
+                  vehicle_info: `${carModel} • ${carPlate}`,
+                  rating: driverRating,
+                },
+                orderId: order?.requestId,
+                isIncoming: false
+              });
+            }
+          },
+        ]
+      );
     }
-  }, [driver?.id, order?.requestId, driverName, driverAvatar, carModel, carPlate, onCallDriver]);
+  }, [driver?.id, order?.requestId, driverName, driverAvatar, carModel, carPlate, driverRating, navigation]);
 
   const handleAcceptCall = useCallback(async () => {
     if (currentCallId) {

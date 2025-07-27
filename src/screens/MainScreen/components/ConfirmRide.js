@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, I18nManager, Modal, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, I18nManager, Modal, Animated, Easing, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { styles } from '../styles';
@@ -206,24 +206,24 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   return (
     <Animated.View 
       style={[
-        confirmRideStyles.container,
+        localStyles.container,
         {
           transform: [{ translateY: slideAnim }],
           opacity: fadeAnim,
         }
       ]}
     >
-      {/* Header */}
+      {/* Uber-style Header */}
       <Animated.View 
         style={[
-          confirmRideStyles.header,
+          localStyles.uberHeader,
           {
             transform: [{ scale: scaleAnim }],
           }
         ]}
       >
         <TouchableOpacity 
-          style={confirmRideStyles.backButton}
+          style={localStyles.backButton}
           onPress={handleBack}
           activeOpacity={0.7}
         >
@@ -234,181 +234,147 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
           />
         </TouchableOpacity>
         
-        <View style={confirmRideStyles.headerContent}>
-          <Text style={confirmRideStyles.headerTitle}>
+        <View style={localStyles.headerContent}>
+          <Text style={localStyles.uberTitle}>
             {t('confirm_your_ride', 'Confirm your ride')}
           </Text>
-          <Text style={confirmRideStyles.headerSubtitle}>
+          <Text style={localStyles.uberSubtitle}>
             {t('review_trip_details', 'Review your trip details')}
           </Text>
         </View>
       </Animated.View>
 
-      {/* Trip Summary Card */}
-      <Animated.View 
-        style={[
-          confirmRideStyles.tripCard,
-          {
-            transform: [{ scale: scaleAnim }],
-          }
-        ]}
-      >
-        {/* Route Information */}
-        <View style={confirmRideStyles.routeSection}>
-          <View style={confirmRideStyles.routeIndicator}>
-            <View style={confirmRideStyles.pickupDot} />
-            <View style={confirmRideStyles.routeLine} />
-            <View style={confirmRideStyles.dropoffDot} />
-          </View>
-          
-          <View style={confirmRideStyles.routeDetails}>
-            <View style={confirmRideStyles.locationItem}>
-              <Text style={confirmRideStyles.locationLabel}>
-                {t('pickup', 'Pickup')}
-              </Text>
-              <Text style={confirmRideStyles.locationAddress} numberOfLines={1}>
-                {formData.pickupAddress || t('current_location', 'Current location')}
-              </Text>
-            </View>
-            
-            <View style={confirmRideStyles.locationItem}>
-              <Text style={confirmRideStyles.locationLabel}>
-                {t('destination', 'Destination')}
-              </Text>
-              <Text style={confirmRideStyles.locationAddress} numberOfLines={1}>
-                {formData.dropoffAddress || t('destination', 'Destination')}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Trip Details */}
-        <View style={confirmRideStyles.tripDetails}>
-          <View style={confirmRideStyles.detailRow}>
-            <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
-            <Text style={confirmRideStyles.detailText}>
-              {formatDateTime(formData.selectedDate)}
-            </Text>
-          </View>
-          
-          <View style={confirmRideStyles.detailRow}>
-            <MaterialCommunityIcons name="map-marker-distance" size={20} color="#666" />
-            <Text style={confirmRideStyles.detailText}>
-              {formData.distance ? `${formData.distance.toFixed(1)} km` : t('calculating', 'Calculating...')}
-            </Text>
-          </View>
-          
-          <View style={confirmRideStyles.detailRow}>
-            <MaterialCommunityIcons name="timer-outline" size={20} color="#666" />
-            <Text style={confirmRideStyles.detailText}>
-              {formData.duration ? `${Math.round(formData.duration)} min` : t('calculating', 'Calculating...')}
-            </Text>
-          </View>
-        </View>
-      </Animated.View>
-
-      {/* Vehicle Selection Card */}
-      {vehicleInfo && (
+      {/* Uber-style Content */}
+      <View style={localStyles.uberContent}>
+        {/* Trip Summary Card */}
         <Animated.View 
           style={[
-            confirmRideStyles.vehicleCard,
+            localStyles.tripCard,
             {
               transform: [{ scale: scaleAnim }],
             }
           ]}
         >
-          <View style={confirmRideStyles.vehicleHeader}>
-            <Text style={confirmRideStyles.vehicleTitle}>
-              {t('selected_vehicle', 'Selected Vehicle')}
+          {/* Route Information */}
+          <View style={localStyles.routeSection}>
+            <View style={localStyles.routeIndicator}>
+              <View style={localStyles.pickupDot} />
+              <View style={localStyles.routeLine} />
+              <View style={localStyles.dropoffDot} />
+            </View>
+            
+            <View style={localStyles.routeDetails}>
+              <View style={localStyles.locationItem}>
+                <Text style={localStyles.locationLabel}>
+                  {t('pickup', 'Pickup')}
+                </Text>
+                <Text style={localStyles.locationAddress} numberOfLines={1}>
+                  {formData.pickupAddress?.address || t('current_location', 'Current location')}
+                </Text>
+              </View>
+              
+              <View style={localStyles.locationItem}>
+                <Text style={localStyles.locationLabel}>
+                  {t('destination', 'Destination')}
+                </Text>
+                <Text style={localStyles.locationAddress} numberOfLines={1}>
+                  {formData.dropoffAddress?.address || t('destination', 'Destination')}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Trip Details */}
+          <View style={localStyles.tripDetails}>
+            <View style={localStyles.detailRow}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
+              <Text style={localStyles.detailText}>
+                {formatDateTime(formData.selectedDate)}
+              </Text>
+            </View>
+            
+            <View style={localStyles.detailRow}>
+              <MaterialCommunityIcons name="map-marker-distance" size={20} color="#666" />
+              <Text style={localStyles.detailText}>
+                {rideData?.distance ? `${(rideData.distance/1000).toFixed(1)} km` : t('calculating', 'Calculating...')}
+              </Text>
+            </View>
+            
+            {vehicleInfo && (
+              <View style={localStyles.detailRow}>
+                <Image source={vehicleInfo.icon} style={localStyles.vehicleIcon} />
+                <Text style={localStyles.detailText}>
+                  {vehicleInfo.label}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Price Section */}
+          <View style={localStyles.priceSection}>
+            <Text style={localStyles.priceLabel}>
+              {t('estimated_fare', 'Estimated fare')}
+            </Text>
+            <Text style={localStyles.priceValue}>
+              {loading ? t('calculating', 'Calculating...') : formatPrice(price)}
             </Text>
           </View>
-          
-          <View style={confirmRideStyles.vehicleContent}>
-            <View style={confirmRideStyles.vehicleIconContainer}>
-              <Image 
-                source={{ uri: vehicleInfo.icon }} 
-                style={confirmRideStyles.vehicleIcon}
-                resizeMode="contain"
-              />
-            </View>
-            
-            <View style={confirmRideStyles.vehicleInfo}>
-              <Text style={confirmRideStyles.vehicleName}>
-                {vehicleInfo.label}
-              </Text>
-              <Text style={confirmRideStyles.vehicleDescription}>
-                {vehicleInfo.description}
-              </Text>
-            </View>
-            
-            <View style={confirmRideStyles.priceContainer}>
-              {loading ? (
-                <ActivityIndicator size="small" color="#000" />
-              ) : (
-                <Text style={confirmRideStyles.priceText}>
-                  {formatPrice(price)}
-                </Text>
-              )}
-            </View>
-          </View>
         </Animated.View>
-      )}
 
-      {/* Confirm Button */}
-      <Animated.View 
-        style={[
-          confirmRideStyles.buttonContainer,
-          {
-            transform: [{ scale: buttonScaleAnim }],
-          }
-        ]}
-      >
-        <TouchableOpacity
+        {/* Uber-style Confirm Button */}
+        <Animated.View 
           style={[
-            confirmRideStyles.confirmButton,
-            isLoading && confirmRideStyles.confirmButtonDisabled
+            localStyles.buttonContainer,
+            {
+              transform: [{ scale: buttonScaleAnim }],
+            }
           ]}
-          onPress={handleConfirmRide}
-          disabled={isLoading || loading}
-          activeOpacity={0.8}
         >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <>
-              <Text style={confirmRideStyles.confirmButtonText}>
-                {t('confirm_ride', 'Confirm Ride')}
-              </Text>
-              <MaterialCommunityIcons 
-                name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
-                size={24} 
-                color="#fff" 
-              />
-            </>
-          )}
-        </TouchableOpacity>
-      </Animated.View>
-
+          <TouchableOpacity
+            style={[
+              localStyles.uberButton,
+              (isLoading || loading) && localStyles.uberButtonDisabled
+            ]}
+            onPress={handleConfirmRide}
+            disabled={isLoading || loading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={localStyles.uberButtonText}>
+                  {t('confirm_ride', 'Confirm Ride')}
+                </Text>
+                <MaterialCommunityIcons 
+                  name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+                  size={24} 
+                  color="#fff" 
+                />
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
       {/* Success Modal */}
       <Modal
         visible={showSuccessModal}
         transparent={true}
         animationType="fade"
       >
-        <View style={confirmRideStyles.modalOverlay}>
+        <View style={localStyles.modalOverlay}>
           <Animated.View 
             style={[
-              confirmRideStyles.successModal,
+              localStyles.successModal,
               {
                 transform: [{ scale: scaleAnim }],
               }
             ]}
           >
             <MaterialCommunityIcons name="check-circle" size={60} color="#4CAF50" />
-            <Text style={confirmRideStyles.successTitle}>
+            <Text style={localStyles.successTitle}>
               {t('ride_confirmed', 'Ride Confirmed!')}
             </Text>
-            <Text style={confirmRideStyles.successMessage}>
+            <Text style={localStyles.successMessage}>
               {t('searching_driver', 'Searching for a driver...')}
             </Text>
           </Animated.View>
@@ -418,17 +384,19 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   );
 };
 
-const confirmRideStyles = StyleSheet.create({
+const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
   },
-  header: {
+  uberHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
   backButton: {
     width: 40,
@@ -442,26 +410,27 @@ const confirmRideStyles = StyleSheet.create({
   headerContent: {
     flex: 1,
   },
-  headerTitle: {
+  uberTitle: {
     fontSize: 28,
     fontWeight: '700',
     color: '#000',
     marginBottom: 4,
   },
-  headerSubtitle: {
+  uberSubtitle: {
     fontSize: 16,
     color: '#8E8E93',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
   },
   tripCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
-    marginBottom: 16,
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
@@ -514,6 +483,7 @@ const confirmRideStyles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
     paddingTop: 16,
+    marginBottom: 16,
   },
   detailRow: {
     flexDirection: 'row',
@@ -526,71 +496,34 @@ const confirmRideStyles = StyleSheet.create({
     marginLeft: 12,
     fontWeight: '500',
   },
-  vehicleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  vehicleHeader: {
-    marginBottom: 16,
-  },
-  vehicleTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
-  },
-  vehicleContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  vehicleIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 12,
-    backgroundColor: '#f8f8f8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
   vehicleIcon: {
-    width: 40,
-    height: 40,
+    width: 20,
+    height: 20,
+    marginRight: 12,
   },
-  vehicleInfo: {
-    flex: 1,
+  priceSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    paddingTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  vehicleName: {
+  priceLabel: {
     fontSize: 18,
     fontWeight: '600',
     color: '#000',
-    marginBottom: 4,
   },
-  vehicleDescription: {
-    fontSize: 14,
-    color: '#8E8E93',
-  },
-  priceContainer: {
-    alignItems: 'flex-end',
-  },
-  priceText: {
+  priceValue: {
     fontSize: 20,
     fontWeight: '700',
     color: '#000',
   },
   buttonContainer: {
     marginTop: 'auto',
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  confirmButton: {
+  uberButton: {
     backgroundColor: '#000',
     borderRadius: 12,
     paddingVertical: 16,
@@ -599,20 +532,17 @@ const confirmRideStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
   },
-  confirmButtonDisabled: {
-    backgroundColor: '#ccc',
+  uberButtonDisabled: {
+    backgroundColor: '#E5E5EA',
   },
-  confirmButtonText: {
+  uberButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
     marginRight: 8,
   },

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions, Image, I18nManager, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions, Image, I18nManager, ActivityIndicator, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
@@ -452,17 +452,24 @@ const SearchDriversComponent = ({ goBack, formData }) => {
   return (
     <Animated.View 
       style={[
-        searchStyles.container,
+        localStyles.container,
         {
           transform: [{ translateY: slideAnim }],
           opacity: fadeAnim,
         }
       ]}
     >
-      {/* Header */}
-      <View style={searchStyles.header}>
+      {/* Uber-style Header */}
+      <Animated.View 
+        style={[
+          localStyles.uberHeader,
+          {
+            transform: [{ scale: scaleAnim }],
+          }
+        ]}
+      >
         <TouchableOpacity 
-          style={searchStyles.headerBackButton}
+          style={localStyles.backButton}
           onPress={handleCancelSearch}
           activeOpacity={0.7}
         >
@@ -473,54 +480,61 @@ const SearchDriversComponent = ({ goBack, formData }) => {
           />
         </TouchableOpacity>
         
-        <Text style={searchStyles.headerTitle}>
-          {searchStep === 2 ? t('driver_found', 'Driver Found!') : t('finding_driver', 'Finding Driver')}
-        </Text>
-      </View>
-
-      {/* Main Content */}
-      <Animated.View
-        style={[
-          searchStyles.mainContent,
-          {
-            transform: [{ scale: scaleAnim }],
-          }
-        ]}
-      >
-        {renderSearchContent()}
+        <View style={localStyles.headerContent}>
+          <Text style={localStyles.uberTitle}>
+            {searchStep === 2 ? t('driver_found', 'Driver Found!') : t('booking.step4.finding_driver', 'Finding your driver')}
+          </Text>
+          <Text style={localStyles.uberSubtitle}>
+            {searchStep === 2 ? t('driver_on_way', 'Your driver is on the way') : t('booking.step4.searching_nearby', 'Searching for nearby drivers...')}
+          </Text>
+        </View>
       </Animated.View>
 
-      {/* Cancel Button */}
-      {searchStep === 1 && (
-        <View style={searchStyles.cancelContainer}>
+      {/* Uber-style Content */}
+      <View style={localStyles.uberContent}>
+        <Animated.View
+          style={[
+            localStyles.mainContent,
+            {
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
+        >
+          {renderSearchContent()}
+        </Animated.View>
+
+        {/* Cancel Button */}
+        {searchStep === 1 && (
           <TouchableOpacity
-            style={searchStyles.cancelButton}
+            style={localStyles.uberButton}
             onPress={handleCancelSearch}
             activeOpacity={0.8}
           >
-            <Text style={searchStyles.cancelButtonText}>
+            <Text style={localStyles.uberButtonText}>
               {t('cancel_search', 'Cancel Search')}
             </Text>
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
     </Animated.View>
   );
 };
 
-const searchStyles = StyleSheet.create({
+const localStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
   },
-  header: {
+  uberHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
   },
-  headerBackButton: {
+  backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -529,176 +543,42 @@ const searchStyles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 16,
   },
-  headerTitle: {
-    fontSize: 24,
+  headerContent: {
+    flex: 1,
+  },
+  uberTitle: {
+    fontSize: 28,
     fontWeight: '700',
     color: '#000',
+    marginBottom: 4,
+  },
+  uberSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
   },
   mainContent: {
     flex: 1,
     justifyContent: 'center',
-  },
-  contentContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  searchIndicatorContainer: {
-    position: 'relative',
-    width: 120,
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  ripple: {
-    position: 'absolute',
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: '#000',
-  },
-  searchIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#000',
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  progressContainer: {
-    width: '100%',
-    height: 4,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 2,
-    marginBottom: 40,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#000',
-    borderRadius: 2,
-  },
-  driversContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-  },
-  driverAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  loader: {
-    marginTop: 40,
-  },
-  successContainer: {
-    alignItems: 'center',
-  },
-  successTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
-    marginTop: 24,
-    marginBottom: 32,
-  },
-  driverInfo: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  driverImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 12,
-  },
-  driverName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  rating: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000',
-    marginLeft: 4,
-  },
-  successMessage: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-  },
-  cancelContainer: {
-    paddingBottom: 20,
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  redZoneContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  redZoneTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FF5722',
-    textAlign: 'center',
-    marginTop: 24,
-    marginBottom: 16,
-  },
-  redZoneMessage: {
-    fontSize: 16,
-    color: '#8E8E93',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 40,
-  },
-  backButton: {
+  uberButton: {
     backgroundColor: '#000',
     borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 32,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: Platform.OS === 'ios' ? 34 : 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
-  backButtonText: {
+  uberButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',

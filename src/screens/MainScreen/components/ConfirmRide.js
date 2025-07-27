@@ -355,6 +355,8 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
             )}
           </TouchableOpacity>
         </Animated.View>
+      </View>
+
       {/* Success Modal */}
       <Modal
         visible={showSuccessModal}

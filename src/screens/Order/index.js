@@ -38,7 +38,7 @@ const Order = ({ route }) => {
   // Track screen view on mount
   useEffect(() => {
     trackScreenView('OrderDetails', { order_id: id });
-    trackOrderDetailsViewed(id);
+   // trackOrderDetailsViewed(id);
   }, []);
 
   const fetchOrder = async () => {

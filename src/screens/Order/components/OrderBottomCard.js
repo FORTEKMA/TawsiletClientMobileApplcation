@@ -454,7 +454,7 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
                 <View style={styles.driverInfo}>
                   <View style={styles.driverNameRow}>
                     <Text style={styles.driverName}>{driverName}</Text>
-                    {!["Canceled_by_client", "Canceled_by_driver", "Completed"].includes(order?.commandStatus) && (
+                    {["Canceled_by_client", "Canceled_by_driver", "Completed"].includes(order?.commandStatus) && (
                       <View style={styles.actionButtonsContainer}>
                         <TouchableOpacity 
                           style={styles.chatButtonCircle}

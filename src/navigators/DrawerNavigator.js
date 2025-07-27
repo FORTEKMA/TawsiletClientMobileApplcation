@@ -13,7 +13,7 @@ import HisoryStackNavigator from './HisoryStackNavigator';
 import ProfileStack from './ProfileStack';
 import HomeStackNavigator from './HomeNavigation';
 import { colors } from '../utils/colors';
-import { logout } from '../store/userSlice/userSlice';
+import { logOut } from '../store/userSlice/userSlice';
 
 const Drawer = createDrawerNavigator();
 
@@ -29,7 +29,7 @@ const CustomDrawerContent = ({ navigation, state }) => {
   const userPhone = currentUser?.phoneNumber || '';
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logOut());
     navigation.closeDrawer();
   };
 

@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Animated,
   Dimensions,
+  StyleSheet
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useIsFocused } from "@react-navigation/native";
@@ -107,7 +108,7 @@ const Historique = ({ navigation }) => {
 
   const handleFilterChange = (newFilter) => {
     setStatusFilter(newFilter);
-    trackHistoryFiltered(newFilter);
+    //trackHistoryFiltered(newFilter);
   };
 
   const handleSearch = (searchTerm) => {

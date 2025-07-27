@@ -94,6 +94,34 @@ export const   localStyles = StyleSheet.create({
       height: 8,
       backgroundColor: 'white'
     },
+    routeInfoContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    routeInfoBox: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'white',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+      borderWidth: 1,
+      borderColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    routeInfoText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#007AFF',
+      marginLeft: 4,
+    },
     clusterMarker: {
       width: 20,
       height: 20,

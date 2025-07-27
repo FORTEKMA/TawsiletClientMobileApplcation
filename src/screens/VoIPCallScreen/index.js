@@ -10,11 +10,16 @@ import {
   StatusBar,
   Alert,
   Platform,
+  SafeAreaView,
+  BackHandler,
 } from 'react-native';
 import Modal from 'react-native-modal';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
+import LinearGradient from 'react-native-linear-gradient';
+import { BlurView } from '@react-native-community/blur';
 
 // NOTE: Agora SDK integration would be imported here
 // import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode } from 'react-native-agora';
@@ -29,33 +34,62 @@ const VoIPCallScreen = ({
   onAccept,
   onDecline,
   onEndCall,
+  route,
 }) => {
   const { t } = useTranslation();
-  const [callStatus, setCallStatus] = useState('connecting'); // 'connecting', 'ringing', 'connected', 'ended'
+  
+  // Extract route params if navigated directly
+  const routeParams = route?.params || {};
+  const finalDriverData = driverData || routeParams.driverData;
+  const finalCallType = callType || routeParams.callType || 'outgoing';
+  const isIncoming = routeParams.isIncoming || callType === 'incoming';
+  const orderId = routeParams.orderId;
+
+  // Call states
+  const [callStatus, setCallStatus] = useState(isIncoming ? 'ringing' : 'connecting');
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
-  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(finalCallType === 'video');
   const [isRemoteVideoEnabled, setIsRemoteVideoEnabled] = useState(false);
   const [remoteUid, setRemoteUid] = useState(null);
+  const [callQuality, setCallQuality] = useState('HD');
+  const [networkQuality, setNetworkQuality] = useState('excellent');
 
-  // Agora Engine Reference (would be initialized with actual Agora SDK)
+  // Agora Engine Reference
   const agoraEngineRef = useRef(null);
+  const channelName = useRef(`tawsilet_${orderId || Date.now()}`);
 
   // Animation values
   const pulseAnimation = useRef(new Animated.Value(1)).current;
   const slideAnimation = useRef(new Animated.Value(screenHeight)).current;
   const fadeAnimation = useRef(new Animated.Value(0)).current;
   const avatarPulseAnimation = useRef(new Animated.Value(1)).current;
+  const buttonScaleAnimation = useRef(new Animated.Value(1)).current;
+  const rippleAnimation = useRef(new Animated.Value(0)).current;
 
   // Timer for call duration
   const timerRef = useRef(null);
   const callStartTime = useRef(null);
 
-  // Initialize Agora Engine (Placeholder - would use actual Agora SDK)
+  // Handle Android back button
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (visible) {
+        handleEndCall();
+        return true;
+      }
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [visible]);
+
+  // Initialize Agora Engine
   useEffect(() => {
     if (visible) {
       initializeAgoraEngine();
+      startRippleAnimation();
     }
 
     return () => {
@@ -68,59 +102,115 @@ const VoIPCallScreen = ({
       // NOTE: This is a placeholder for actual Agora SDK initialization
       // Actual implementation would be:
       /*
-      const engine = await RtcEngine.create('YOUR_AGORA_APP_ID_HERE');
-      agoraEngineRef.current = engine;
+      const { RtcEngine } = require('react-native-agora');
       
-      // Set up event handlers
-      engine.addListener('Warning', (warn) => {
-        console.log('Agora Warning', warn);
+      this.agoraEngine = await RtcEngine.create('YOUR_AGORA_APP_ID_HERE');
+      agoraEngineRef.current = this.agoraEngine;
+      
+      // Set up comprehensive event handlers
+      this.agoraEngine.addListener('Warning', (warn) => {
+        console.log('Agora Warning:', warn);
       });
       
-      engine.addListener('Error', (err) => {
-        console.log('Agora Error', err);
+      this.agoraEngine.addListener('Error', (err) => {
+        console.error('Agora Error:', err);
+        setCallStatus('error');
       });
       
-      engine.addListener('JoinChannelSuccess', (channel, uid, elapsed) => {
-        console.log('JoinChannelSuccess', channel, uid, elapsed);
+      this.agoraEngine.addListener('JoinChannelSuccess', (channel, uid, elapsed) => {
+        console.log('JoinChannelSuccess:', channel, uid, elapsed);
         setCallStatus('connected');
+        setCallStartTime(Date.now());
       });
       
-      engine.addListener('UserJoined', (uid, elapsed) => {
-        console.log('UserJoined', uid, elapsed);
+      this.agoraEngine.addListener('UserJoined', (uid, elapsed) => {
+        console.log('UserJoined:', uid, elapsed);
         setRemoteUid(uid);
+        if (isVideoEnabled) {
+          setIsRemoteVideoEnabled(true);
+        }
       });
       
-      engine.addListener('UserOffline', (uid, reason) => {
-        console.log('UserOffline', uid, reason);
+      this.agoraEngine.addListener('UserOffline', (uid, reason) => {
+        console.log('UserOffline:', uid, reason);
         setRemoteUid(null);
+        setIsRemoteVideoEnabled(false);
+        if (reason === 0) { // User left
+          handleEndCall();
+        }
       });
       
-      engine.addListener('RemoteVideoStateChanged', (uid, state, reason, elapsed) => {
-        console.log('RemoteVideoStateChanged', uid, state, reason, elapsed);
-        setIsRemoteVideoEnabled(state === 2); // 2 means video is enabled
+      this.agoraEngine.addListener('RemoteVideoStateChanged', (uid, state, reason, elapsed) => {
+        console.log('RemoteVideoStateChanged:', uid, state, reason, elapsed);
+        setIsRemoteVideoEnabled(state === 2);
       });
       
-      // Configure engine
-      await engine.enableAudio();
-      await engine.setChannelProfile(1); // 1 for communication
-      await engine.setClientRole(1); // 1 for broadcaster
+      this.agoraEngine.addListener('NetworkQuality', (uid, txQuality, rxQuality) => {
+        const quality = Math.min(txQuality, rxQuality);
+        const qualityMap = {
+          1: 'excellent',
+          2: 'good',
+          3: 'poor',
+          4: 'bad',
+          5: 'very_bad',
+          6: 'down'
+        };
+        setNetworkQuality(qualityMap[quality] || 'unknown');
+      });
+      
+      this.agoraEngine.addListener('RtcStats', (stats) => {
+        // Update call quality based on stats
+        if (stats.txKBitRate > 0 || stats.rxKBitRate > 0) {
+          setCallQuality('HD');
+        }
+      });
+      
+      // Configure engine for optimal call quality
+      await this.agoraEngine.setChannelProfile(1); // Communication
+      await this.agoraEngine.setClientRole(1); // Broadcaster
+      await this.agoraEngine.enableAudio();
+      await this.agoraEngine.setAudioProfile(1, 0); // Speech standard
+      await this.agoraEngine.enableAudioVolumeIndication(1000, 3, false);
+      
+      if (isVideoEnabled) {
+        await this.agoraEngine.enableVideo();
+        await this.agoraEngine.setVideoEncoderConfiguration({
+          dimensions: { width: 640, height: 360 },
+          frameRate: 15,
+          bitrate: 400,
+          orientationMode: 0,
+        });
+      }
       
       // Join channel
-      const channelName = `call_${Date.now()}`;
-      const token = null; // In production, generate token from your server
-      await engine.joinChannel(token, channelName, null, 0);
+      const token = null; // In production, get from your server
+      await this.agoraEngine.joinChannel(token, channelName.current, null, 0);
       */
       
       console.log('Agora Engine initialized (placeholder)');
+      
+      // Simulate connection for demo
+      setTimeout(() => {
+        if (callStatus === 'connecting') {
+          setCallStatus('connected');
+          callStartTime.current = Date.now();
+        }
+      }, 2000);
+      
     } catch (error) {
       console.error('Failed to initialize Agora Engine:', error);
+      setCallStatus('error');
     }
   };
 
   const cleanupAgoraEngine = async () => {
     try {
-      // NOTE: This is a placeholder for actual Agora SDK cleanup
-      // Actual implementation would be:
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      
+      // NOTE: Actual Agora SDK cleanup would be:
       /*
       if (agoraEngineRef.current) {
         await agoraEngineRef.current.leaveChannel();
@@ -141,30 +231,29 @@ const VoIPCallScreen = ({
       Animated.parallel([
         Animated.timing(slideAnimation, {
           toValue: 0,
-          duration: 300,
+          duration: 400,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnimation, {
           toValue: 1,
-          duration: 300,
+          duration: 400,
           useNativeDriver: true,
         }),
       ]).start();
 
-      // Start avatar pulse animation for incoming/connecting calls
-      if (callType === 'incoming' || callStatus === 'connecting') {
+      if (isIncoming || callStatus === 'connecting') {
         startAvatarPulse();
       }
     } else {
       Animated.parallel([
         Animated.timing(slideAnimation, {
           toValue: screenHeight,
-          duration: 250,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(fadeAnimation, {
           toValue: 0,
-          duration: 250,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]).start();
@@ -195,13 +284,13 @@ const VoIPCallScreen = ({
     Animated.loop(
       Animated.sequence([
         Animated.timing(avatarPulseAnimation, {
-          toValue: 1.1,
-          duration: 1000,
+          toValue: 1.15,
+          duration: 1200,
           useNativeDriver: true,
         }),
         Animated.timing(avatarPulseAnimation, {
           toValue: 1,
-          duration: 1000,
+          duration: 1200,
           useNativeDriver: true,
         }),
       ])
@@ -213,6 +302,31 @@ const VoIPCallScreen = ({
     avatarPulseAnimation.setValue(1);
   };
 
+  const startRippleAnimation = () => {
+    Animated.loop(
+      Animated.timing(rippleAnimation, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  const animateButton = (callback) => {
+    Animated.sequence([
+      Animated.timing(buttonScaleAnimation, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnimation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start(callback);
+  };
+
   const formatCallDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -220,33 +334,38 @@ const VoIPCallScreen = ({
   };
 
   const handleAcceptCall = async () => {
-    setCallStatus('connected');
-    stopAvatarPulse();
-    
-    // Initialize Agora connection for incoming call
-    await initializeAgoraEngine();
-    
-    if (onAccept) onAccept();
+    animateButton(async () => {
+      setCallStatus('connected');
+      stopAvatarPulse();
+      
+      await initializeAgoraEngine();
+      
+      if (onAccept) onAccept();
+    });
   };
 
   const handleDeclineCall = async () => {
-    setCallStatus('ended');
-    stopAvatarPulse();
-    
-    await cleanupAgoraEngine();
-    
-    if (onDecline) onDecline();
-    setTimeout(() => onClose(), 1000);
+    animateButton(async () => {
+      setCallStatus('ended');
+      stopAvatarPulse();
+      
+      await cleanupAgoraEngine();
+      
+      if (onDecline) onDecline();
+      setTimeout(() => onClose && onClose(), 1000);
+    });
   };
 
   const handleEndCall = async () => {
-    setCallStatus('ended');
-    stopAvatarPulse();
-    
-    await cleanupAgoraEngine();
-    
-    if (onEndCall) onEndCall();
-    setTimeout(() => onClose(), 1000);
+    animateButton(async () => {
+      setCallStatus('ended');
+      stopAvatarPulse();
+      
+      await cleanupAgoraEngine();
+      
+      if (onEndCall) onEndCall();
+      setTimeout(() => onClose && onClose(), 1000);
+    });
   };
 
   const toggleMute = async () => {
@@ -297,21 +416,46 @@ const VoIPCallScreen = ({
     console.log(`Video ${newVideoState ? 'enabled' : 'disabled'} (placeholder)`);
   };
 
+  const switchCamera = async () => {
+    // NOTE: Actual Agora SDK integration would be:
+    /*
+    if (agoraEngineRef.current && isVideoEnabled) {
+      await agoraEngineRef.current.switchCamera();
+    }
+    */
+    
+    console.log('Camera switched (placeholder)');
+  };
+
   const getStatusText = () => {
     switch (callStatus) {
       case 'connecting':
         return t('call.connecting', 'Connecting...');
       case 'ringing':
-        return callType === 'incoming' 
+        return isIncoming 
           ? t('call.incoming_call', 'Incoming call') 
           : t('call.ringing', 'Ringing...');
       case 'connected':
         return formatCallDuration(callDuration);
       case 'ended':
         return t('call.call_ended', 'Call ended');
+      case 'error':
+        return t('call.connection_error', 'Connection error');
       default:
         return '';
     }
+  };
+
+  const getNetworkQualityIcon = () => {
+    const qualityIcons = {
+      excellent: 'signal-cellular-3',
+      good: 'signal-cellular-2',
+      poor: 'signal-cellular-1',
+      bad: 'signal-cellular-outline',
+      very_bad: 'signal-cellular-outline',
+      down: 'signal-cellular-off',
+    };
+    return qualityIcons[networkQuality] || 'signal-cellular-3';
   };
 
   const renderVideoView = () => {
@@ -328,12 +472,16 @@ const VoIPCallScreen = ({
             {/* <RtcRemoteView.SurfaceView
               style={styles.remoteVideo}
               uid={remoteUid}
-              channelId={channelName}
+              channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
             /> */}
-            <View style={styles.placeholderVideo}>
+            <LinearGradient
+              colors={['#667eea', '#764ba2']}
+              style={styles.placeholderVideo}
+            >
+              <MaterialCommunityIcons name="video" size={60} color="rgba(255,255,255,0.7)" />
               <Text style={styles.placeholderText}>Remote Video</Text>
-            </View>
+            </LinearGradient>
           </View>
         )}
         
@@ -343,35 +491,83 @@ const VoIPCallScreen = ({
             {/* NOTE: Actual Agora SDK would render local video here */}
             {/* <RtcLocalView.SurfaceView
               style={styles.localVideo}
-              channelId={channelName}
+              channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
             /> */}
-            <View style={styles.placeholderLocalVideo}>
-              <Text style={styles.placeholderText}>Local Video</Text>
-            </View>
+            <LinearGradient
+              colors={['#11998e', '#38ef7d']}
+              style={styles.placeholderLocalVideo}
+            >
+              <MaterialCommunityIcons name="account-circle" size={40} color="rgba(255,255,255,0.8)" />
+            </LinearGradient>
+            
+            {/* Camera switch button */}
+            <TouchableOpacity
+              style={styles.switchCameraButton}
+              onPress={switchCamera}
+              activeOpacity={0.8}
+            >
+              <MaterialCommunityIcons name="camera-switch" size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         )}
       </View>
     );
   };
 
+  const renderRippleEffect = () => {
+    if (callStatus !== 'ringing' && callStatus !== 'connecting') return null;
+
+    return (
+      <View style={styles.rippleContainer}>
+        {[0, 1, 2].map((index) => (
+          <Animated.View
+            key={index}
+            style={[
+              styles.ripple,
+              {
+                opacity: rippleAnimation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.8, 0],
+                }),
+                transform: [
+                  {
+                    scale: rippleAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.5, 2],
+                    }),
+                  },
+                ],
+                animationDelay: index * 700,
+              },
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
   const renderIncomingCallButtons = () => (
     <View style={styles.incomingButtonsContainer}>
-      <TouchableOpacity
-        style={[styles.callButton, styles.declineButton]}
-        onPress={handleDeclineCall}
-        activeOpacity={0.8}
-      >
-        <MaterialCommunityIcons name="phone-hangup" size={32} color="#fff" />
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: buttonScaleAnimation }] }}>
+        <TouchableOpacity
+          style={[styles.callButton, styles.declineButton]}
+          onPress={handleDeclineCall}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="phone-hangup" size={32} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
       
-      <TouchableOpacity
-        style={[styles.callButton, styles.acceptButton]}
-        onPress={handleAcceptCall}
-        activeOpacity={0.8}
-      >
-        <MaterialCommunityIcons name="phone" size={32} color="#fff" />
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: buttonScaleAnimation }] }}>
+        <TouchableOpacity
+          style={[styles.callButton, styles.acceptButton]}
+          onPress={handleAcceptCall}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="phone" size={32} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 
@@ -386,7 +582,7 @@ const VoIPCallScreen = ({
           <MaterialCommunityIcons 
             name={isMuted ? "microphone-off" : "microphone"} 
             size={24} 
-            color={isMuted ? "#fff" : "#000"} 
+            color={isMuted ? "#fff" : "#333"} 
           />
         </TouchableOpacity>
 
@@ -398,7 +594,7 @@ const VoIPCallScreen = ({
           <MaterialCommunityIcons 
             name={isSpeakerOn ? "volume-high" : "volume-medium"} 
             size={24} 
-            color={isSpeakerOn ? "#fff" : "#000"} 
+            color={isSpeakerOn ? "#fff" : "#333"} 
           />
         </TouchableOpacity>
 
@@ -410,18 +606,40 @@ const VoIPCallScreen = ({
           <MaterialCommunityIcons 
             name={isVideoEnabled ? "video" : "video-off"} 
             size={24} 
-            color={isVideoEnabled ? "#fff" : "#000"} 
+            color={isVideoEnabled ? "#fff" : "#333"} 
           />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        style={[styles.callButton, styles.endCallButton]}
-        onPress={handleEndCall}
-        activeOpacity={0.8}
-      >
-        <MaterialCommunityIcons name="phone-hangup" size={28} color="#fff" />
-      </TouchableOpacity>
+      <Animated.View style={{ transform: [{ scale: buttonScaleAnimation }] }}>
+        <TouchableOpacity
+          style={[styles.callButton, styles.endCallButton]}
+          onPress={handleEndCall}
+          activeOpacity={0.8}
+        >
+          <MaterialCommunityIcons name="phone-hangup" size={28} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
+    </View>
+  );
+
+  const renderCallInfo = () => (
+    <View style={styles.callInfoContainer}>
+      <View style={styles.networkQualityContainer}>
+        <MaterialIcons name={getNetworkQualityIcon()} size={16} color="#fff" />
+        <Text style={styles.networkQualityText}>
+          {callQuality}
+        </Text>
+      </View>
+      
+      {callStatus === 'connected' && (
+        <View style={styles.encryptionContainer}>
+          <MaterialCommunityIcons name="lock" size={14} color="#4CAF50" />
+          <Text style={styles.encryptionText}>
+            {t('call.encrypted', 'Encrypted')}
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -429,99 +647,110 @@ const VoIPCallScreen = ({
     <Modal
       isVisible={visible}
       style={styles.modal}
-      backdropOpacity={0.9}
+      backdropOpacity={1}
       animationIn="slideInUp"
       animationOut="slideOutDown"
-      backdropTransitionInTiming={300}
-      backdropTransitionOutTiming={250}
+      backdropTransitionInTiming={400}
+      backdropTransitionOutTiming={300}
+      onBackdropPress={null}
+      onBackButtonPress={handleEndCall}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
       
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            transform: [{ translateY: slideAnimation }],
-            opacity: fadeAnimation,
-          },
-        ]}
-      >
-        {/* Background gradient effect */}
-        <View style={styles.backgroundGradient} />
+      <SafeAreaView style={styles.safeArea}>
+        <Animated.View
+          style={[
+            styles.container,
+            {
+              transform: [{ translateY: slideAnimation }],
+              opacity: fadeAnimation,
+            },
+          ]}
+        >
+          {/* Background gradient */}
+          <LinearGradient
+            colors={['#1a1a2e', '#16213e', '#0f3460']}
+            style={styles.backgroundGradient}
+          />
 
-        {/* Video Views */}
-        {renderVideoView()}
+          {/* Video Views */}
+          {renderVideoView()}
 
-        {/* Driver Info */}
-        {(!isVideoEnabled || !isRemoteVideoEnabled) && (
-          <View style={styles.driverInfoContainer}>
-            <Animated.View
-              style={[
-                styles.avatarContainer,
-                {
-                  transform: [{ scale: avatarPulseAnimation }],
-                },
-              ]}
-            >
-              <Image
-                source={{ uri: driverData?.avatar || 'https://via.placeholder.com/150' }}
-                style={styles.driverAvatar}
-              />
-              {callStatus === 'connected' && (
-                <View style={styles.connectedIndicator}>
-                  <View style={styles.connectedDot} />
-                </View>
-              )}
-            </Animated.View>
+          {/* Call Info */}
+          {renderCallInfo()}
 
-            <Text style={styles.driverName}>
-              {driverData?.name || t('call.driver', 'Driver')}
-            </Text>
-            
-            <Text style={styles.driverInfo}>
-              {driverData?.vehicle_info || t('call.taxi_driver', 'Taxi Driver')}
-            </Text>
+          {/* Driver Info */}
+          {(!isVideoEnabled || !isRemoteVideoEnabled) && (
+            <View style={styles.driverInfoContainer}>
+              {renderRippleEffect()}
+              
+              <Animated.View
+                style={[
+                  styles.avatarContainer,
+                  {
+                    transform: [{ scale: avatarPulseAnimation }],
+                  },
+                ]}
+              >
+                <Image
+                  source={{ 
+                    uri: finalDriverData?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+                  }}
+                  style={styles.driverAvatar}
+                />
+                {callStatus === 'connected' && (
+                  <View style={styles.connectedIndicator}>
+                    <View style={styles.connectedDot} />
+                  </View>
+                )}
+              </Animated.View>
 
-            <View style={styles.ratingContainer}>
-              <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-              <Text style={styles.rating}>
-                {driverData?.rating || '4.8'}
+              <Text style={styles.driverName}>
+                {finalDriverData?.name || t('call.driver', 'Driver')}
               </Text>
+              
+              <Text style={styles.driverInfo}>
+                {finalDriverData?.vehicle_info || t('call.taxi_driver', 'Taxi Driver')}
+              </Text>
+
+              <View style={styles.ratingContainer}>
+                <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
+                <Text style={styles.rating}>
+                  {finalDriverData?.rating || '4.8'}
+                </Text>
+              </View>
             </View>
+          )}
+
+          {/* Call Status */}
+          <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>
+              {getStatusText()}
+            </Text>
+            {callStatus === 'error' && (
+              <Text style={styles.errorText}>
+                {t('call.check_connection', 'Please check your connection')}
+              </Text>
+            )}
           </View>
-        )}
 
-        {/* Call Status */}
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>
-            {getStatusText()}
-          </Text>
-        </View>
+          {/* Call Controls */}
+          <View style={styles.controlsContainer}>
+            {isIncoming && callStatus !== 'connected' && callStatus !== 'ended'
+              ? renderIncomingCallButtons()
+              : renderConnectedCallButtons()
+            }
+          </View>
 
-        {/* Call Controls */}
-        <View style={styles.controlsContainer}>
-          {callType === 'incoming' && callStatus !== 'connected' && callStatus !== 'ended'
-            ? renderIncomingCallButtons()
-            : renderConnectedCallButtons()
-          }
-        </View>
-
-        {/* Additional Info */}
-        {callStatus === 'connected' && (
-          <View style={styles.additionalInfo}>
-            <Text style={styles.callQuality}>
-              {t('call.hd_quality', 'HD Quality')}
+          {/* Configuration Notice */}
+          <View style={styles.configNotice}>
+            <MaterialCommunityIcons name="information-outline" size={16} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.configNoticeText}>
+              {t('call.demo_mode', 'Demo Mode - Configure Agora SDK for production')}
             </Text>
           </View>
-        )}
-
-        {/* Configuration Notice */}
-        <View style={styles.configNotice}>
-          <Text style={styles.configNoticeText}>
-            {t('call.config_notice', 'Configure Agora App ID in VoIPManager.js')}
-          </Text>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </SafeAreaView>
     </Modal>
   );
 };
@@ -530,12 +759,15 @@ const styles = StyleSheet.create({
   modal: {
     margin: 0,
   },
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  container: {
+    flex: 1,
     justifyContent: 'space-between',
-    paddingVertical: 60,
-    paddingHorizontal: 30,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
   },
   backgroundGradient: {
     position: 'absolute',
@@ -543,7 +775,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
   },
   videoContainer: {
     position: 'absolute',
@@ -554,9 +785,21 @@ const styles = StyleSheet.create({
   },
   remoteVideoContainer: {
     flex: 1,
+    backgroundColor: '#1a1a2e',
   },
   remoteVideo: {
     flex: 1,
+  },
+  placeholderVideo: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 16,
+    marginTop: 12,
+    fontWeight: '500',
   },
   localVideoContainer: {
     position: 'absolute',
@@ -567,122 +810,196 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   localVideo: {
     flex: 1,
   },
-  placeholderVideo: {
-    flex: 1,
-    backgroundColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   placeholderLocalVideo: {
     flex: 1,
-    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
+  switchCameraButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  callInfoContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 24,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  networkQualityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  networkQualityText: {
     color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  encryptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(76,175,80,0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  encryptionText: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rippleContainer: {
+    position: 'absolute',
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ripple: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   driverInfoContainer: {
     alignItems: 'center',
-    marginTop: 60,
+    marginTop: 80,
+    zIndex: 10,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   driverAvatar: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   connectedIndicator: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: '#4CAF50',
+    bottom: 8,
+    right: 8,
+    width: 24,
+    height: 24,
     borderRadius: 12,
-    padding: 4,
-    borderWidth: 2,
-    borderColor: '#fff',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   connectedDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#fff',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#4CAF50',
   },
   driverName: {
-    fontSize: hp(3),
+    fontSize: 28,
     fontWeight: '700',
     color: '#fff',
-    textAlign: 'center',
     marginBottom: 8,
+    textAlign: 'center',
   },
   driverInfo: {
-    fontSize: hp(1.8),
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.8)',
     marginBottom: 12,
+    textAlign: 'center',
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    gap: 4,
   },
   rating: {
     color: '#fff',
-    fontSize: hp(1.6),
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 4,
   },
   statusContainer: {
     alignItems: 'center',
-    marginVertical: 40,
+    marginTop: 32,
   },
   statusText: {
-    fontSize: hp(2.2),
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#fff',
     textAlign: 'center',
   },
+  errorText: {
+    fontSize: 14,
+    color: '#FF5722',
+    textAlign: 'center',
+    marginTop: 8,
+  },
   controlsContainer: {
-    alignItems: 'center',
     marginBottom: 40,
   },
   incomingButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    width: wp(60),
+    paddingHorizontal: 40,
   },
   connectedButtonsContainer: {
     alignItems: 'center',
+    gap: 32,
   },
   controlButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 30,
+    gap: 24,
+  },
+  controlButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  activeControlButton: {
+    backgroundColor: 'rgba(244,67,54,0.9)',
+    borderColor: 'rgba(244,67,54,0.3)',
   },
   callButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    alignItems: 'center',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     justifyContent: 'center',
+    alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
@@ -696,40 +1013,21 @@ const styles = StyleSheet.create({
   endCallButton: {
     backgroundColor: '#F44336',
   },
-  controlButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  configNotice: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 15,
-  },
-  activeControlButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  additionalInfo: {
-    alignItems: 'center',
-  },
-  callQuality: {
-    fontSize: hp(1.4),
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontWeight: '500',
-  },
-  configNotice: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 193, 7, 0.9)',
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 20,
+    gap: 8,
   },
   configNoticeText: {
-    fontSize: hp(1.4),
-    color: '#000',
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 12,
     textAlign: 'center',
-    fontWeight: '500',
   },
 });
 

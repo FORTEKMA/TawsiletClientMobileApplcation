@@ -117,7 +117,7 @@ export const styles = StyleSheet.create({
   },
   uberUserDetails: {
     alignItems: 'center',
-    
+    gap:10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
@@ -197,7 +197,7 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#000',
-    marginBottom: 20,
+  
   },
   uberMenuItem: {
     flexDirection: 'row',

@@ -47,7 +47,10 @@
     "seconds": "ثواني",
     "today": "اليوم",
     "yesterday": "أمس",
-    "days_ago": "أيام"
+    "days_ago": "أيام",
+    "warning": "تحذير",
+    "please_wait": "يرجى الانتظار",
+    "save_changes": "حفظ التغييرات"
   },
   "onboarding": {
     "login": "تسجيل الدخول",
@@ -355,6 +358,7 @@
     },
     "personal_info": {
       "title": "المعلومات الشخصية",
+      "section_title": "المعلومات الشخصية",
       "first_name": "الاسم الأول",
       "last_name": "اسم العائلة",
       "email": "البريد الإلكتروني",
@@ -368,7 +372,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "رقم الهاتف",
       "otp_title": "أدخل رمز التحقق",
-      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}"
+      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}",
+      "please_wait": "يرجى الانتظار {{time}} قبل المحاولة مرة أخرى",
+      "notice": "ستتطلب التغييرات في رقم هاتفك التحقق عبر الرسائل النصية."
     },
     "first_name": "الاسم الأول",
     "last_name": "اسم العائلة",

@@ -16,14 +16,8 @@ import {
 import Modal from 'react-native-modal';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
-import { useTranslation } from 'react-i18next';
-//import LinearGradient from 'react-native-linear-gradient';
-import { BlurView } from '@react-native-community/blur';
-
-// NOTE: Agora SDK integration would be imported here
-// import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode } from 'react-native-agora';
-
+ import { useTranslation } from 'react-i18next';
+ 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const VoIPCallScreen = ({
@@ -494,12 +488,12 @@ const VoIPCallScreen = ({
               channelId={channelName.current}
               renderMode={VideoRenderMode.Hidden}
             /> */}
-            <LinearGradient
+            <View
               colors={['#11998e', '#38ef7d']}
               style={styles.placeholderLocalVideo}
             >
               <MaterialCommunityIcons name="account-circle" size={40} color="rgba(255,255,255,0.8)" />
-            </LinearGradient>
+            </View>
             
             {/* Camera switch button */}
             <TouchableOpacity
@@ -668,8 +662,8 @@ const VoIPCallScreen = ({
           ]}
         >
           {/* Background gradient */}
-          <LinearGradient
-            colors={['#1a1a2e', '#16213e', '#0f3460']}
+          <View
+           
             style={styles.backgroundGradient}
           />
 

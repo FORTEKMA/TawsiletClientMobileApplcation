@@ -298,13 +298,8 @@ const PersonalInfo = () => {
                 />
               </TouchableOpacity>
               
-              <View style={styles.uberHeaderContent}>
-                <Text style={styles.uberSectionTitle}>{t("profile.personal_info.title")}</Text>
-                <Text style={styles.uberSectionSubtitle}>
-                  {t("profile.personal_info.subtitle", "Manage your personal information")}
-                </Text>
-              </View>
-              
+                 <Text style={styles.uberSectionTitle}>{t("profile.personal_info.title")}</Text>
+                 
               <View style={styles.uberHeaderSpacer} />
             </View>
            
@@ -335,9 +330,7 @@ const PersonalInfo = () => {
                 <View style={styles.uberInputContainer}>
                   <Text style={styles.uberInputLabel}>{t("profile.personal_info.phone")}</Text>
                   <View style={styles.uberInputWrapper}>
-                    <View style={styles.uberInputIconContainer}>
-                      <MaterialCommunityIcons name="phone-outline" size={20} color="#8E8E93" />
-                    </View>
+                    
                     <PhoneInput
                       ref={phoneInputRef}
                       autoFormat

@@ -48,7 +48,10 @@
     "seconds": "Secondes",
     "today": "Aujourd'hui",
     "yesterday": "Hier",
-    "days_ago": "jours"
+    "days_ago": "jours",
+    "warning": "Avertissement",
+    "please_wait": "Veuillez patienter",
+    "save_changes": "Enregistrer les modifications"
   },
   "auth": {
     "login": "Connexion",
@@ -398,6 +401,7 @@
     },
     "personal_info": {
       "title": "Informations Personnelles",
+      "section_title": "Informations Personnelles",
       "first_name": "Prénom",
       "last_name": "Nom",
       "email": "Email",
@@ -411,7 +415,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "Numéro de téléphone",
       "otp_title": "Entrez le code OTP",
-      "otp_message": "Un code OTP a été envoyé à {{phoneNumber}}"
+      "otp_message": "Un code OTP a été envoyé à {{phoneNumber}}",
+      "please_wait": "Veuillez patienter {{time}} avant de réessayer",
+      "notice": "Les modifications de votre numéro de téléphone nécessiteront une vérification par SMS."
     },
 
     "first_name": "Prénom",

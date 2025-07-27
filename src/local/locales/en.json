@@ -46,7 +46,10 @@
     "seconds": "Seconds",
     "today": "Today",
     "yesterday": "Yesterday",
-    "days_ago": "days ago"
+    "days_ago": "days ago",
+    "warning": "Warning",
+    "please_wait": "Please wait",
+    "save_changes": "Save Changes"
   },
   "onboarding": {
     "login": "Login",
@@ -361,6 +364,7 @@
     },
     "personal_info": {
       "title": "Personal Information",
+      "section_title": "Personal Information",
       "first_name": "First Name",
       "last_name": "Last Name",
       "email": "Email",
@@ -374,7 +378,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "Phone Number",
       "otp_title": "Enter OTP",
-      "otp_message": "An OTP has been sent to {{phoneNumber}}"
+      "otp_message": "An OTP has been sent to {{phoneNumber}}",
+      "please_wait": "Please wait {{time}} before trying again",
+      "notice": "Changes to your phone number will require verification via SMS."
     },
     "first_name": "First Name",
     "last_name": "Last Name",

@@ -203,12 +203,12 @@ const Login = ({ navigation }) => {
         </TouchableOpacity>
         
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('login.welcomeBack')}</Text>
+        <Text style={styles.headerTitle}>{t("login.welcomeBack")}</Text>
         <TouchableOpacity
-          style={{ position: 'absolute', top: 0, right: 0, padding: 16, zIndex: 10 }}
+          style={styles.closeButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="close" size={24} color="#222" />
+          <Icon name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
       {/* Segmented Switch */}

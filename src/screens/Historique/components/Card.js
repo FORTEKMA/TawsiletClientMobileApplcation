@@ -4,7 +4,7 @@ import { colors } from "../../../utils/colors";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from "react-native-responsive-screen";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 
 export const Card = ({ order ,refresh}) => {
   const { t } = useTranslation();
@@ -32,33 +32,33 @@ export const Card = ({ order ,refresh}) => {
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case "pending":
-        return "#F1C40F";
+        return colors.warning;
       case "dispatched_to_partner":
-        return "#4A90E2"; // Blue
+        return colors.uberBlue; 
       case "assigned_to_driver":
-        return "#9B59B6"; // Purple
+        return colors.purple; 
       case "driver_on_route_to_pickup":
-        return "#3498DB"; // Light Blue
+        return colors.info; 
       case "arrived_at_pickup":
-        return "#FFA500"; // Green
+        return colors.orange; 
       case "picked_up":
-        return "#FFA500"; // Dark Green
+        return colors.orange; 
       case "on_route_to_delivery":
-        return "#FFA500"; // Light Blue
+        return colors.info; 
       case "arrived_at_delivery":
-        return "#FFA500"; // Green
+        return colors.success; 
       case "delivered":
-        return "#27AE60"; // Dark Green
+        return colors.success; 
       case "completed":
-        return "#27AE60"; // Dark Green
+        return colors.success; 
       case "canceled_by_client":
       case "canceled_by_partner":
-        return "red"; // Red
+        return colors.error; 
       case "failed_pickup":
       case "failed_delivery":
-        return "#C0392B"; // Dark Red
+        return colors.error; 
       case "go_to_pickup":
-        return "#FFA500"; // Yellow
+        return colors.orange; 
       default:
         return colors.gray;
     }
@@ -104,37 +104,37 @@ export const Card = ({ order ,refresh}) => {
   const getStatusTranslation = (status) => {
     switch (status.toLowerCase()) {
       case "pending":
-        return t('history.status.pending');
+        return t("history.status.pending");
       case "dispatched_to_partner":
-        return t('history.status.dispatched_to_partner');
+        return t("history.status.dispatched_to_partner");
       case "assigned_to_driver":
-        return t('history.status.assigned_to_driver');
+        return t("history.status.assigned_to_driver");
       case "driver_on_route_to_pickup":
-        return t('history.status.driver_on_route_to_pickup');
+        return t("history.status.driver_on_route_to_pickup");
       case "arrived_at_pickup":
-        return t('history.status.arrived_at_pickup');
+        return t("history.status.arrived_at_pickup");
       case "picked_up":
-        return t('history.status.picked_up');
+        return t("history.status.picked_up");
       case "on_route_to_delivery":
-        return t('history.status.on_route_to_delivery');
+        return t("history.status.on_route_to_delivery");
       case "arrived_at_delivery":
-        return t('history.status.arrived_at_delivery');
+        return t("history.status.arrived_at_delivery");
       case "delivered":
-        return t('history.status.delivered');
+        return t("history.status.delivered");
       case "completed":
-        return t('history.status.completed');
+        return t("history.status.completed");
       case "canceled_by_client":
-        return t('history.status.canceled_by_client');
+        return t("history.status.canceled_by_client");
       case "canceled_by_partner":
-        return t('history.status.canceled_by_partner');
+        return t("history.status.canceled_by_partner");
       case "failed_pickup":
-        return t('history.status.failed_pickup');
+        return t("history.status.failed_pickup");
       case "failed_delivery":
-        return t('history.status.failed_delivery');
+        return t("history.status.failed_delivery");
       case "go_to_pickup":
-        return t('history.status.go_to_pickup');
+        return t("history.status.go_to_pickup");
       default:
-        return t('history.status.unknown');
+        return t("history.status.unknown");
     }
   };
 
@@ -151,14 +151,14 @@ export const Card = ({ order ,refresh}) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.orderInfo}>
-            <Ionicons name="receipt-outline" size={hp(2.5)} color={colors.primary} />
+            <Ionicons name="receipt-outline" size={hp(2.5)} color={colors.textPrimary} />
             <Text style={styles.title}>#{order.refNumber}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.commandStatus) }]}>
             <Ionicons 
               name={getStatusIcon(order.commandStatus)} 
               size={hp(1.8)} 
-              color={"#fff"} 
+              color={colors.textInverse} 
               style={styles.statusIcon}
             />
             <Text style={styles.statusText}>{getStatusTranslation(order.commandStatus)}</Text>
@@ -168,22 +168,22 @@ export const Card = ({ order ,refresh}) => {
         {/* Body */}
         <View style={styles.body}>
           <View style={styles.infoRow}>
-            <Ionicons name="person-outline" size={hp(2)} color={colors.primary} />
-            <Text style={styles.label}>
+            <Ionicons name="person-outline" size={hp(2)} color={colors.textSecondary} />
+            <Text style={styles.label} numberOfLines={1}>
               {order?.driver?.firstName} {order?.driver?.lastName}
             </Text>
           </View>
           
           <View style={styles.infoRow}>
-            <Ionicons name="location-outline" size={hp(2)} color={colors.primary} />
+            <Ionicons name="location-outline" size={hp(2)} color={colors.textSecondary} />
             <Text style={styles.label} numberOfLines={1}>
-              {order?.dropOfAddress?.Address?.replace(/"/g, '')}
+              {order?.dropOfAddress?.Address?.replace(/"/g, "")}
             </Text>
           </View>
           
           <View style={styles.infoRow}>
-            <Ionicons name="card-outline" size={hp(2)} color={colors.primary} />
-            <Text style={styles.label}>
+            <Ionicons name="card-outline" size={hp(2)} color={colors.textSecondary} />
+            <Text style={styles.label} numberOfLines={1}>
               {t(order.payType)}
             </Text>
           </View>
@@ -192,7 +192,7 @@ export const Card = ({ order ,refresh}) => {
         {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={hp(1.8)} color={colors.primary} />
+            <Ionicons name="calendar-outline" size={hp(1.8)} color={colors.textSecondary} />
             <Text style={styles.date}>{new Date(order.createdAt).toLocaleString()}</Text>
           </View>
         </View>
@@ -203,14 +203,18 @@ export const Card = ({ order ,refresh}) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    borderRadius: hp(2),
+    backgroundColor: colors.backgroundPrimary,
+    borderRadius: 16,
     padding: hp(2.5),
     marginVertical: hp(1),
-    marginHorizontal: hp(2),
-    borderWidth: 3,
-    borderColor: "#ccc",
-   
+    marginHorizontal: wp(4),
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   header: {
     flexDirection: "row",
@@ -226,48 +230,48 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: hp(2.2),
-    fontWeight: "bold",
-    color: colors.primary,
+    fontWeight: "700",
+    color: colors.textPrimary,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: hp(0.5),
-    paddingHorizontal: wp(2),
-    borderRadius: hp(1.5),
+    paddingVertical: hp(0.8),
+    paddingHorizontal: wp(3),
+    borderRadius: 20,
     gap: wp(1),
-    width:110
+    minWidth: wp(25),
+    justifyContent: "center",
   },
   statusIcon: {
     marginRight: wp(1),
   },
   statusText: {
-    fontSize: hp(1.5),
-    color: "#fff",
+    fontSize: hp(1.6),
+    color: colors.textInverse,
     textTransform: "capitalize",
     fontWeight: "600",
-    maxWidth: wp(40),
   },
   body: {
     gap: hp(1.5),
-    backgroundColor: colors.lightPrimary + '10',
-    padding: hp(1.5),
-    borderRadius: hp(1),
+    backgroundColor: colors.backgroundSecondary,
+    padding: hp(2),
+    borderRadius: 12,
+    marginBottom: hp(2),
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: wp(2),
+    gap: wp(3),
   },
   label: {
-    fontSize: hp(1.7),
-    color: colors.darkGray,
+    fontSize: hp(1.8),
+    color: colors.textPrimary,
     flex: 1,
   },
   footer: {
-    borderTopWidth:3,
-    borderTopColor: "#ccc",
-   // marginTop: hp(1),
+    borderTopWidth: 1,
+    borderTopColor: colors.borderLight,
     paddingTop: hp(1.5),
   },
   dateContainer: {
@@ -276,8 +280,9 @@ const styles = StyleSheet.create({
     gap: wp(2),
   },
   date: {
-    fontSize: hp(1.5),
-    color: "#0c0c0c",
+    fontSize: hp(1.6),
+    color: colors.textSecondary,
     fontWeight: "500",
   },
 });
+

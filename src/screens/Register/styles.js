@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {widthPercentageToDP as wp} from 'react-native-responsive-screen';
+import {widthPercentageToDP as wp, heightPercentageToDP as hp} from 'react-native-responsive-screen';
 import {colors} from '../../utils/colors';
 
 export const styles = StyleSheet.create({
@@ -7,48 +7,74 @@ export const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'black',
+    backgroundColor: colors.backgroundPrimary,
   },
   inputContainer: {
-    width: wp('100%'),
-    gap: 15,
+    width: wp('90%'),
+    gap: hp(2.5),
   },
   input: {
-    width: wp('100%'),
-    marginBottom: 10,
+    width: '100%',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    paddingHorizontal: wp(4),
+    paddingVertical: hp(1.8),
+    fontSize: hp(1.8),
+    color: colors.textPrimary,
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   btn: {
-    padding: 20,
-    backgroundColor: '#0c0c0c',
-    borderRadius: 20,
-    marginTop: 30,
+    paddingVertical: hp(2),
+    backgroundColor: colors.uberBlack,
+    borderRadius: 12,
+    marginTop: hp(3),
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.uberBlack,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   btnText: {
-    color: 'black',
+    color: colors.textInverse,
     textAlign: 'center',
+    fontSize: hp(2),
+    fontWeight: '700',
   },
   stepContainer: {
     flex: 1,
     alignItems: 'flex-start',
     justifyContent: 'center',
-    paddingHorizontal: 20,
-    gap: 30,
+    paddingHorizontal: wp(5),
+    gap: hp(3),
   },
   title: {
-    fontWeight: '900',
-    color: 'white',
-    fontSize: 24,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontSize: hp(3.2),
   },
   inputLabel: {
     fontWeight: '600',
-    color: 'white',
-    fontSize: 20,
+    color: colors.textPrimary,
+    fontSize: hp(1.8),
+    marginBottom: hp(1),
   },
   errorText: {
-    color: 'red',
+    color: colors.error,
+    fontSize: hp(1.5),
+    marginTop: hp(0.5),
+    marginLeft: wp(1),
   },
   buttonContainer: {
     alignSelf: 'center',
-    width: wp('100%'),
+    width: wp('90%'),
   },
-}); 
+});
+

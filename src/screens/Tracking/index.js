@@ -58,10 +58,10 @@ const Tracking = ({order, timer}) => {
       setRegion({
         latitude:
           order?.attributes?.driver_id?.data?.attributes?.accountOverview[0]
-            ?.position?.coords?.latitude,
+            ?.position?.coords?.latitude || order?.driver_id?.location?.latitude || 48.8566,
         longitude:
           order?.attributes?.driver_id?.data?.attributes?.accountOverview[0]
-            ?.position?.coords?.longitude,
+            ?.position?.coords?.longitude || order?.driver_id?.location?.longitude || 2.3522,
         latitudeDelta,
         longitudeDelta,
       });
@@ -69,51 +69,56 @@ const Tracking = ({order, timer}) => {
   }, [order]);
 
   const handleAnimateToDriverPosition = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: driverPosition[0],
-          longitude: driverPosition[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+    if (mapRef.current && driverPosition[0] !== 0 && driverPosition[1] !== 0) {
+      // For Mapbox, we'll use the camera ref from TrackingMap component
+      // This will be handled by the TrackingMap component's camera animation
+      const cameraUpdate = {
+        centerCoordinate: [driverPosition[1], driverPosition[0]],
+        zoomLevel: 16,
+        animationDuration: 1000,
+        animationMode: 'easeTo',
+      };
+      
+      // Trigger camera animation through map reference
+      if (mapRef.current.setCamera) {
+        mapRef.current.setCamera(cameraUpdate);
+      }
     }
   };
 
   const handleAnimateToPickupPosition = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: pickupCoordinate[0],
-          longitude: pickupCoordinate[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+    if (mapRef.current && pickupCoordinate[0] !== 0 && pickupCoordinate[1] !== 0) {
+      const cameraUpdate = {
+        centerCoordinate: [pickupCoordinate[1], pickupCoordinate[0]],
+        zoomLevel: 16,
+        animationDuration: 1000,
+        animationMode: 'easeTo',
+      };
+      
+      if (mapRef.current.setCamera) {
+        mapRef.current.setCamera(cameraUpdate);
+      }
     }
   };
 
   const handleAnimateToDropPosition = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: dropCoordinate[0],
-          longitude: dropCoordinate[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+    if (mapRef.current && dropCoordinate[0] !== 0 && dropCoordinate[1] !== 0) {
+      const cameraUpdate = {
+        centerCoordinate: [dropCoordinate[1], dropCoordinate[0]],
+        zoomLevel: 16,
+        animationDuration: 1000,
+        animationMode: 'easeTo',
+      };
+      
+      if (mapRef.current.setCamera) {
+        mapRef.current.setCamera(cameraUpdate);
+      }
     }
   };
 
   const handleMapReady = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 1000);
-    }
+    // Map is ready, initial camera position will be set by TrackingMap component
+    console.log('Mapbox map is ready');
   };
 
   return (

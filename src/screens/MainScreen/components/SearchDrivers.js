@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions, Image, I18nManager } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, PanResponder, Dimensions, Image, I18nManager, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
@@ -22,12 +22,7 @@ import {
 } from '../../../utils/analytics';
 import { isPointInPolygon } from '../../../utils/helpers/mapUtils';
 
-const avatarUrls = [
-  'https://randomuser.me/api/portraits/men/32.jpg',
-  'https://randomuser.me/api/portraits/women/44.jpg',
-  'https://randomuser.me/api/portraits/men/65.jpg',
-  'https://randomuser.me/api/portraits/women/12.jpg',
-];
+ 
 
 const SearchDriversComponent = ({ goBack, formData }) => {
   const { t } = useTranslation();
@@ -44,6 +39,130 @@ const SearchDriversComponent = ({ goBack, formData }) => {
   const [redZones, setRedZones] = useState([]);
   const [inRedZone, setInRedZone] = useState(false);
   const [redZonesChecked, setRedZonesChecked] = useState(false);
+  const [searchStep, setSearchStep] = useState(0); // 0: initial, 1: searching, 2: found
+  const [searchProgress, setSearchProgress] = useState(0);
+  const searchStartTime = useRef(Date.now());
+  const [avatarUrls, setAvatarUrls] = useState([]);
+  
+  // Animation values
+  const slideAnim = useRef(new Animated.Value(300)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+
+  // Generate random avatar URLs on component mount
+  useEffect(() => {
+    const generateRandomAvatars = () => {
+      const baseUrl = 'https://randomuser.me/api/portraits/';
+      const genders = ['men', 'women'];
+      const randomAvatars = [];
+      
+      for (let i = 0; i < 4; i++) {
+        const gender = genders[Math.floor(Math.random() * genders.length)];
+        const randomId = Math.floor(Math.random() * 99) + 1;
+        randomAvatars.push(`${baseUrl}${gender}/${randomId}.jpg`);
+      }
+      
+      setAvatarUrls(randomAvatars);
+    };
+
+    generateRandomAvatars();
+  }, []);
+
+  // Initialize animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Start search animations
+    startSearchAnimations();
+  }, []);
+
+  const startSearchAnimations = () => {
+    // Pulse animation for search indicator
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Ripple animation
+    Animated.loop(
+      Animated.timing(rippleAnim, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      })
+    ).start();
+  };
+
+  // Start progress animation when search begins
+  const startProgressAnimation = () => {
+    // Reset progress animation
+    progressAnim.setValue(0);
+    
+    // Start progress animation with search duration
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 30000, // 30 seconds search - sync with search timeout
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // Start fast progress animation when no driver found
+  const startFastProgressAnimation = () => {
+    // Use a simple approach - just complete the progress in 5 seconds
+    Animated.timing(progressAnim, {
+      toValue: 1,
+      duration: 5000, // 5 seconds to complete
+      useNativeDriver: false,
+    }).start((finished) => {
+      if (finished) {
+        // Go back first, then show toast
+        goBack();
+        // Show toast after a short delay to ensure navigation is complete
+        setTimeout(() => {
+          Toast.show({
+            type: 'error',
+            text1: t('common.no_driver_accepted'),
+            visibilityTime: 2000,
+            onPress: () => {}
+          });
+        }, 500);
+      }
+    });
+  };
+
+  // Track step view
+  useEffect(() => {
+    trackBookingStepViewed('search_drivers');
+  }, []);
 
   // Fetch red zones on mount
   useEffect(() => {
@@ -52,8 +171,10 @@ const SearchDriversComponent = ({ goBack, formData }) => {
         const response = await api.get('/red-zones');
         const zones = response?.data?.data || response?.data || [];
         setRedZones(zones.filter(z => z.active));
+        setRedZonesChecked(true);
       } catch (err) {
         setRedZones([]);
+        setRedZonesChecked(true);
       }
     };
     fetchRedZones();
@@ -74,8 +195,6 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       }
     }
     setInRedZone(foundRedZone);
-    setRedZonesChecked(true);
-  
   }, [redZones, formData?.pickupAddress, formData?.dropAddress]);
 
   // If inRedZone, show search UI for 30s, then show no_driver_accepted and goBack
@@ -92,11 +211,6 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     }, 30000);
     return () => clearTimeout(timer);
   }, [inRedZone]);
-
-  // Track step view
-  useEffect(() => {
-    trackBookingStepViewed(5, 'Searching Drivers');
-  }, []);
 
   // Fetch parameters from API
   useEffect(() => {
@@ -136,8 +250,11 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     });
   };
 
-  const handleCancel = () => {
-    trackBookingStepBack(5, 'Searching Drivers');
+  const handleCancelSearch = () => {
+    // Stop progress animation
+    progressAnim.stopAnimation();
+    
+    trackBookingStepBack('search_drivers');
     trackRideCancelled('user_cancelled', {
       step: 5,
       search_duration: Date.now() - searchStartTime.current
@@ -145,10 +262,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     goBack();
   };
 
-  const searchStartTime = useRef(Date.now());
-
   const searchDrivers = async () => {
-   
     // Reset the searching flag to ensure the while loop can start
     isSearchingRef.current = true;
     stepRef.current = 5;
@@ -159,7 +273,6 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     let currentDriverId = null;
     
     try {
-       
       // Validate required formData
       if (!formData?.pickupAddress?.latitude || !formData?.pickupAddress?.longitude) {
         throw new Error('Pickup address coordinates are required');
@@ -180,22 +293,20 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       }
       requestRef.current = newRequestRef;
 
-        
       // Use set to create the initial request object
-       await set(newRequestRef, {
-        
+      await set(newRequestRef, {
         status: 'searching',
         createdAt: Date.now(),
         user: user,
         pickupAddress: formData.pickupAddress,
         dropoffAddress: formData.dropAddress,
-        dropAddress:formData.dropAddress,
+        dropAddress: formData.dropAddress,
         vehicleType: formData.vehicleType,
         notifiedDrivers: {},
-        price:formData.price,
-        distance:formData.distance,
-        reservation:formData.selectedDate!=null,
-        time:formData.time
+        price: formData.price,
+        distance: formData.distance,
+        reservation: formData.selectedDate != null,
+        time: formData.time
       });
 
       // Main listener for request status changes
@@ -207,6 +318,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
         const data = snapshot.val();
         if (data && data.status === 'accepted') {
           setAccepted(true);
+          setSearchStep(2);
           isSearchingRef.current = false;
           stepRef.current = 0;
           unsubscribe();
@@ -214,6 +326,9 @@ const SearchDriversComponent = ({ goBack, formData }) => {
           if (currentDriverTimeout) {
             clearTimeout(currentDriverTimeout);
           }
+          
+          // Stop progress animation
+          progressAnim.stopAnimation();
          
           // Track driver found
           trackDriverFound(data.driverId, {
@@ -396,7 +511,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     
       // Main search loop
       const maxRadius = parameters?.min_radius_search || 4; // Fallback to 4 if not defined
-       while (accepted === null && radius <= maxRadius && isSearchingRef.current) {
+      while (accepted === null && radius <= maxRadius && isSearchingRef.current) {
         if (!isSearchingRef.current) {
           break;
         }
@@ -449,15 +564,11 @@ const SearchDriversComponent = ({ goBack, formData }) => {
           drivers_notified: Object.keys(processedDriversRef.current).length
         });
         
-        Toast.show({
-          type: 'error',
-          text1: t('common.no_driver_accepted'),
-          visibilityTime: 2000,
-          onPress: () => {}
-        });
-        
+      
         setDriversIdsNotAccepted([]);
-        goBack();
+        
+        // Start fast progress animation and wait for completion before going back
+        startFastProgressAnimation();
       }
 
       unsubscribe();
@@ -473,6 +584,9 @@ const SearchDriversComponent = ({ goBack, formData }) => {
         off(requestRef.current);
       }
       
+      // Stop progress animation
+      progressAnim.stopAnimation();
+      
       // Track search error
       trackRideCancelled('search_error', {
         error_message: error.message,
@@ -487,26 +601,26 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       });
     }
   };
- 
+
+  // Start driver search
   useEffect(() => {
     console.log("SearchDrivers useEffect triggered");
     console.log("Parameters loaded:", parameters);
     console.log("Form data:", formData);
-    if (!redZonesChecked) {
-      console.log("Red zones not checked yet, waiting...");
-      return;
-    }
-    if (inRedZone) {
+    if(inRedZone){
       console.log("In red zone, skipping searchDrivers and showing search UI for 30s");
       return;
-    }
-    setDrivers(generateCenteredPositions(avatarUrls));
-    // Only start searching when parameters and redZonesChecked are loaded and not in red zone
-    if (parameters && redZonesChecked && !inRedZone) {
+    } 
+    
+    // Only start searching when parameters are loaded and avatarUrls are ready
+    if (parameters && !inRedZone && avatarUrls.length > 0) {
       console.log("Starting searchDrivers function");
+      setDrivers(generateCenteredPositions(avatarUrls));
+      setSearchStep(1);
+      startProgressAnimation(); // Start progress animation
       searchDrivers();
     } else {
-      console.log("Parameters or red zone check not loaded yet, waiting...");
+      console.log("Parameters not loaded yet, waiting...");
     }
 
     return () => {
@@ -516,6 +630,9 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       stepRef.current = 0;
       // Clear any pending timeouts
       clearTimeout();
+      
+      // Stop progress animation
+      progressAnim.stopAnimation();
       
       // Check if the request exists and its status before removing
       if (requestRef.current) {
@@ -532,248 +649,454 @@ const SearchDriversComponent = ({ goBack, formData }) => {
         });
       }
     }
-  }, [parameters, redZonesChecked, inRedZone]);
+  }, [parameters]);
 
-  // Swipe overlay logic
- 
- 
-  
+  const renderSearchContent = () => {
+    switch (searchStep) {
+      case 0:
+        return (
+          <View style={searchStyles.contentContainer}>
+            <Text style={searchStyles.title}>
+              {t('preparing_search', 'Preparing your request...')}
+            </Text>
+            <ActivityIndicator size="large" color="#000" style={searchStyles.loader} />
+          </View>
+        );
+      
+      case 1:
+        return (
+          <View style={searchStyles.contentContainer}>
+            {/* Animated Search Indicator */}
+            <View style={searchStyles.searchIndicatorContainer}>
+              {/* Ripple effects */}
+              {[0, 1, 2].map((index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    searchStyles.ripple,
+                    {
+                      opacity: rippleAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.8, 0],
+                      }),
+                      transform: [
+                        {
+                          scale: rippleAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.5, 2],
+                          }),
+                        },
+                      ],
+                      animationDelay: index * 700,
+                    },
+                  ]}
+                />
+              ))}
+              
+              {/* Central search icon */}
+              <Animated.View
+                style={[
+                  searchStyles.searchIcon,
+                  {
+                    transform: [{ scale: pulseAnim }],
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons name="car" size={40} color="#fff" />
+              </Animated.View>
+            </View>
 
- 
+            <Text style={searchStyles.title}>
+              {t('searching_drivers', 'Searching for drivers')}
+            </Text>
+            
+            <Text style={searchStyles.subtitle}>
+              {t('finding_best_driver', 'Finding the best driver for you...')}
+            </Text>
+
+            {/* Progress Bar */}
+            <View style={searchStyles.progressContainer}>
+              <Animated.View
+                style={[
+                  searchStyles.progressBar,
+                  {
+                    width: progressAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0%', '100%'],
+                    }),
+                  },
+                ]}
+              />
+            </View>
+
+            {/* Driver Avatars Animation */}
+            <View style={searchStyles.driversContainer}>
+              {avatarUrls.map((url, index) => (
+                <Animated.View
+                  key={index}
+                  style={[
+                    searchStyles.driverAvatar,
+                    {
+                      opacity: progressAnim.interpolate({
+                        inputRange: [index * 0.25, (index + 1) * 0.25],
+                        outputRange: [0.3, 1],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [
+                        {
+                          scale: progressAnim.interpolate({
+                            inputRange: [index * 0.25, (index + 1) * 0.25],
+                            outputRange: [0.8, 1],
+                            extrapolate: 'clamp',
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Image source={{ uri: url }} style={searchStyles.avatarImage} />
+                </Animated.View>
+              ))}
+            </View>
+          </View>
+        );
+      
+      case 2:
+        return (
+          <View style={searchStyles.contentContainer}>
+            <Animated.View
+              style={[
+                searchStyles.successContainer,
+                {
+                  transform: [{ scale: scaleAnim }],
+                },
+              ]}
+            >
+              <MaterialCommunityIcons name="check-circle" size={80} color="#4CAF50" />
+              
+              <Text style={searchStyles.successTitle}>
+                {t('driver_found', 'Driver Found!')}
+              </Text>
+              
+              {accepted?.driver_data && (
+                <View style={searchStyles.driverInfo}>
+                  <Image 
+                    source={{ uri: accepted.driver_data.avatar || avatarUrls[0] }} 
+                    style={searchStyles.driverImage} 
+                  />
+                  <Text style={searchStyles.driverName}>
+                    {accepted.driver_data.name}
+                  </Text>
+                  <View style={searchStyles.ratingContainer}>
+                    <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
+                    <Text style={searchStyles.rating}>
+                      {accepted.driver_data.rating || '4.8'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              
+              <Text style={searchStyles.successMessage}>
+                {t('redirecting_tracking', 'Redirecting to tracking...')}
+              </Text>
+            </Animated.View>
+          </View>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  if (inRedZone) {
+    return (
+      <Animated.View 
+        style={[
+          searchStyles.container,
+          {
+            transform: [{ translateY: slideAnim }],
+            opacity: fadeAnim,
+          }
+        ]}
+      >
+        <View style={searchStyles.redZoneContainer}>
+          <MaterialCommunityIcons name="map-marker-off" size={80} color="#FF5722" />
+          <Text style={searchStyles.redZoneTitle}>
+            {t('service_unavailable', 'Service Unavailable')}
+          </Text>
+          <Text style={searchStyles.redZoneMessage}>
+            {t('red_zone_description', 'Pickup service is not available in this area. Please choose a different location.')}
+          </Text>
+          
+          <TouchableOpacity
+            style={searchStyles.backButton}
+            onPress={goBack}
+            activeOpacity={0.8}
+          >
+            <Text style={searchStyles.backButtonText}>
+              {t('choose_different_location', 'Choose Different Location')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    );
+  }
 
   return (
-    <View style={localStyles.container}>
-    {/* Status Header */}
-    <View style={{ alignItems: 'center', marginTop: hp(2) }}>
-      <View style={localStyles.statusIconWrapper}>
-        <MaterialCommunityIcons name="progress-clock" size={32} color="#030303" />
+    <Animated.View 
+      style={[
+        searchStyles.container,
+        {
+          transform: [{ translateY: slideAnim }],
+          opacity: fadeAnim,
+        }
+      ]}
+    >
+      {/* Header */}
+      <View style={searchStyles.header}>
+        <TouchableOpacity 
+          style={searchStyles.headerBackButton}
+          onPress={handleCancelSearch}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons 
+            name={I18nManager.isRTL ? "chevron-right" : "chevron-left"} 
+            size={28} 
+            color="#000" 
+          />
+        </TouchableOpacity>
+        
+        <Text style={searchStyles.headerTitle}>
+          {searchStep === 2 ? t('driver_found', 'Driver Found!') : t('finding_driver', 'Finding Driver')}
+        </Text>
       </View>
-      <Text style={localStyles.statusTitle}>{t("booking.step3.searching_ride")}</Text>
-      <Text style={localStyles.statusSubtitle}>{t("booking.step3.it_may_take_some_time")}</Text>
-    </View>
 
-    {/* Waves */}
-    <View style={localStyles.animationWrapper}>
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        flexDirection: "column",
-      }}
-    >
-     <Ring delay={0} />
-      <Ring delay={1000} />
-      <Ring delay={2000} />
-      <Ring delay={2500} />
-      <Ring delay={3000} />
-      
-    </View>
+      {/* Main Content */}
+      <Animated.View
+        style={[
+          searchStyles.mainContent,
+          {
+            transform: [{ scale: scaleAnim }],
+          }
+        ]}
+      >
+        {renderSearchContent()}
+      </Animated.View>
 
-     
-      
-    </View>
- 
-
-
-<Slider
- 
-  onEndReached={handleCancel}
-  containerStyle={{
-    
-    backgroundColor: '#ddd',
-    borderRadius: 10,
-    overflow: 'hidden',
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '95%',
-    zIndex:9999999
-  }}
-  sliderElement={
-    <View
-      style={{
-        width: 50,
-       // margin: 4,
-        borderRadius: 5,
-        height: 60,
-        backgroundColor:"#0c0c0c",
-        alignItems:"center",
-        justifyContent:"center"
-      }}
-      
-    >
-        <MaterialCommunityIcons name={I18nManager.isRTL?"arrow-left":"arrow-right"} size={32} color="#fff" />
-    </View>
-  }
-  
->
-  <Text>{I18nManager.isRTL ? t('booking.step3.swipe_left_to_cancel') : t('booking.step3.swipe_right_to_cancel')}</Text>
-</Slider>
-
-    {/* Add 4 fake drivers with avatars in random positions */}
-    <View style={{ position: 'absolute', width: '100%', height: '100%', }}>
-      {drivers.map(driver => (
-        <View key={driver.key} style={[localStyles.driverAvatar, driver]}>
-          <Image source={{ uri: driver.avatar }} style={localStyles.avatarImg} />
+      {/* Cancel Button */}
+      {searchStep === 1 && (
+        <View style={searchStyles.cancelContainer}>
+          <TouchableOpacity
+            style={searchStyles.cancelButton}
+            onPress={handleCancelSearch}
+            activeOpacity={0.8}
+          >
+            <Text style={searchStyles.cancelButtonText}>
+              {t('cancel_search', 'Cancel Search')}
+            </Text>
+          </TouchableOpacity>
         </View>
-      ))}
-    </View>
-  </View>
+      )}
+    </Animated.View>
   );
 };
 
-const localStyles = StyleSheet.create({
+const searchStyles = StyleSheet.create({
   container: {
+    flex: 1,
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 18,
-    margin: 16,
-     flex:1,
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-    
-  },
-  statusIconWrapper: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 8,
-    marginBottom: 8,
-  },
-  statusTitle: {
-    fontWeight: '700',
-    fontSize: hp(2.5),
-    color: '#fff',
-    marginTop: 4,
-  },
-  statusSubtitle: {
-    color: '#BDBDBD',
-    fontSize: hp(1.7),
-    marginTop: 2,
-    marginBottom: 10,
-  },
-  animationWrapper: {
-    flex: 1.5, // Make animation area bigger
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: hp(2),
-    minHeight: 350,
-  },
-  circle: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#000',
-    borderStyle: 'dashed',
-    borderRadius: 200,
-  },
-  circleLarge: {
-    width: 260,
-    height: 260,
-    top: '10%',
-    left: '50%',
-    marginLeft: -130,
-  },
-  circleMedium: {
-    width: 180,
-    height: 180,
-    top: '22%',
-    left: '50%',
-    marginLeft: -90,
-  },
-  circleSmall: {
-    width: 110,
-    height: 110,
-    top: '30%',
-    left: '50%',
-    marginLeft: -55,
-  },
-  carWrapper: {
-    position: 'absolute',
-    top: '48%',
-    left: '50%',
-    marginLeft: -24,
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    padding: 12,
-    zIndex: 2,
-    elevation: 2,
-  },
-  avatarWrapper: {
-    position: 'absolute',
-    zIndex: 3,
-    alignItems: 'center',
-  },
-  driverBubble: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    position: 'absolute',
-    top: 50,
-    left: -30,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  driverName: {
-    fontWeight: '700',
-    color: '#fff',
-    fontSize: hp(1.7),
-  },
-  driverDistance: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-  },
-  cancelWrapper: {
-    alignItems: 'center',
-    marginBottom: hp(4),
-    zIndex:1000,
-  },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 30,
     paddingHorizontal: 24,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-    minWidth: 220,
+    paddingTop: 20,
   },
-  cancelText: {
-    color: '#BDBDBD',
-    fontWeight: '600',
-    fontSize: hp(2),
-    marginLeft: 8,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 40,
   },
-  swipeHint: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-    marginTop: 8,
-  },
-  driverAvatar: {
-    position: 'absolute',
-    zIndex: 10,
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 2,
-    elevation: 3,
-  },
-  avatarImg: {
+  headerBackButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    resizeMode: 'cover',
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#000',
+  },
+  mainContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  contentContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  searchIndicatorContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  ripple: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  searchIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  progressContainer: {
+    width: '100%',
+    height: 4,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 2,
+    marginBottom: 40,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#000',
+    borderRadius: 2,
+  },
+  driversContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
+  driverAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  loader: {
+    marginTop: 40,
+  },
+  successContainer: {
+    alignItems: 'center',
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#000',
+    marginTop: 24,
+    marginBottom: 32,
+  },
+  driverInfo: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  driverImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 12,
+  },
+  driverName: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  rating: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 4,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+  cancelContainer: {
+    paddingBottom: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+  },
+  redZoneContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  redZoneTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FF5722',
+    textAlign: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  redZoneMessage: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 40,
+  },
+  backButton: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
-export default memo(SearchDriversComponent); 
+export default memo(SearchDriversComponent);
+

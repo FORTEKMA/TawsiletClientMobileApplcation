@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, I18nManager, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Image, I18nManager, Modal, Animated, Easing, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { styles } from '../styles';
@@ -19,9 +19,39 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   const user = useSelector(state => state.user.currentUser);
   const [loading, setLoading] = useState(true);
   const [price, setPrice] = useState(0);
+  const [priceData, setPriceData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
+  // Animation values
+  const slideAnim = React.useRef(new Animated.Value(300)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.8)).current;
+  const buttonScaleAnim = React.useRef(new Animated.Value(1)).current;
  
+  // Initialize animations
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 400,
+        easing: Easing.out(Easing.back(1.2)),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   // Get vehicle info from formData
   const getVehicleInfo = () => {
     if (!formData?.vehicleType) {
@@ -41,73 +71,53 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     const currentLang = i18nInstance.language;
     switch (currentLang) {
       case 'ar':
-        return vehicle.name_ar || vehicle.name_en || 'Vehicle';
+        return vehicle.name_ar || vehicle.name_en || t('confirm_ride.vehicle');
       case 'fr':
-        return vehicle.name_fr || vehicle.name_en || 'Vehicle';
+        return vehicle.name_fr || vehicle.name_en || t('confirm_ride.vehicle');
       default:
-        return vehicle.name_en || 'Vehicle';
+        return vehicle.name_en || t('confirm_ride.vehicle');
     }
   };
 
- 
-
-  // Get default description based on vehicle ID
+  // Get default description for vehicle
   const getDefaultDescription = (vehicleId) => {
     switch (vehicleId) {
       case 1:
-        return 'eco_description';
+        return t('confirm_ride.vehicle_economy_desc');
       case 2:
-        return 'berline_description';
+        return t('confirm_ride.vehicle_comfort_desc');
       case 3:
-        return 'van_description';
+        return t('confirm_ride.vehicle_premium_desc');
       default:
-        return 'eco_description';
+        return t('confirm_ride.vehicle_standard_desc');
     }
   };
 
   // Track step view
   useEffect(() => {
-    trackBookingStepViewed(4, 'Ride Confirmation');
+    trackBookingStepViewed('confirm_ride');
   }, []);
 
   useEffect(() => {
-    const getData = async () => {
-      try {
-        setLoading(true);
-      
-        const response = await calculatePrice(formData)
-        setPrice(response.price);
-        setLoading(false);
-      } catch (error) {
-        console.log(error)
-        goBack()
-        setLoading(false);
+    calculateRidePrice();
+  }, [formData]);
+
+  const calculateRidePrice = async () => {
+    setLoading(true);
+    try {
+      if (formData?.distance && formData?.vehicleType) {
+       
+        const calculatedPriceData = await calculatePrice(formData);
+        setPrice(calculatedPriceData.price);
+        setPriceData(calculatedPriceData);
       }
-    
+    } catch (error) {
+      console.error('Error calculating price:', error);
+    } finally {
+      setLoading(false);
     }
-    getData();
-  }, [rideData]);
-
-  const splitDateTime=(isoString)=> {
-    const date = new Date(isoString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const departDate = `${year}-${month}-${day}`;
-    
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
-    const departTime = `${hours}:${minutes}:${seconds}.${milliseconds}`;
-  
-    return { departDate, deparTime: departTime };
-  }
-
-  const handleBack = () => {
-    trackBookingStepBack(4, 'Ride Confirmation');
-    goBack();
   };
+
 
   const handleConfirm = () => {
     trackBookingStepCompleted(4, 'Ride Confirmation', {
@@ -119,6 +129,8 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     });
     goNext({ price });
   };
+
+
 
   const handleReservation = async () => {
     try {
@@ -168,360 +180,385 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     }
   }
 
-  if (loading) {
-    return (
-      <View style={[localStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#030303" />
-      </View>
-    );
-  }
+  
+  const handleConfirmRide = async () => {
+    formData?.selectedDate != undefined ? handleReservation() : handleConfirm()
+  };
+
+  const handleBack = () => {
+    trackBookingStepBack('confirm_ride');
+    goBack();
+  };
+
+  const formatPrice = (price) => {
+    return `${price.toFixed(2)} ${t('common.currency')}`;
+  };
+
+  const formatDateTime = (date) => {
+    if (!date) return t('confirm_ride.now');
+    
+    const now = new Date();
+    const selectedDate = new Date(date);
+    const diffInMinutes = Math.floor((selectedDate - now) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return t('confirm_ride.in_minutes', { minutes: diffInMinutes });
+    } else if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return hours === 1 
+        ? t('confirm_ride.in_hours', { hours: hours })
+        : t('confirm_ride.in_hours_plural', { hours: hours });
+    } else {
+      return selectedDate.toLocaleDateString() + ' ' + selectedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+  };
 
   const vehicleInfo = getVehicleInfo();
 
-  // Show error if no vehicle info is available
-  if (!vehicleInfo) {
-    return (
-      <View style={[localStyles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <MaterialCommunityIcons name="car-off" size={48} color="#BDBDBD" />
-        <Text style={{ fontSize: hp(1.8), color: '#030303', marginTop: 15, textAlign: 'center' }}>
-          Vehicle information not available
-        </Text>
-      </View>
-    );
-  }
-
   return (
-    <View style={localStyles.container}>
-      {/* Header */}
-      <View style={{ gap: 10, marginBottom: 18, marginTop: 10, flexDirection: 'row', alignItems: 'center', width: "100%" }}>
-        <TouchableOpacity
-          style={{ backgroundColor: '#fff', borderRadius: 20, padding: 6, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4, elevation: 2 }}
+    <Animated.View 
+      style={[
+        localStyles.container,
+        {
+          transform: [{ translateY: slideAnim }],
+          opacity: fadeAnim,
+        }
+      ]}
+    >
+      {/* Professional Header */}
+      <Animated.View 
+        style={[
+          localStyles.header,
+          {
+            transform: [{ scale: scaleAnim }],
+          }
+        ]}
+      >
+        <TouchableOpacity 
+          style={localStyles.backButton}
           onPress={handleBack}
+          activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name={I18nManager.isRTL?"arrow-right":"arrow-left"} size={28} color="#030303" />
+          <MaterialCommunityIcons 
+            name={I18nManager.isRTL ? "chevron-right" : "chevron-left"} 
+            size={24} 
+            color="#1a1a1a" 
+          />
         </TouchableOpacity>
-        <Text style={{ fontWeight: '700', fontSize: hp(2.2), color: '#030303', }}>{t('booking.step4.confirm_ride')}</Text>
-      </View>
-
-      {/* Car Type Card */}
-      <View style={localStyles.card}>
-        <View style={localStyles.row}>
-           <Image source={vehicleInfo.icon} style={{ width: 70, height: 70, marginRight: 12 }} />
-          <View style={{ flex: 1 }}>
-            <Text style={localStyles.carType}>{vehicleInfo.label}</Text>
-            <Text style={localStyles.carDescription}>{t(vehicleInfo.description)}</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Pickup & Dropoff */}
-      <View style={localStyles.infoCard}>
-      <View style={localStyles.pickupDropRow}>
-
-      <View style={{ 
-     
-      width: 20, 
-      height: 20, 
-      borderRadius: 10,
-      backgroundColor: '#030303',
-      borderWidth: 2,
-      borderColor: 'white',
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginHorizontal:4
- 
-    }}>
-      <View style={{
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: 'white'
-      }} />
-    </View>
-        <View>
-        <Text style={localStyles.label}>{t('pickup_point')}</Text>
-        <Text style={localStyles.boldText} numberOfLines={1} >{formData?.pickupAddress?.address}</Text>
-        </View>
         
-      
+        <View style={localStyles.headerContent}>
+          <Text style={localStyles.title}>
+            {t('confirm_ride.title')}
+          </Text>
+          <Text style={localStyles.subtitle}>
+            {t('confirm_ride.subtitle')}
+          </Text>
+        </View>
+      </Animated.View>
 
-      </View>
-
-      <View style={localStyles.verticalLine} />
-
-      <View style={[localStyles.pickupDropRow,{marginTop:30,}]}>
-
-      <View style={{ 
-    marginLeft:5,
-    marginRight:10,
-    width: 20, 
-    height: 20, 
-    backgroundColor: '#030303',
-    borderWidth: 2,
-    borderColor: 'white',
-    justifyContent: 'center',
-    alignItems: 'center',
-    //marginTop:20
-  }}>
-    <View style={{
-      width: 8,
-      height: 8,
-      backgroundColor: 'white'
-    }} />
-  </View>
-
-  <View>
-  <Text style={localStyles.label}>{t('pick_off')}</Text>
-    <Text style={localStyles.boldText} numberOfLines={1}>{formData?.dropAddress?.address}</Text>
-  </View>
-  
-
-
-</View>
-
-
-      </View>
-
-      {/* Scheduled Date Card - Show only if selectedDate exists */}
-      {formData?.selectedDate && (
-        <View style={localStyles.dateCard}>
-          <View style={localStyles.dateRow}>
-            <MaterialCommunityIcons name="calendar-clock" size={24} color="#030303" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={localStyles.dateLabel}>{t('scheduled_date')}</Text>
-              <Text style={localStyles.dateText}>
-                {new Date(formData.selectedDate).toLocaleDateString(i18nInstance.language === 'ar' ? 'ar-TN' : 'en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </Text>
+      {/* Main Content */}
+      <View style={localStyles.content}>
+        {/* Trip Summary Card */}
+        <Animated.View 
+          style={[
+            localStyles.tripCard,
+            {
+              transform: [{ scale: scaleAnim }],
+            }
+          ]}
+        >
+          {/* Route Information */}
+          <View style={localStyles.routeSection}>
+            <View style={localStyles.routeIndicator}>
+              <View style={localStyles.pickupDot} />
+              <View style={localStyles.routeLine} />
+              <View style={localStyles.dropoffDot} />
+            </View>
+            
+            <View style={localStyles.routeDetails}>
+              <View style={localStyles.locationItem}>
+                <Text style={localStyles.locationLabel}>
+                  {t('confirm_ride.pickup')}
+                </Text>
+                <Text style={localStyles.locationAddress} numberOfLines={1}>
+                  {formData.pickupAddress?.address || t('confirm_ride.current_location')}
+                </Text>
+              </View>
+              
+              <View style={localStyles.locationItem}>
+                <Text style={localStyles.locationLabel}>
+                  {t('confirm_ride.destination')}
+                </Text>
+                <Text style={localStyles.locationAddress} numberOfLines={1}>
+                  {formData.dropAddress?.address || t('confirm_ride.destination')}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      )}
+
+          {/* Trip Details */}
+          <View style={localStyles.tripDetails}>
+            <View style={localStyles.detailRow}>
+              <MaterialCommunityIcons name="clock-outline" size={20} color="#666" />
+              <Text style={localStyles.detailText}>
+                {formatDateTime(formData.selectedDate)}
+              </Text>
+            </View>
+            
+            <View style={localStyles.detailRow}>
+              <MaterialCommunityIcons name="map-marker-distance" size={20} color="#666" />
+              <Text style={localStyles.detailText}>
+                {priceData?.distance ? `${(priceData.distance).toFixed(1)} ${t('common.km')}` : t('confirm_ride.calculating')}
+              </Text>
+            </View>
+            
+            {vehicleInfo && (
+              <View style={localStyles.detailRow}>
+                <Image source={vehicleInfo.icon} style={localStyles.vehicleIcon} />
+                <Text style={localStyles.detailText}>
+                  {vehicleInfo.label}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Price Section */}
+          <View style={localStyles.priceSection}>
+            <Text style={localStyles.priceLabel}>
+              {t('confirm_ride.total_price')}
+            </Text>
+            <Text style={localStyles.priceValue}>
+              {loading ? t('confirm_ride.calculating') : formatPrice(price)}
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Confirm Button */}
+        <Animated.View 
+          style={[
+            localStyles.buttonContainer,
+            {
+              transform: [{ scale: buttonScaleAnim }],
+            }
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              localStyles.confirmButton,
+              (isLoading || loading) && localStyles.confirmButtonDisabled
+            ]}
+            onPress={handleConfirmRide}
+            disabled={isLoading || loading}
+            activeOpacity={0.8}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Text style={localStyles.confirmButtonText}>
+                  {t('confirm_ride.confirm_ride')}
+                </Text>
+                <MaterialCommunityIcons 
+                  name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+                  size={20} 
+                  color="#fff" 
+                />
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </View>
 
       {/* Success Modal */}
       <Modal
         visible={showSuccessModal}
-        transparent
+        transparent={true}
         animationType="fade"
       >
         <View style={localStyles.modalOverlay}>
-          <View style={localStyles.modalContent}>
+          <Animated.View 
+            style={[
+              localStyles.successModal,
+              {
+                transform: [{ scale: scaleAnim }],
+              }
+            ]}
+          >
             <MaterialCommunityIcons name="check-circle" size={60} color="#4CAF50" />
-            <Text style={localStyles.modalTitle}>{t('success')}</Text>
-            <Text style={localStyles.modalText}>{t('common.reservation_created_success')}</Text>
-            <TouchableOpacity 
-              style={localStyles.modalButton}
-              onPress={() => {
-                setShowSuccessModal(false);
-                handleReset();
-              }}
-            >
-              <Text style={localStyles.modalButtonText}>{t('ok')}</Text>
-            </TouchableOpacity>
-          </View>
+            <Text style={localStyles.successTitle}>
+              {t('confirm_ride.ride_confirmed')}
+            </Text>
+            <Text style={localStyles.successMessage}>
+              {t('confirm_ride.searching_driver')}
+            </Text>
+          </Animated.View>
         </View>
       </Modal>
-
-      {/* Next Button */}
-      <TouchableOpacity 
-        style={[localStyles.nextButtonWrapper, isLoading && localStyles.disabledButton]} 
-        onPress={() => formData?.selectedDate != undefined ? handleReservation() : handleConfirm()}
-        disabled={isLoading}
-      >
-        {isLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Text style={localStyles.nextButtonPrice}>{parseFloat(price).toFixed(2)} DT</Text>
-            <Text style={localStyles.nextButtonText}>{t('common.confirm')}</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      {/* Price Information */}
-      {formData?.selectedDate && (
-        <View style={localStyles.priceInfoCard}>
-          <View style={localStyles.priceInfoRow}>
-            <MaterialCommunityIcons name="information" size={16} color="#6c757d" />
-            <Text style={localStyles.priceInfoText}>
-              {t('price_includes_reservation', { 
-                amount: parseFloat(formData.vehicleType.reservation_price).toFixed(2) 
-              })}
-            </Text>
-          </View>
-        </View>
-      )}
-    </View>
+    </Animated.View>
   );
 };
 
 const localStyles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 18,
-    margin: 16,
-    width: '92%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
+    flex: 1,
+    backgroundColor: "#ffffff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
   },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  dateCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 18,
-   // shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
- //   borderLeftWidth: 4,
-  //  borderLeftColor: '#030303',
-  },
-  dateRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  dateLabel: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-    fontWeight: '400',
-    textAlign:  "left",
-  },
-  dateText: {
-    color: '#030303',
-    fontWeight: '600',
-    fontSize: hp(1.8),
-    marginTop: 2,
-    textAlign:  "left",
-  },
-  priceInfoCard: {
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  headerContent: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6c757d',
+    fontWeight: '400',
+  },
+  content: {
+    paddingHorizontal: 24,
+    flex: 1,
+    paddingTop: 24,
+  },
+  tripCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
     borderWidth: 1,
     borderColor: '#e9ecef',
   },
-  priceInfoRow: {
+  routeSection: {
     flexDirection: 'row',
-    alignItems: 'center',
+    marginBottom: 24,
   },
-  priceInfoText: {
-    fontSize: hp(1.5),
-    color: '#6c757d',
-    fontWeight: '400',
-    marginLeft: 8,
-
-    textAlign:  "left",
+  routeIndicator: {
+    alignItems: 'center',
+    marginRight: 16,
+    paddingTop: 8,
+  },
+  pickupDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#000',
+    marginBottom: 8,
+  },
+  routeLine: {
+    width: 2,
+    height: 40,
+    backgroundColor: '#dee2e6',
+    marginBottom: 8,
+  },
+  dropoffDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    backgroundColor: '#000',
+  },
+  routeDetails: {
     flex: 1,
   },
-  row: {
+  locationItem: {
+    marginBottom: 20,
+  },
+  locationLabel: {
+    fontSize: 12,
+    color: '#6c757d',
+    marginBottom: 4,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  locationAddress: {
+    fontSize: 16,
+    color: '#1a1a1a',
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  tripDetails: {
+    borderTopWidth: 1,
+    borderTopColor: '#f8f9fa',
+    paddingTop: 20,
+    marginBottom: 20,
+  },
+  detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
-  carType: {
-    fontWeight: '700',
-    fontSize: hp(2.2),
-    color: '#030303',
-    textAlign:"left",
+  detailText: {
+    fontSize: 15,
+    color: '#495057',
+    marginLeft: 12,
+    fontWeight: '500',
   },
-  carDescription: {
-    color: '#BDBDBD',
-    fontSize: hp(1.7),
-    marginTop: 2,
-    textAlign:"left",
-
+  vehicleIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 12,
   },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  pickupDropRow: {
+  priceSection: {
+    borderTopWidth: 1,
+    borderTopColor: '#f8f9fa',
+    paddingTop: 20,
     flexDirection: 'row',
-    alignItems: 'flex-end',
-  //  marginBottom: 10,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  label: {
-    color: '#BDBDBD',
-    fontSize: hp(1.5),
-    fontWeight: '400',
-    textAlign:"left",
-     
+  priceLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
   },
-  boldText: {
-    color: '#030303',
+  priceValue: {
+    fontSize: 20,
     fontWeight: '700',
-    fontSize: hp(2),
-
+    color: '#1a1a1a',
   },
-  verticalLine: {
-    width: 2,
-    height: 54,
-    backgroundColor: '#030303',
-      
-    position:"absolute",
-    top:55,
-    left:32,
-    marginBottom: 10,
+  buttonContainer: {
+    marginTop: 'auto',
+    paddingBottom: Platform.OS === 'ios' ? 34 : 24,
   },
-  nextButtonWrapper: {
+  confirmButton: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#030303',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    width: '100%',
-    marginTop: 8,
-    shadowColor: '#030303',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  nextButtonPrice: {
+  confirmButtonDisabled: {
+    backgroundColor: '#6c757d',
+  },
+  confirmButtonText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: hp(2.2),
-    marginRight: 16,
-  },
-  nextButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: hp(2.2),
-    letterSpacing: 0.5,
-  },
-  disabledButton: {
-    opacity: 0.7,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -529,44 +566,28 @@ const localStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: 'white',
+  successModal: {
+    backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 24,
+    padding: 32,
     alignItems: 'center',
-    width: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    marginHorizontal: 40,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
-  modalTitle: {
-    fontSize: hp(2.5),
-    fontWeight: 'bold',
-    color: '#030303',
+  successTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1a1a1a',
     marginTop: 16,
     marginBottom: 8,
   },
-  modalText: {
-    fontSize: hp(1.8),
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalButton: {
-    backgroundColor: '#030303',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    width: '100%',
-  },
-  modalButtonText: {
-    color: 'white',
-    fontSize: hp(1.8),
-    fontWeight: 'bold',
+  successMessage: {
+    fontSize: 16,
+    color: '#6c757d',
     textAlign: 'center',
   },
 });
 
-export default memo(ConfirmRideComponent); 
+export default memo(ConfirmRideComponent);
+

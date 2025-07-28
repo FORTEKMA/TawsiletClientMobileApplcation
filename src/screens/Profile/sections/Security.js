@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, SafeAreaView, StatusBar, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView, SafeAreaView, StatusBar, Keyboard, TouchableWithoutFeedback, I18nManager } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { styles } from '../styles';
 import { changePassword } from '../../../store/userSlice/userSlice';
@@ -105,15 +105,31 @@ const Security = () => {
     }
   };
 
-  const renderInput = (label, field, placeholder, secureTextEntry = false) => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.label}>{t(label)}</Text>
-      {secureTextEntry ? (
-        <View style={[styles.passwordContainer, errors[field] && styles.passwordContainerError]}>
+  const getPasswordStrength = (password) => {
+    const errors = validatePassword(password);
+    const strength = 5 - errors.length;
+    if (strength <= 2) return { level: 'weak', color: '#FF3B30', text: t('profile.security.strength.weak', 'Weak') };
+    if (strength <= 3) return { level: 'medium', color: '#FF9500', text: t('profile.security.strength.medium', 'Medium') };
+    if (strength <= 4) return { level: 'good', color: '#30D158', text: t('profile.security.strength.good', 'Good') };
+    return { level: 'strong', color: '#34C759', text: t('profile.security.strength.strong', 'Strong') };
+  };
+
+  const renderPasswordInput = (label, field, placeholder, showPassword, setShowPassword) => {
+    const hasError = errors[field];
+    const isNewPassword = field === 'password';
+    const strength = isNewPassword && passwordData[field] ? getPasswordStrength(passwordData[field]) : null;
+
+    return (
+      <View style={styles.uberInputContainer}>
+        <Text style={styles.uberInputLabel}>{t(label)}</Text>
+        <View style={[styles.uberPasswordWrapper, hasError && styles.uberInputError]}>
+          <View style={styles.uberInputIconContainer}>
+            <Icon name="lock-outline" size={20} color="#8E8E93" />
+          </View>
           <TextInput
-            style={styles.passwordInput}
+            style={styles.uberPasswordInput}
             placeholder={t(placeholder)}
-            placeholderTextColor="#ccc"
+            placeholderTextColor="#8E8E93"
             value={passwordData[field]}
             onChangeText={(text) => {
               setPasswordData({ ...passwordData, [field]: text });
@@ -121,91 +137,187 @@ const Security = () => {
                 setErrors({ ...errors, [field]: null });
               }
             }}
-            secureTextEntry={!showCurrentPassword}
+            secureTextEntry={!showPassword}
+            textAlign={I18nManager.isRTL ? 'right' : 'left'}
           />
           <TouchableOpacity 
-            style={styles.eyeIcon}
-            onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+            style={styles.uberPasswordToggle}
+            onPress={() => setShowPassword(!showPassword)}
+            activeOpacity={0.7}
           >
             <Icon
-              name={showCurrentPassword ? 'eye' : 'eye-off'}
-              size={24}
-              color="#000"
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#8E8E93"
             />
           </TouchableOpacity>
         </View>
-      ) : (
-        <TextInput
-          style={[styles.input, errors[field] && styles.inputError]}
-          placeholder={t(placeholder)}
-          placeholderTextColor="#ccc"
-          value={passwordData[field]}
-          onChangeText={(text) => {
-            setPasswordData({ ...passwordData, [field]: text });
-            if (errors[field]) {
-              setErrors({ ...errors, [field]: null });
-            }
-          }}
-          secureTextEntry={secureTextEntry}
-        />
-      )}
-      {errors[field] && <Text style={styles.errorText}>{errors[field]}</Text>}
+        
+        {/* Password Strength Indicator */}
+        {strength && (
+          <View style={styles.uberPasswordStrengthContainer}>
+            <View style={styles.uberPasswordStrengthBar}>
+              <View 
+                style={[
+                  styles.uberPasswordStrengthFill,
+                  { 
+                    width: `${(5 - validatePassword(passwordData[field]).length) * 20}%`,
+                    backgroundColor: strength.color 
+                  }
+                ]} 
+              />
+            </View>
+            <Text style={[styles.uberPasswordStrengthText, { color: strength.color }]}>
+              {strength.text}
+            </Text>
+          </View>
+        )}
+
+        {hasError && (
+          <View style={styles.uberErrorContainer}>
+            <Icon name="alert-circle-outline" size={16} color="#FF3B30" />
+            <Text style={styles.uberErrorText}>
+              {Array.isArray(hasError) ? hasError.join(', ') : hasError}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderSecurityTip = (icon, title, description) => (
+    <View style={styles.uberSecurityTip}>
+      <View style={styles.uberSecurityTipIcon}>
+        <Icon name={icon} size={20} color="#007AFF" />
+      </View>
+      <View style={styles.uberSecurityTipContent}>
+        <Text style={styles.uberSecurityTipTitle}>{title}</Text>
+        <Text style={styles.uberSecurityTipDescription}>{description}</Text>
+      </View>
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 }]}>
+    <SafeAreaView style={styles.uberContainer}>
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.mainContainer}>
-            <Header style={{paddingTop:0}} title={t('profile.security.title')} />
+          <View style={styles.uberMainContainer}>
+            {/* Modern Header */}
+            <View style={styles.uberSectionHeader}>
+              <TouchableOpacity 
+                style={styles.uberBackButton}
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.7}
+              >
+                <Icon 
+                  name={I18nManager.isRTL ? "chevron-right" : "chevron-left"} 
+                  size={24} 
+                  color="#000" 
+                />
+              </TouchableOpacity>
+              
+              <View style={styles.uberHeaderContent}>
+                <Text style={styles.uberSectionTitle}>{t('profile.security.title')}</Text>
+              </View>
+              
+              <View style={styles.uberHeaderSpacer} />
+            </View>
+
             <ScrollView
-              contentContainerStyle={styles.scrollContainer}
+              style={styles.uberScrollView}
+              contentContainerStyle={styles.uberScrollContainer}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.stepContainer}>
-                <View style={styles.formContainer}>
-                  {renderInput(
-                    'profile.security.current_password',
-                    'currentPassword',
-                    'profile.security.current_password',
-                    true
-                  )}
-                  {renderInput(
-                    'profile.security.new_password',
-                    'password',
-                    'profile.security.new_password',
-                    true
-                  )}
-                  {renderInput(
-                    'profile.security.confirm_password',
-                    'passwordConfirmation',
-                    'profile.security.confirm_password',
-                    true
-                  )}
+              {/* Password Change Section */}
+              <View style={styles.uberFormSection}>
+                <View style={styles.uberSectionHeaderInline}>
+                  <Icon name="shield-check-outline" size={24} color="#000" />
+                  <Text style={styles.uberSectionHeaderTitle}>
+                    {t('profile.security.change_password', 'Change Password')}
+                  </Text>
                 </View>
+
+                {renderPasswordInput(
+                  'profile.security.current_password',
+                  'currentPassword',
+                  'profile.security.current_password_placeholder',
+                  showCurrentPassword,
+                  setShowCurrentPassword
+                )}
+
+                {renderPasswordInput(
+                  'profile.security.new_password',
+                  'password',
+                  'profile.security.new_password_placeholder',
+                  showNewPassword,
+                  setShowNewPassword
+                )}
+
+                {renderPasswordInput(
+                  'profile.security.confirm_password',
+                  'passwordConfirmation',
+                  'profile.security.confirm_password_placeholder',
+                  showConfirmPassword,
+                  setShowConfirmPassword
+                )}
+              </View>
+
+              {/* Security Tips Section */}
+              <View style={styles.uberFormSection}>
+                <View style={styles.uberSectionHeaderInline}>
+                  <Icon name="lightbulb-outline" size={24} color="#000" />
+                  <Text style={styles.uberSectionHeaderTitle}>
+                    {t('profile.security.tips_title', 'Security Tips')}
+                  </Text>
+                </View>
+
+                {renderSecurityTip(
+                  'key-variant',
+                  t('profile.security.tip1_title', 'Strong Password'),
+                  t('profile.security.tip1_desc', 'Use at least 8 characters with uppercase, lowercase, numbers, and special characters.')
+                )}
+
+                {renderSecurityTip(
+                  'update',
+                  t('profile.security.tip2_title', 'Regular Updates'),
+                  t('profile.security.tip2_desc', 'Change your password regularly to maintain account security.')
+                )}
+
+                {renderSecurityTip(
+                  'account-lock-outline',
+                  t('profile.security.tip3_title', 'Keep it Private'),
+                  t('profile.security.tip3_desc', 'Never share your password with others or use it on multiple accounts.')
+                )}
               </View>
             </ScrollView>
           </View>
         </TouchableWithoutFeedback>
 
-        <View style={styles.buttonContainer}>
+        {/* Modern Action Button */}
+        <View style={styles.uberActionContainer}>
           <TouchableOpacity
-            style={[styles.nextButton, isLoading && styles.loginButtonDisabled]}
+            style={[
+              styles.uberActionButton,
+              isLoading && styles.uberActionButtonDisabled
+            ]}
             onPress={handleUpdatePassword}
             disabled={isLoading}
+            activeOpacity={0.8}
           >
             {isLoading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <Text style={styles.nextButtonText}>
-                {t('profile.security.update_button')}
-              </Text>
+              <>
+                <Icon name="shield-check-outline" size={20} color="#fff" />
+                <Text style={styles.uberActionButtonText}>
+                  {t('profile.security.update_button', 'Update Password')}
+                </Text>
+              </>
             )}
           </TouchableOpacity>
         </View>

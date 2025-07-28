@@ -22,6 +22,9 @@ target 'Tawsilet' do
 
   rn_maps_path = '../node_modules/react-native-maps'
   pod 'react-native-google-maps', :path => rn_maps_path
+  
+  # Agora VoIP SDK
+  pod 'react-native-agora', :path => '../node_modules/react-native-agora'
     
   config = use_native_modules!
 

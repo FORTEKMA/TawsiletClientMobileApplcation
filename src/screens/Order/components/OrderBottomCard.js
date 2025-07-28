@@ -1,16 +1,19 @@
 import React, { useRef, useMemo, useCallback, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, Modal, TextInput, ScrollView, PanResponder, Platform, AppState } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Dimensions, Modal, TextInput, ScrollView, PanResponder, Platform, AppState, Alert } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../../../utils/colors';
 import OrderCancelConfirmationModal from './OrderCancelConfirmationModal';
 import OrderCancellationReasonSheet from './OrderCancellationReasonSheet';
 import OrderReportProblemModal from './OrderReportProblemModal';
+
 import { useNavigation } from '@react-navigation/native';
 import api from '../../../utils/api';
 import BackgroundTimer from 'react-native-background-timer';
 import { ref, update, off } from 'firebase/database';
 import db from '../../../utils/firebase';
+import voipManager from '../../../utils/VoIPManager';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const CARD_HEIGHT = Platform.OS === 'ios' ? SCREEN_HEIGHT * 0.55 : SCREEN_HEIGHT * 0.47;
 
@@ -43,6 +46,12 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
   const [params, setParams] = useState({});
   const timerRef = useRef(null);
   const navigation = useNavigation();
+  
+  // VoIP and Chat state
+  const [showCall, setShowCall] = useState(false);
+  const [currentCallId, setCurrentCallId] = useState(null);
+  const [callType, setCallType] = useState('outgoing');
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const cancellationReasons = [
     'Driver is taking too long',
     'Driver is not moving / stuck',
@@ -73,6 +82,107 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
   const carModel = driver?.vehicule?.mark || 'Toyota Camry';
   const carPlate = driver?.vehicule?.matriculation || 'DEF 456';
   const driverRating = driver.rating || '5.0';
+
+  // VoIP and Chat handlers
+  const handleChatPress = useCallback(() => {
+    navigation.navigate('ChatScreen', {
+      requestId: order?.requestId,
+      driverData: {
+        id: driver?.id,
+        name: driverName,
+        avatar: driverAvatar,
+        vehicle_info: `${carModel} • ${carPlate}`,
+        rating: driverRating,
+      },
+    });
+  }, [navigation, order?.requestId, driver?.id, driverName, driverAvatar, carModel, carPlate, driverRating]);
+
+  const handleCallPress = useCallback(async () => {
+    try {
+      // Enhanced VoIP call with fallback options
+      const { callId } = await voipManager.initiateCall(
+        driver?.id,
+        'driver',
+        order?.requestId,
+        {
+          name: driverName,
+          avatar: driverAvatar,
+          vehicle_info: `${carModel} • ${carPlate}`,
+        }
+      );
+      
+      setCurrentCallId(callId);
+      setCallType('outgoing');
+      setShowCall(true);
+    } catch (error) {
+      console.error('Error initiating VoIP call:', error);
+      
+      // Enhanced fallback with call type selection
+      Alert.alert(
+        'Call Driver',
+        'Choose call type',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Voice Call', 
+            onPress: () => {
+              navigation.navigate('VoIPCallScreen', {
+                callType: 'voice',
+                driverData: {
+                  id: driver?.id,
+                  name: driverName,
+                  avatar: driverAvatar,
+                  vehicle_info: `${carModel} • ${carPlate}`,
+                  rating: driverRating,
+                },
+                orderId: order?.requestId,
+                isIncoming: false
+              });
+            }
+          },
+          { 
+            text: 'Video Call', 
+            onPress: () => {
+              navigation.navigate('VoIPCallScreen', {
+                callType: 'video',
+                driverData: {
+                  id: driver?.id,
+                  name: driverName,
+                  avatar: driverAvatar,
+                  vehicle_info: `${carModel} • ${carPlate}`,
+                  rating: driverRating,
+                },
+                orderId: order?.requestId,
+                isIncoming: false
+              });
+            }
+          },
+        ]
+      );
+    }
+  }, [driver?.id, order?.requestId, driverName, driverAvatar, carModel, carPlate, driverRating, navigation]);
+
+  const handleAcceptCall = useCallback(async () => {
+    if (currentCallId) {
+      await voipManager.acceptCall(currentCallId);
+    }
+  }, [currentCallId]);
+
+  const handleDeclineCall = useCallback(async () => {
+    if (currentCallId) {
+      await voipManager.declineCall(currentCallId);
+      setShowCall(false);
+      setCurrentCallId(null);
+    }
+  }, [currentCallId]);
+
+  const handleEndCall = useCallback(async () => {
+    if (currentCallId) {
+      await voipManager.endCall(currentCallId);
+      setShowCall(false);
+      setCurrentCallId(null);
+    }
+  }, [currentCallId]);
 
   const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {
@@ -384,15 +494,32 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
                 <View style={styles.driverInfo}>
                   <View style={styles.driverNameRow}>
                     <Text style={styles.driverName}>{driverName}</Text>
-                    {!["Canceled_by_client", "Canceled_by_driver", "Completed"].includes(order?.commandStatus) && (
-                      <TouchableOpacity 
-                        style={styles.callButtonCircle}
-                        onPress={onCallDriver}
-                        onPressIn={handlePressIn}
-                        onPressOut={handlePressOut}
-                      >
-                        <Ionicons name="call" size={20} color="#fff" />
-                      </TouchableOpacity>
+                    {["Canceled_by_client", "Canceled_by_driver", "Completed"].includes(order?.commandStatus) && (
+                      <View style={styles.actionButtonsContainer}>
+                        <TouchableOpacity 
+                          style={styles.chatButtonCircle}
+                          onPress={handleChatPress}
+                          onPressIn={handlePressIn}
+                          onPressOut={handlePressOut}
+                        >
+                          <MaterialCommunityIcons name="message-text" size={18} color="#fff" />
+                          {unreadMessages > 0 && (
+                            <View style={styles.unreadBadge}>
+                              <Text style={styles.unreadBadgeText}>
+                                {unreadMessages > 9 ? '9+' : unreadMessages}
+                              </Text>
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                          style={styles.callButtonCircle}
+                          onPress={handleCallPress}
+                          onPressIn={handlePressIn}
+                          onPressOut={handlePressOut}
+                        >
+                          <Ionicons name="call" size={18} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
                     )}
                   </View>
                   <View style={styles.ratingContainer}>
@@ -587,8 +714,9 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
       <OrderReportProblemModal
         visible={showReportModal}
         onClose={() => setShowReportModal(false)}
-        order={order}
       />
+
+      {/* VoIP Call Screen - Removed modal approach, now uses navigation */}
     </Animated.View>
   );
 };
@@ -705,6 +833,25 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign:"left"
   },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chatButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+    position: 'relative',
+  },
   callButtonCircle: {
     width: 40,
     height: 40,
@@ -717,6 +864,24 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  unreadBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   ratingContainer: {
     flexDirection: 'row',

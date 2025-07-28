@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "loading_more": "Loading more...",
     "error": "An error occurred",
     "success": "Success",
     "cancel": "Cancel",
@@ -24,6 +25,7 @@
     "cancel_ride_warning": "Are you sure you want to cancel this ride? Your balance will be reduced.",
     "yes": "Yes",
     "no": "No",
+    "call": "Call",
     "Home": "Home",
     "Historique": "History",
     "Notifications": "Notifications",
@@ -42,7 +44,33 @@
     "days": "Days",
     "hours": "Hours",
     "minutes": "Minutes",
-    "seconds": "Seconds"
+    "seconds": "Seconds",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "days_ago": "days ago",
+    "warning": "Warning",
+    "please_wait": "Please wait",
+    "save_changes": "Save Changes",
+    "with_elevator": "With Elevator",
+    "floor": "floor",
+    "kb": "KB",
+    "attach_file": "Attach File",
+    "drop_address": "Drop Address",
+    "pickup_address": "Pickup Address",
+    "delivery_address": "Delivery Address",
+    "report_problem": "Report a Problem",
+    "problem": "Problem",
+    "message": "Message",
+    "attachment": "Attachment",
+    "submit_report": "Submit Report",
+    "thank_you_cooperation": "Thank you for your cooperation.",
+    "report_received": "We have received your report. Our team will examine the problem and contact you as soon as possible.",
+    "continue": "Continue",
+    "address_pickup_delivery": "Pickup / Delivery Address"
+  },
+  "errors": {
+    "title": "Error",
+    "phone_call": "Could not open phone app."
   },
   "onboarding": {
     "login": "Login",
@@ -160,6 +188,17 @@
     "profile_update_failed": "Profile update failed. Please try again."
   },
   "history": {
+    "total_rides": "Total Rides",
+    "active": "Active",
+    "completed": "Completed",
+    "no_rides_title": "No Rides Yet",
+    "no_rides_subtitle": "You haven't taken any rides yet. Book your first ride to get started!",
+    "book_ride": "Book a Ride",
+    "rides_found": "rides found",
+    "active_ride": "Active Ride",
+    "pickup": "Pickup",
+    "dropoff": "Dropoff",
+    "address_not_available": "Address not available",
     "empty": {
       "no_orders": "No orders found"
     },
@@ -248,6 +287,7 @@
     "yesterday": "Yesterday"
   },
   "profile": {
+    "title": "Profile",
     "confirmed": "Active",
     "pending": "Pending",
     "menu": {
@@ -330,9 +370,26 @@
       "current_password": "Current Password",
       "new_password": "New Password",
       "confirm_password": "Confirm Password",
+      "current_password_placeholder": "Enter current password",
+      "new_password_placeholder": "Enter new password",
+      "confirm_password_placeholder": "Confirm new password",
       "update_button": "Update Password",
       "update_success": "Password updated successfully!",
       "update_error": "Password update failed.",
+      "change_password": "Change Password",
+      "tips_title": "Security Tips",
+      "tip1_title": "Strong Password",
+      "tip1_desc": "Use at least 8 characters with uppercase, lowercase, numbers, and special characters.",
+      "tip2_title": "Regular Updates",
+      "tip2_desc": "Change your password regularly to maintain account security.",
+      "tip3_title": "Keep it Private",
+      "tip3_desc": "Never share your password with others or use it on multiple accounts.",
+      "strength": {
+        "weak": "Weak",
+        "medium": "Medium",
+        "good": "Good",
+        "strong": "Strong"
+      },
       "validation": {
         "title": "Validation Error",
         "current_required": "Current password is required",
@@ -346,6 +403,7 @@
     },
     "personal_info": {
       "title": "Personal Information",
+      "section_title": "Personal Information",
       "first_name": "First Name",
       "last_name": "Last Name",
       "email": "Email",
@@ -359,7 +417,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "Phone Number",
       "otp_title": "Enter OTP",
-      "otp_message": "An OTP has been sent to {{phoneNumber}}"
+      "otp_message": "An OTP has been sent to {{phoneNumber}}",
+      "please_wait": "Please wait {{time}} before trying again",
+      "notice": "Changes to your phone number will require verification via SMS."
     },
     "first_name": "First Name",
     "last_name": "Last Name",
@@ -375,6 +435,12 @@
   },
   "help": {
     "title": "Help and Support",
+    "subtitle": "Get support and find answers",
+    "quick_actions": "Quick Actions",
+    "contact_support": "Contact Support",
+    "contact": {
+      "email": "Email Support"
+    },
     "call_support": "Call Support",
     "send_email": "Send Email",
     "whatsapp": "WhatsApp",
@@ -383,7 +449,7 @@
       "whatsapp": "Could not open WhatsApp."
     },
     "faq": {
-      "title": "FAQ",
+      "title": "Frequently Asked Questions",
       "personal_info": {
         "question": "How can I edit my personal information?",
         "answer": "Go to the \"Information\" section and click on the \"Edit\" button."
@@ -391,8 +457,19 @@
       "password": {
         "question": "How can I update my password?",
         "answer": "Go to the \"Security\" section and follow the instructions to change your password."
+      },
+      "booking": {
+        "question": "How do I book a ride?",
+        "answer": "Open the app, set your pickup and destination, choose your vehicle type, and confirm your booking."
+      },
+      "payment": {
+        "question": "What payment methods are accepted?",
+        "answer": "We accept cash payments and various digital payment methods. You can manage your payment options in the app settings."
       }
-    }
+    },
+    "app_info": "App Information",
+    "app_version": "App Version",
+    "last_updated": "Last Updated"
   },
   "booking": {
     "step1": {
@@ -480,7 +557,15 @@
     },
     "outside_tunisia": "This location is outside of Tunisia. Please select a location within Tunisia.",
     "too_close": "The dropoff location must be at least 100 meters from the pickup location.",
-    "calculating_distance": "Calculating distance..."
+    "calculating_distance": "Calculating distance...",
+    "drag_map_instruction": "Drag map to move pin",
+    "set_destination": "Set your destination",
+    "set_pickup_location": "Set your pickup location",
+    "where_from": "Where from?",
+    "search_destination": "Search destination",
+    "drop_address": "Drop Address",
+    "pickup_address": "Pickup Address",
+    "delivery_address": "Delivery Address"
   },
   "Choose_location": "Choose a location",
   "save": "Save",
@@ -517,6 +602,7 @@
       "very_professional": "Very professional",
       "arrive_on_time": "Arrived on time",
       "package_handed_over_gently": "Package handed over gently",
+      "talk_to_much": "Talk too much",
       "other": "Other"
     },
     "very_bad": "Very Bad",
@@ -620,6 +706,164 @@
   },
   "choose_vehicle": {
     "account_under_validation": "Your account is under validation.",
-    "must_complete_women_validation": "You must complete the women validation process to select this vehicle."
+    "must_complete_women_validation": "You must complete the women validation process to select this vehicle.",
+    "select_vehicle_subtitle": "Select the vehicle that suits your needs",
+    "confirm_vehicle": "Confirm vehicle",
+    "scheduled_for": "Scheduled for",
+    "people": "people",
+    "standard_ride": "Standard ride"
+  },
+  "confirm_ride": {
+    "title": "Confirm Your Ride",
+    "subtitle": "Review your trip details",
+    "pickup": "Pickup",
+    "destination": "Destination",
+    "current_location": "Current location",
+    "total_price": "Total Price",
+    "confirm_ride": "Confirm Ride",
+    "calculating": "Calculating...",
+    "now": "Now",
+    "in_minutes": "In {{minutes}} minutes",
+    "in_hours": "In {{hours}} hour",
+    "in_hours_plural": "In {{hours}} hours",
+    "ride_confirmed": "Ride Confirmed!",
+    "searching_driver": "Searching for a driver...",
+    "request_failed": "Failed to create request",
+    "vehicle": "Vehicle",
+    "vehicle_economy_desc": "Affordable rides for everyday trips",
+    "vehicle_comfort_desc": "More space and comfort",
+    "vehicle_premium_desc": "Premium vehicles for special occasions",
+    "vehicle_standard_desc": "Standard ride"
+  },
+  "search_drivers": {
+    "preparing_search": "Preparing your request...",
+    "searching_drivers": "Searching for drivers",
+    "finding_best_driver": "Finding the best driver for you...",
+    "driver_found": "Driver Found!",
+    "redirecting_tracking": "Redirecting to tracking...",
+    "cancel_search": "Cancel Search",
+    "finding_driver": "Finding Driver",
+    "service_unavailable": "Service Unavailable",
+    "red_zone_description": "Pickup service is not available in this area. Please choose a different location.",
+    "choose_different_location": "Choose Different Location",
+    "red_zone_title": "Service Unavailable",
+    "red_zone_message": "Pickup service is not available in this area"
+  },
+  "search": {
+    "placeholder": "Search...",
+    "search_placeholder": "Search for a location",
+    "search_destination": "Search destination",
+    "search_orders": "Search orders..."
+  },
+  "order": {
+    "title": "Order Details",
+    "loading": "Loading order details...",
+    "track_order": "Track Order",
+    "driver_info": "Driver Information",
+    "chat": "Chat",
+    "call": "Call",
+    "call_driver": "Call Driver",
+    "call_driver_message": "Choose how you would like to contact the driver",
+    "voice_call": "Voice Call",
+    "voice_call_subtext": "Audio call with driver",
+    "video_call": "Video Call",
+    "video_call_subtext": "Video call with driver",
+    "trip_details": "Trip Details",
+    "pickup_location": "Pickup Location",
+    "dropoff_location": "Dropoff Location",
+    "address_not_available": "Address not available",
+    "payment_details": "Payment Details",
+    "base_fare": "Base Fare",
+    "additional_charges": "Additional Charges",
+    "total_amount": "Total Amount",
+    "payment_method_cash": "Cash Payment",
+    "order_info": "Order Information",
+    "order_id": "Order ID",
+    "order_date": "Order Date",
+    "estimated_duration": "Estimated Duration",
+    "distance": "Distance",
+    "last_updated": "Last Updated",
+    "support_title": "Contact Support",
+    "support_message": "Need help? Contact our support team for assistance.",
+    "status": {
+      "pending": "Pending",
+      "assigned_to_driver": "Assigned to Driver",
+      "driver_on_route_to_pickup": "Driver on Route to Pickup",
+      "arrived_at_pickup": "Arrived at Pickup",
+      "picked_up": "Picked Up",
+      "on_route_to_delivery": "On Route to Delivery",
+      "arrived_at_delivery": "Arrived at Delivery",
+      "completed": "Completed",
+      "canceled_by_client": "Canceled by Client",
+      "canceled_by_partner": "Canceled by Partner"
+    },
+    "status_description": {
+      "pending": "Your order is being processed",
+      "assigned_to_driver": "A driver has been assigned to your order",
+      "driver_on_route_to_pickup": "Driver is on the way to pickup location",
+      "arrived_at_pickup": "Driver has arrived at pickup location",
+      "picked_up": "Driver has picked up your order",
+      "on_route_to_delivery": "Driver is on the way to delivery location",
+      "arrived_at_delivery": "Driver has arrived at delivery location",
+      "completed": "Order has been completed successfully",
+      "canceled_by_client": "Order was canceled by you",
+      "canceled_by_partner": "Order was canceled by the driver"
+    }
+  },
+  "drawer": {
+    "guest_user": "Guest User",
+    "guest_user_short": "Guest",
+    "user": "User",
+    "tap_to_sign_in": "Tap to sign in",
+    "guest_mode": "Guest Mode",
+    "signed_in": "Signed In",
+    "unlock_features": "Unlock All Features",
+    "sign_in_benefits": "Sign in to access chats, history, and personalized features.",
+    "powered_by": "Powered by FORTEKMA",
+    "sign_in_required": "Sign In Required",
+    "sign_in_message": "Please sign in to access your account features.",
+    "feature_requires_signin": "{{actionName}} requires you to sign in first.",
+    "all_chats": "All Chats"
+  },
+  "tracking": {
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "order_not_found": "Order not found",
+    "fetch_error": "Failed to load order details",
+    "status": {
+      "pending": "Pending",
+      "go_to_pickup": "Go to Pickup",
+      "arrived_at_pickup": "Arrived at Pickup",
+      "picked_up": "Picked Up",
+      "completed": "Completed",
+      "canceled_by_client": "Canceled by Client",
+      "canceled_by_partner": "Canceled by Partner"
+    },
+    "loading": "Loading tracking information...",
+    "title": "Track Order",
+    "pickup_location": "Pickup Location",
+    "dropoff_location": "Dropoff Location"
+  },
+  "call": {
+    "select_call_type": "Select Call Type",
+    "choose_call_type": "Choose how you want to call the driver",
+    "voice_call": "Voice Call",
+    "video_call": "Video Call",
+    "failed_to_initiate": "Failed to initiate call. Please try again."
+  },
+  "chat": {
+    "just_now": "Just now",
+    "minutes_ago": "{{minutes}}m ago",
+    "hours_ago": "{{hours}}h ago",
+    "days_ago": "{{days}}d ago",
+    "connecting": "Connecting...",
+    "you": "You",
+    "no_chats_title": "No conversations yet",
+    "no_chats_subtitle": "Your chat conversations with drivers will appear here",
+    "book_ride": "Book a Ride",
+    "loading_chats": "Loading conversations...",
+    "all_chats": "All Chats",
+    "conversations": "conversations",
+    "search_feature_coming_soon": "Chat search feature will be available soon!"
   }
 }

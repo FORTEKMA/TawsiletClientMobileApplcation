@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.tawsiletclientmobileapplcation">
+
+    <!-- VoIP Call Permissions -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    
+    <!-- Optional: For better audio quality -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    
+    <!-- Hardware features -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="true" />
+    <uses-feature android:name="android.hardware.audio.output" android:required="true" />
+
+    <application
+        android:name=".MainApplication"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:allowBackup="false"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true">
+        
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <!-- VoIP Call Activity (if needed for full-screen calls) -->
+        <activity
+            android:name=".VoIPCallActivity"
+            android:label="VoIP Call"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/CallScreenTheme"
+            android:exported="false" />
+            
+    </application>
+</manifest>
+
+<!-- 
+IMPORTANT NOTES FOR ANDROID VOIP INTEGRATION:
+
+1. Add these permissions to your actual AndroidManifest.xml file
+2. For Android 6.0+ (API 23+), request runtime permissions in your app
+3. Test on real devices, not emulators, for best VoIP performance
+4. Consider adding android:hardwareAccelerated="true" for better video performance
+5. For production, you may need additional permissions based on your specific use case
+
+PROGUARD RULES (add to android/app/proguard-rules.pro):
+-keep class io.agora.**{*;}
+-dontwarn io.agora.**
+
+GRADLE DEPENDENCIES (add to android/app/build.gradle if needed):
+dependencies {
+    implementation 'io.agora.rtc:full-sdk:3.7.0' // or latest version
+}
+-->
+

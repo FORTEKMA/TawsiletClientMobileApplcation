@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, I18nManager } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, I18nManager, Platform } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { styles } from '../styles';
 import ConfirmButton from './ConfirmButton';
 import Geolocation from 'react-native-geolocation-service';
 import { getAddressFromCoordinates, getDistanceFromGoogleAPI, getDistanceFromLatLonInMeters } from '../../../utils/helpers/mapUtils';
 import { Spinner, Toast } from 'native-base';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { API_GOOGLE } from "@env";
 import { 
@@ -192,77 +192,59 @@ const DropoffLocation = ({ formData, goNext, isMapDragging, onBack, animateToReg
   // Check if we should show validation errors (only when user has interacted)
   const shouldShowErrors = hasUserInteracted;
 
-  const renderGooglePlacesAutocomplete = (showError = false) => (
-    <GooglePlacesAutocomplete
-      predefinedPlacesAlwaysVisible={false}
-      placeholder={t('location.dropOff')}
-      debounce={300}
-      onPress={handleLocationSelect}
-      ref={inputRef}
-      query={{
-        key: API_GOOGLE,
-        language: 'en',
-        components: 'country:tn',
-      }}
-      textInputProps={{
-        placeholder: formData?.dropAddress?.address ? formData?.dropAddress?.address : "",
-        placeholderTextColor: "#ccc",
-        style: {
-          width: "100%",
-           color:"#000"
-        }
-      }}
-      styles={{
-        container: {
-          width: "100%",
-        //  marginBottom: showError ? 20 : 0,
-
-        },
-        textInputContainer: {
-          borderWidth: 3,
-          borderColor: showError ? '#ff3b30' : '#ccc',
-          borderRadius: 8,
-          backgroundColor: '#fff',
-          color: "#000",
-          height: 50,
-          paddingHorizontal: 10,
-        },
-        listView: {
-          marginTop: 15,
-        },
-        textInput: {
-          height: 50,
-          color: '#000',
-          fontSize: 16,
-          placeholderTextColor: "#ccc",
-          width: "100%"
-        },
-        row: {
-          width: "100%"
-        },
-        description: {
-          color: '#000',
-        },
-      }}
-      fetchDetails={true}
-      enablePoweredByContainer={false}
-      minLength={2}
-    />
-  );
-
   return (
-    <View style={[styles.step1Wrapper, isMapDragging && { opacity: 0.5 }]}>
-      <View style={localStyles.header}>
+    <View style={[localStyles.container, isMapDragging && { opacity: 0.5 }]}>
+      {/* Uber-style Header with Back Button */}
+      <View style={localStyles.uberHeader}>
         <TouchableOpacity onPress={handleBack} style={localStyles.backButton}>
-          <MaterialCommunityIcons name={I18nManager.isRTL?"arrow-right": "arrow-left"} size={28} color="#030303" />
+          <MaterialCommunityIcons name={I18nManager.isRTL ? "arrow-right" : "arrow-left"} size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={localStyles.headerTitle}>{t('location.where_to')}</Text>
-        <View style={{ width: 24 }} />
+        
+        <View style={localStyles.headerTextContainer}>
+          <Text style={localStyles.uberTitle}>{t('location.set_destination', 'Set your destination')}</Text>
+          <Text style={localStyles.uberSubtitle}>{t('location.drag_map_instruction', 'Drag map to move pin')}</Text>
+        </View>
       </View>
 
-      <View style={localStyles.content}>
-        {renderGooglePlacesAutocomplete()}
+      {/* Uber-style Search Input */}
+      <View style={localStyles.uberContent}>
+            
+            <GooglePlacesAutocomplete
+              predefinedPlacesAlwaysVisible={false}
+              placeholder={t('location.where_to', 'Where to?')}
+              debounce={300} 
+              onPress={handleLocationSelect}
+              textInputContainer={localStyles.searchContainer}
+             
+               textInputProps={{
+                style:localStyles.inputWrapper,
+                placeholder:formData?.dropAddress?.address ? formData?.dropAddress?.address : t('location.where_to', 'Where to?'),
+                placeholderTextColor:"#8E8E93",
+               ref:inputRef, 
+                
+               }}
+               renderLeftButton={()=>{
+                return (
+                  <MaterialCommunityIcons style={localStyles.leftIcon} name="square" size={12} color="#000" />
+                )
+               }}
+            
+              query={{
+                key: API_GOOGLE,
+                language: 'en',
+                components: 'country:tn',
+              }}
+              styles={{
+               
+                 
+                description: localStyles.description,
+              }}
+              fetchDetails={true}
+              enablePoweredByContainer={false}
+              minLength={2}
+            />
         
+        {/* Loading State */}
         {isCalculatingDistance && (
           <View style={localStyles.loadingContainer}>
             <Spinner size="sm" color="#007AFF" />
@@ -272,9 +254,10 @@ const DropoffLocation = ({ formData, goNext, isMapDragging, onBack, animateToReg
           </View>
         )}
         
+        {/* Error States */}
         {shouldShowErrors && !isLocationValid && (
           <View style={localStyles.errorContainer}>
-            <MaterialIcons name="error-outline" size={40} color="#ff3b30" />
+            <MaterialIcons name="error-outline" size={24} color="#ff3b30" />
             <Text style={localStyles.errorText}>
               {t('location.outside_tunisia') || 'This location is outside Tunisia. Please select a location within Tunisia.'}
             </Text>
@@ -283,85 +266,196 @@ const DropoffLocation = ({ formData, goNext, isMapDragging, onBack, animateToReg
         
         {shouldShowErrors && !isDistanceValid && !isCalculatingDistance && (
           <View style={localStyles.errorContainer}>
-            <MaterialIcons name="error-outline" size={40} color="#ff3b30" />
+            <MaterialIcons name="error-outline" size={24} color="#ff3b30" />
             <Text style={localStyles.errorText}>
               {t('location.too_close') || 'The dropoff location must be at least 100 meters from the pickup location.'}
             </Text>
           </View>
         )}
-      </View>
 
-      {dropoffAddress.latitude && (
-        <ConfirmButton
+        {/* Uber-style Continue Button */}
+        <TouchableOpacity
+          style={[
+            localStyles.uberButton,
+            !shouldShowConfirmButton && localStyles.uberButtonDisabled
+          ]}
           onPress={handleContinue}
-          text={t('location.continue')}
           disabled={!shouldShowConfirmButton}
-        />
-      )}
+        >
+          <Text style={[
+            localStyles.uberButtonText,
+            !shouldShowConfirmButton && localStyles.uberButtonTextDisabled
+          ]}>
+            {t('location.search_destination', 'Search destination')}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const localStyles = StyleSheet.create({
-  header: {
+  container: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
+  },
+  uberHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent:"flex-start"
-,    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    width: "100%",
-    gap:10
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   backButton: {
-    backgroundColor: '#fff',
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+  headerTextContainer: {
+    flex: 1,
+  },
+  uberTitle: {
+    fontSize: 28,
+    fontWeight: '700',
     color: '#000',
+    marginBottom: 4,
   },
-  content: {
-    padding: 16,
-    width: "100%"
+  uberSubtitle: {
+    fontSize: 16,
+    color: '#8E8E93',
+  },
+  uberContent: {
+    paddingHorizontal: 24,
+    flex: 1,
+  },
+  searchContainer: {
+    marginBottom: 24,
+    flex: 1,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    minHeight: 56,
+    flex:1,
+    marginBottom:15,
+    paddingLeft:30,
+  },
+  leftIcon: {
+    marginRight: 12,
+    position:"absolute",
+     left:10,
+     top:22,
+     zIndex:1000,
+    
+  },
+  autocompleteContainer: {
+    flex: 1,
+  },
+  textInputContainer: {
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+    height: 48,
+    
+  },
+  googleTextInput: {
+    backgroundColor: 'transparent',
+    height: 48,
+    fontSize: 16,
+    color: '#000',
+    paddingHorizontal: 0,
+    marginHorizontal: 0,
+  },
+  textInput: {
+    fontSize: 16,
+    color: '#000',
+    flex: 1,
+  },
+  listView: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  row: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  description: {
+    color: '#000',
+    fontSize: 16,
+  },
+  searchIconContainer: {
+    marginLeft: 12,
   },
   loadingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 15,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginTop: 15,
-    gap: 10
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    marginBottom: 16,
   },
   loadingText: {
     color: '#007AFF',
     fontSize: 14,
+    marginLeft: 8,
   },
   errorContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 8,
+    padding: 16,
+    backgroundColor: '#FFF2F2',
+    borderRadius: 12,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#ff3b30',
-    marginTop:15
+    borderColor: '#FFE5E5',
   },
   errorText: {
-    marginTop: 10,
+    marginLeft: 12,
     color: '#ff3b30',
-    textAlign: 'center',
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 20,
+  },
+  uberButton: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: Platform.OS === 'ios' ? 34 : 24,
+  
+  },
+  uberButtonDisabled: {
+    backgroundColor: '#E5E5EA',
+  },
+  uberButtonText: {
+    color: '#fff',
     fontSize: 16,
-  }
+    fontWeight: '600',
+  },
+  uberButtonTextDisabled: {
+    color: '#8E8E93',
+  },
 });
 
-export default DropoffLocation; 
+export default DropoffLocation;
+

@@ -1,5 +1,5 @@
 import {StyleSheet} from 'react-native';
-import {heightPercentageToDP as hp} from 'react-native-responsive-screen';
+import {heightPercentageToDP as hp, widthPercentageToDP as wp} from 'react-native-responsive-screen';
 import {colors} from '../../../utils/colors';
 
 export const styles = StyleSheet.create({
@@ -8,10 +8,30 @@ export const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
+  modernButton: {
+    backgroundColor: '#000',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    marginHorizontal: 4,
+  },
   buttonText: {
     fontWeight: 'bold',
     color: colors.secondary,
     fontSize: 12,
+  },
+  modernButtonText: {
+    color: '#fff',
+    fontSize: hp(1.4),
+    fontWeight: '600',
+    marginLeft: 6,
   },
   container: {
     flex: 1,
@@ -37,11 +57,17 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     left: 0,
     bottom: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 20,
     gap: 5,
   },
   timerText: {
     color: 'white',
+    fontSize: hp(1.6),
+    fontWeight: '500',
   },
   buttonContainer: {
     position: 'absolute',
@@ -51,7 +77,62 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     left: 0,
-    bottom: 50,
-    gap: 5,
+    bottom: 120,
+    paddingHorizontal: 20,
+    gap: 8,
   },
-}); 
+  floatingButtons: {
+    position: 'absolute',
+    right: 20,
+    bottom: 180,
+    zIndex: 1001,
+    alignItems: 'center',
+  },
+  chatButton: {
+    backgroundColor: '#000',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  callButton: {
+    backgroundColor: '#4CAF50',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF3B30',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  unreadText: {
+    color: '#fff',
+    fontSize: hp(1.2),
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});
+

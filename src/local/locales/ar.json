@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "جارٍ التحميل...",
+    "loading_more": "جارٍ تحميل المزيد...",
     "error": "حدث خطأ",
     "success": "نجاح",
     "cancel": "إلغاء",
@@ -24,6 +25,7 @@
     "cancel_ride_warning": "هل أنت متأكد أنك تريد إلغاء هذه الرحلة؟ سيتم تخفيض رصيدك.",
     "yes": "نعم",
     "no": "لا",
+    "call": "اتصال",
     "verify": "تحقق",
     "Home": "الرئيسية",
     "Historique": "السجل",
@@ -43,7 +45,33 @@
     "days": "أيام",
     "hours": "ساعات",
     "minutes": "دقائق",
-    "seconds": "ثواني"
+    "seconds": "ثواني",
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "days_ago": "أيام",
+    "warning": "تحذير",
+    "please_wait": "يرجى الانتظار",
+    "save_changes": "حفظ التغييرات",
+    "with_elevator": "مع مصعد",
+    "floor": "طابق",
+    "kb": "كيلوبايت",
+    "attach_file": "إرفاق ملف",
+    "drop_address": "عنوان التسليم",
+    "pickup_address": "عنوان الاستلام",
+    "delivery_address": "عنوان التوصيل",
+    "report_problem": "الإبلاغ عن مشكلة",
+    "problem": "مشكلة",
+    "message": "رسالة",
+    "attachment": "مرفق",
+    "submit_report": "إرسال التقرير",
+    "thank_you_cooperation": "شكراً لتعاونكم.",
+    "report_received": "لقد تلقينا تقريركم. سيقوم فريقنا بفحص المشكلة والاتصال بكم في أقرب وقت ممكن.",
+    "continue": "متابعة",
+    "address_pickup_delivery": "عنوان الاستلام / التسليم"
+  },
+  "errors": {
+    "title": "خطأ",
+    "phone_call": "لا يمكن فتح تطبيق الهاتف."
   },
   "onboarding": {
     "login": "تسجيل الدخول",
@@ -154,6 +182,17 @@
     "profile_update_failed": "فشل تحديث الملف الشخصي. يرجى المحاولة مرة أخرى."
   },
   "history": {
+    "total_rides": "إجمالي الرحلات",
+    "active": "نشط",
+    "completed": "مكتمل",
+    "no_rides_title": "لا توجد رحلات بعد",
+    "no_rides_subtitle": "لم تقم بأي رحلات بعد. احجز رحلتك الأولى للبدء!",
+    "book_ride": "احجز رحلة",
+    "rides_found": "رحلة تم العثور عليها",
+    "active_ride": "رحلة نشطة",
+    "pickup": "نقطة الانطلاق",
+    "dropoff": "نقطة الوصول",
+    "address_not_available": "العنوان غير متاح",
     "empty": {
       "no_orders": "لم يتم العثور على طلبات"
     },
@@ -324,9 +363,26 @@
       "current_password": "كلمة المرور الحالية",
       "new_password": "كلمة المرور الجديدة",
       "confirm_password": "تأكيد كلمة المرور",
+      "current_password_placeholder": "أدخل كلمة المرور الحالية",
+      "new_password_placeholder": "أدخل كلمة المرور الجديدة",
+      "confirm_password_placeholder": "تأكيد كلمة المرور الجديدة",
       "update_button": "تحديث كلمة المرور",
       "update_success": "تم تحديث كلمة المرور بنجاح!",
       "update_error": "فشل تحديث كلمة المرور.",
+      "change_password": "تغيير كلمة المرور",
+      "tips_title": "نصائح الأمان",
+      "tip1_title": "كلمة مرور قوية",
+      "tip1_desc": "استخدم 8 أحرف على الأقل مع أحرف كبيرة وصغيرة وأرقام وأحرف خاصة.",
+      "tip2_title": "تحديثات منتظمة",
+      "tip2_desc": "غير كلمة المرور الخاصة بك بانتظام للحفاظ على أمان الحساب.",
+      "tip3_title": "احتفظ بها خاصة",
+      "tip3_desc": "لا تشارك كلمة المرور الخاصة بك مع الآخرين أو تستخدمها في حسابات متعددة.",
+      "strength": {
+        "weak": "ضعيف",
+        "medium": "متوسط",
+        "good": "جيد",
+        "strong": "قوي"
+      },
       "validation": {
         "title": "خطأ في التحقق",
         "current_required": "كلمة المرور الحالية مطلوبة",
@@ -340,6 +396,7 @@
     },
     "personal_info": {
       "title": "المعلومات الشخصية",
+      "section_title": "المعلومات الشخصية",
       "first_name": "الاسم الأول",
       "last_name": "اسم العائلة",
       "email": "البريد الإلكتروني",
@@ -353,7 +410,9 @@
       "email_placeholder": "email@example.com",
       "phone_placeholder": "رقم الهاتف",
       "otp_title": "أدخل رمز التحقق",
-      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}"
+      "otp_message": "تم إرسال رمز التحقق إلى {{phoneNumber}}",
+      "please_wait": "يرجى الانتظار {{time}} قبل المحاولة مرة أخرى",
+      "notice": "ستتطلب التغييرات في رقم هاتفك التحقق عبر الرسائل النصية."
     },
     "first_name": "الاسم الأول",
     "last_name": "اسم العائلة",
@@ -369,6 +428,12 @@
   },
   "help": {
     "title": "المساعدة والدعم",
+    "subtitle": "احصل على الدعم واعثر على الإجابات",
+    "quick_actions": "الإجراءات السريعة",
+    "contact_support": "اتصل بالدعم",
+    "contact": {
+      "email": "دعم البريد الإلكتروني"
+    },
     "call_support": "الاتصال بالدعم",
     "send_email": "إرسال بريد إلكتروني",
     "whatsapp": "واتساب",
@@ -385,8 +450,19 @@
       "password": {
         "question": "كيف يمكنني تحديث كلمة المرور الخاصة بي؟",
         "answer": "انتقل إلى قسم \"الأمان\" واتبع التعليمات لتغيير كلمة المرور الخاصة بك."
+      },
+      "booking": {
+        "question": "كيف أحجز رحلة؟",
+        "answer": "افتح التطبيق، حدد نقطة الانطلاق والوجهة، اختر نوع المركبة، وتأكيد الحجز."
+      },
+      "payment": {
+        "question": "ما هي طرق الدفع المقبولة؟",
+        "answer": "نحن نقبل المدفوعات النقدية وطرق الدفع الرقمية المختلفة. يمكنك إدارة خيارات الدفع في إعدادات التطبيق."
       }
-    }
+    },
+    "app_info": "معلومات التطبيق",
+    "app_version": "إصدار التطبيق",
+    "last_updated": "آخر تحديث"
   },
   "booking": {
     "step1": {
@@ -474,11 +550,24 @@
     },
     "outside_tunisia": "هذا الموقع خارج تونس. يرجى اختيار موقع داخل تونس.",
     "too_close": "يجب أن تكون نقطة الوصول على بُعد 100 متر على الأقل من نقطة الانطلاق.",
-    "calculating_distance": "حساب المسافة..."
+    "calculating_distance": "حساب المسافة...",
+    "drag_map_instruction": "اسحب الخريطة لتحريك الدبوس",
+    "set_destination": "حدد وجهتك",
+    "set_pickup_location": "حدد نقطة الانطلاق",
+    "where_from": "من أين؟",
+    "search_destination": "البحث عن الوجهة",
+    "drop_address": "عنوان التسليم",
+    "pickup_address": "عنوان الاستلام",
+    "delivery_address": "عنوان التوصيل"
   },
   "Choose_location": "اختر مكاناً",
   "save": "حفظ",
-  "search_placeholder": "ابحث عن مكان",
+  "search": {
+    "placeholder": "بحث...",
+    "search_placeholder": "ابحث عن مكان",
+    "search_destination": "البحث عن الوجهة",
+    "search_orders": "البحث عن الطلبات..."
+  },
   "eco_description": "مركبة اقتصادية",
   "berline_description": "مركبة مريحة وواسعة",
   "van_description": "مركبة لنقل الركاب",
@@ -640,6 +729,143 @@
   },
   "choose_vehicle": {
     "account_under_validation": "حسابك قيد المراجعة.",
-    "must_complete_women_validation": "يجب عليك إكمال عملية توثيق النساء لاختيار هذه المركبة."
+    "must_complete_women_validation": "يجب عليك إكمال عملية توثيق النساء لاختيار هذه المركبة.",
+    "select_vehicle_subtitle": "اختر المركبة التي تناسب احتياجاتك",
+    "confirm_vehicle": "تأكيد المركبة",
+    "scheduled_for": "مجدول لـ",
+    "people": "أشخاص",
+    "standard_ride": "رحلة عادية"
+  },
+  "confirm_ride": {
+    "title": "تأكيد رحلتك",
+    "subtitle": "راجع تفاصيل رحلتك",
+    "pickup": "نقطة الانطلاق",
+    "destination": "الوجهة",
+    "current_location": "الموقع الحالي",
+    "total_price": "السعر الإجمالي",
+    "confirm_ride": "تأكيد الرحلة",
+    "calculating": "جاري الحساب...",
+    "now": "الآن",
+    "in_minutes": "خلال {{minutes}} دقيقة",
+    "in_hours": "خلال {{hours}} ساعة",
+    "in_hours_plural": "خلال {{hours}} ساعات",
+    "ride_confirmed": "تم تأكيد الرحلة!",
+    "searching_driver": "البحث عن سائق...",
+    "request_failed": "فشل في إنشاء الطلب",
+    "vehicle": "مركبة",
+    "vehicle_economy_desc": "رحلات اقتصادية للرحلات اليومية",
+    "vehicle_comfort_desc": "مساحة أكبر وراحة أكثر",
+    "vehicle_premium_desc": "مركبات فاخرة للمناسبات الخاصة",
+    "vehicle_standard_desc": "رحلة قياسية"
+  },
+  "search_drivers": {
+    "preparing_search": "جاري إعداد طلبك...",
+    "searching_drivers": "البحث عن سائقين",
+    "finding_best_driver": "البحث عن أفضل سائق لك...",
+    "driver_found": "تم العثور على سائق!",
+    "redirecting_tracking": "جاري التوجيه إلى التتبع...",
+    "cancel_search": "إلغاء البحث",
+    "finding_driver": "البحث عن سائق",
+    "service_unavailable": "الخدمة غير متاحة",
+    "red_zone_description": "خدمة الاستلام غير متاحة في هذه المنطقة. يرجى اختيار موقع مختلف.",
+    "choose_different_location": "اختر موقعاً مختلفاً",
+    "red_zone_title": "الخدمة غير متاحة",
+    "red_zone_message": "خدمة الاستلام غير متاحة في هذه المنطقة"
+  },
+  "order": {
+    "title": "تفاصيل الطلب",
+    "loading": "جاري تحميل تفاصيل الطلب...",
+    "track_order": "تتبع الطلب",
+    "driver_info": "معلومات السائق",
+    "chat": "محادثة",
+    "call": "اتصال",
+    "call_driver": "اتصال بالسائق",
+    "call_driver_message": "اختر كيف تريد الاتصال بالسائق",
+    "voice_call": "اتصال صوتي",
+    "voice_call_subtext": "اتصال صوتي مع السائق",
+    "video_call": "اتصال بالفيديو",
+    "video_call_subtext": "اتصال بالفيديو مع السائق",
+    "trip_details": "تفاصيل الرحلة",
+    "pickup_location": "موقع الاستلام",
+    "dropoff_location": "موقع التسليم",
+    "address_not_available": "العنوان غير متاح",
+    "payment_details": "تفاصيل الدفع",
+    "base_fare": "الأجرة الأساسية",
+    "additional_charges": "رسوم إضافية",
+    "total_amount": "المبلغ الإجمالي",
+    "payment_method_cash": "الدفع نقداً",
+    "order_info": "معلومات الطلب",
+    "order_id": "رقم الطلب",
+    "order_date": "تاريخ الطلب",
+    "estimated_duration": "المدة المقدرة",
+    "distance": "المسافة",
+    "last_updated": "آخر تحديث",
+    "support_title": "اتصل بالدعم",
+    "support_message": "تحتاج مساعدة؟ اتصل بفريق الدعم للحصول على المساعدة.",
+    "status": {
+      "pending": "قيد الانتظار",
+      "assigned_to_driver": "تم التعيين للسائق",
+      "driver_on_route_to_pickup": "السائق في طريقه إلى موقع الاستلام",
+      "arrived_at_pickup": "وصل إلى موقع الاستلام",
+      "picked_up": "تم الاستلام",
+      "on_route_to_delivery": "في طريقه إلى موقع التسليم",
+      "arrived_at_delivery": "وصل إلى موقع التسليم",
+      "completed": "مكتمل",
+      "canceled_by_client": "تم الإلغاء من قبل العميل",
+      "canceled_by_partner": "تم الإلغاء من قبل السائق"
+    },
+    "status_description": {
+      "pending": "طلبك قيد المعالجة",
+      "assigned_to_driver": "تم تعيين سائق لطلبك",
+      "driver_on_route_to_pickup": "السائق في طريقه إلى موقع الاستلام",
+      "arrived_at_pickup": "وصل السائق إلى موقع الاستلام",
+      "picked_up": "قام السائق باستلام طلبك",
+      "on_route_to_delivery": "السائق في طريقه إلى موقع التسليم",
+      "arrived_at_delivery": "وصل السائق إلى موقع التسليم",
+      "completed": "تم إكمال الطلب بنجاح",
+      "canceled_by_client": "تم إلغاء الطلب من قبلك",
+      "canceled_by_partner": "تم إلغاء الطلب من قبل السائق"
+    }
+  },
+  "drawer": {
+    "guest_user": "مستخدم ضيف",
+    "guest_user_short": "ضيف",
+    "user": "مستخدم",
+    "tap_to_sign_in": "اضغط لتسجيل الدخول",
+    "guest_mode": "وضع الضيف",
+    "signed_in": "تم تسجيل الدخول",
+    "unlock_features": "افتح جميع الميزات",
+    "sign_in_benefits": "سجّل الدخول للوصول إلى الدردشات والسجل والميزات المخصصة.",
+    "powered_by": "بدعم من FORTEKMA",
+    "sign_in_required": "مطلوب تسجيل الدخول",
+    "sign_in_message": "يرجى تسجيل الدخول للوصول إلى ميزات حسابك.",
+    "feature_requires_signin": "{{actionName}} يتطلب تسجيل الدخول أولاً.",
+    "all_chats": "كل الدردشات"
+  },
+  "tracking": {
+    "driver": "السائق",
+    "vehicle": "المركبة",
+    "order_not_found": "لم يتم العثور على الطلب",
+    "fetch_error": "فشل في تحميل تفاصيل الطلب",
+    "status": {
+      "pending": "قيد الانتظار",
+      "go_to_pickup": "في الطريق للاستلام",
+      "arrived_at_pickup": "وصل إلى نقطة الاستلام",
+      "picked_up": "تم الاستلام",
+      "completed": "مكتمل",
+      "canceled_by_client": "تم الإلغاء من قبل العميل",
+      "canceled_by_partner": "تم الإلغاء من قبل السائق"
+    },
+    "loading": "جاري تحميل معلومات التتبع...",
+    "title": "تتبع الطلب",
+    "pickup_location": "موقع الاستلام",
+    "dropoff_location": "موقع التسليم"
+  },
+  "call": {
+    "select_call_type": "اختر نوع الاتصال",
+    "choose_call_type": "اختر كيف تريد الاتصال بالسائق",
+    "voice_call": "مكالمة صوتية",
+    "video_call": "مكالمة فيديو",
+    "failed_to_initiate": "فشل في بدء المكالمة. يرجى المحاولة مرة أخرى."
   }
 }

@@ -121,6 +121,7 @@ export const sendNotificationToDrivers = async (
 };
 
 export const calculatePrice = async (formData,driver=null) => {
+  console.log("formData",formData);
   const data={
     
     "accessDepart": {
@@ -141,9 +142,9 @@ export const calculatePrice = async (formData,driver=null) => {
       "lng": driver.longitude
     }
   }
-  console.log(data);
  
   const response = await api.post('/calcul',data);
+  console.log("response",response.data);
 
    return response.data;
 }

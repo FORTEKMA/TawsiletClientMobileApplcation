@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, TouchableOpacity, Image, Text, Alert, Linking, View, ScrollView, I18nManager, ActivityIndicator  } from "react-native";
+import { SafeAreaView, TouchableOpacity, Image, Text, Alert, Linking, View, ScrollView, I18nManager, ActivityIndicator, Platform  } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "@react-navigation/native";
 import { differenceInMonths, differenceInDays, parseISO } from "date-fns";
 import { OneSignal } from "react-native-onesignal";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../../utils/colors';
 import { styles } from './styles';
@@ -138,9 +139,24 @@ try {
   };
 
   const menuButtons = [
-    { title: t('profile.menu.information'), screen: 'PersonalInfo' },
-    { title: t('profile.menu.security'), screen: 'Security' },
-    { title: t('profile.menu.help'), screen: 'Help' },
+    { 
+      title: t('profile.menu.information'), 
+      screen: 'PersonalInfo',
+      icon: 'person-outline',
+      description: t('profile.menu.information_desc', 'Manage your personal details')
+    },
+    { 
+      title: t('profile.menu.security'), 
+      screen: 'Security',
+      icon: 'shield-checkmark-outline',
+      description: t('profile.menu.security_desc', 'Password and security settings')
+    },
+    { 
+      title: t('profile.menu.help'), 
+      screen: 'Help',
+      icon: 'help-circle-outline',
+      description: t('profile.menu.help_desc', 'Get support and assistance')
+    },
   ];
 
   // Handle account deletion
@@ -191,51 +207,164 @@ try {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <ProfileHeader
-          user={user}
-          onImagePress={() => setGalleyModal(true)}
-          isUploading={isUploading}
-        />
+    <SafeAreaView style={styles.uberContainer}>
+      {/* Modern Header */}
+      <View style={styles.uberHeader}>
+        <TouchableOpacity 
+          style={styles.uberHeaderButton}
+          onPress={() => navigation.openDrawer()}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="menu" size={24} color="#000" />
+        </TouchableOpacity>
         
-        <View style={styles.menuContainer}>
+        <View style={styles.uberHeaderContent}>
+          <Text style={styles.uberHeaderTitle}>{t('profile.title')}</Text>
+        </View>
+        
+        <View style={styles.uberHeaderSpacer} />
+      </View>
+      
+      <ScrollView style={styles.uberScrollView} showsVerticalScrollIndicator={false}>
+        {/* Enhanced Profile Header */}
+        <View style={styles.uberProfileSection}>
+          <View style={styles.uberProfileImageContainer}>
+            <TouchableOpacity 
+              onPress={() => setGalleyModal(true)}
+              style={styles.uberProfileImageWrapper}
+              activeOpacity={0.8}
+            >
+              {user?.profilePicture?.url ? (
+                <Image
+                  style={styles.uberProfileImage}
+                  source={{ uri: user.profilePicture.url }}
+                />
+              ) : (
+                <View style={styles.uberProfileImagePlaceholder}>
+                  <Text style={styles.uberProfileImageInitials}>
+                    {user?.firstName?.charAt(0)?.toUpperCase() || ''}{user?.lastName?.charAt(0)?.toUpperCase() || ''}
+                  </Text>
+                </View>
+              )}
+              
+              {/* Upload Loading Overlay */}
+              {isUploading && (
+                <View style={styles.uberUploadingOverlay}>
+                  <ActivityIndicator size="large" color="#000" />
+                </View>
+              )}
+              
+              {/* Edit Icon */}
+              <View style={styles.uberEditIconContainer}>
+                <MaterialCommunityIcons
+                  name="camera"
+                  size={18}
+                  color="white"
+                />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* User Information */}
+          <View style={styles.uberUserInfoContainer}>
+            <Text style={styles.uberUserName}>
+              {user?.firstName || ''} {user?.lastName || ''}
+            </Text>
+            
+            <View style={styles.uberUserDetails}>
+              {user?.email && (
+                <View style={styles.uberInfoRow}>
+                  <MaterialCommunityIcons name="email-outline" size={16} color="#8E8E93" />
+                  <Text style={styles.uberUserEmail}>{user.email}</Text>
+                </View>
+              )}
+              
+              {user?.phoneNumber && (
+                <View style={styles.uberInfoRow}>
+                  <MaterialCommunityIcons name="phone-outline" size={16} color="#8E8E93" />
+                  <Text style={styles.uberUserPhone}>{user.phoneNumber}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+
+         
+        </View>
+        
+        {/* Menu Section */}
+        <View style={styles.uberMenuSection}>
+          <Text style={styles.uberSectionTitle}>{t('profile.menu.title', 'Account Settings')}</Text>
+          
           {menuButtons.map((button, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.menuButton}
+              style={styles.uberMenuItem}
               onPress={() => navigation.navigate(button.screen)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.menuButtonText}>{button.title}</Text>
-              <Ionicons name={I18nManager.isRTL ? "chevron-back-outline" : "chevron-forward-outline"} size={24} color={"#000"} />
+              <View style={styles.uberMenuItemLeft}>
+                <View style={styles.uberMenuIconContainer}>
+                  <Ionicons name={button.icon} size={24} color="#000" />
+                </View>
+                <View style={styles.uberMenuTextContainer}>
+                  <Text style={styles.uberMenuItemTitle}>{button.title}</Text>
+                  <Text style={styles.uberMenuItemDescription}>{button.description}</Text>
+                </View>
+              </View>
+              <MaterialCommunityIcons 
+                name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+                size={24} 
+                color="#8E8E93" 
+              />
             </TouchableOpacity>
           ))}
 
+          {/* Language Option */}
           <TouchableOpacity
-            style={styles.menuButton}
+            style={styles.uberMenuItem}
             onPress={() => setShowLanguageModal(true)}
+            activeOpacity={0.7}
           >
-            <Text style={styles.menuButtonText}>{t('profile.language.title')}</Text>
-            <Ionicons name="language-outline" size={24} color={"#000"} />
+            <View style={styles.uberMenuItemLeft}>
+              <View style={styles.uberMenuIconContainer}>
+                <Ionicons name="language-outline" size={24} color="#000" />
+              </View>
+              <View style={styles.uberMenuTextContainer}>
+                <Text style={styles.uberMenuItemTitle}>{t('profile.language.title')}</Text>
+                <Text style={styles.uberMenuItemDescription}>{t('profile.language.description', 'Change app language')}</Text>
+              </View>
+            </View>
+            <MaterialCommunityIcons 
+              name={I18nManager.isRTL ? "chevron-left" : "chevron-right"} 
+              size={24} 
+              color="#8E8E93" 
+            />
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Ionicons name="log-out-outline" size={24} color={"#fff"} />
-          <Text style={[styles.logoutText,{color:"#fff"}]}>{t('profile.logout.button')}</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.uberActionSection}>
+          <TouchableOpacity
+            style={styles.uberLogoutButton}
+            onPress={() => setModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="logout" size={24} color="#fff" />
+            <Text style={styles.uberLogoutText}>{t('profile.logout.button')}</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.logoutButton, { marginTop: 10, backgroundColor: '#ffebee' }]}
-          onPress={handleDeleteAccount}
-        >
-          <Ionicons name="trash-outline" size={24} color="#d32f2f" />
-          <Text style={[styles.logoutText, { color: '#d32f2f' }]}>{t('profile.delete_account.button')}</Text>
-        </TouchableOpacity>
-        <View style={{height:100}}/>
+          <TouchableOpacity
+            style={styles.uberDeleteButton}
+            onPress={handleDeleteAccount}
+            activeOpacity={0.8}
+          >
+            <MaterialCommunityIcons name="delete-outline" size={24} color="#FF3B30" />
+            <Text style={styles.uberDeleteText}>{t('profile.delete_account.button')}</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Bottom Spacing */}
+        <View style={styles.uberBottomSpacing} />
       </ScrollView>
 
       <LogoutModal

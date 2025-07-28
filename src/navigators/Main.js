@@ -3,11 +3,13 @@ import {NavigationContainer} from '@react-navigation/native';
 import {useDispatch, useSelector} from 'react-redux';
 import {getCurrentUser} from '../store/userSlice/userSlice';
 import AuthStack from './AuthStack';
-import TabNavigator from './TabNavigator';
+import DrawerNavigator from './DrawerNavigator'; // Changed from TabNavigator to DrawerNavigator
 import {createStackNavigator} from '@react-navigation/stack';
 import Onboarding from '../screens/Onboarding';
 import Rating from "../screens/Rating"
 import Login from '../screens/Login';
+import ChatScreen from '../screens/ChatScreen'; // Import ChatScreen
+import TrackingScreen from '../screens/TrackingScreen'; // Import TrackingScreen
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { startTrackingUserLocation } from "../utils/userLocationTracker"
 
@@ -43,7 +45,7 @@ const MainNavigator = ({onReady}) => {
     {isFirstTime==true&&(  <Stack.Screen name="onboarding" component={Onboarding} />)}
       {hasReview!=null&&(  <Stack.Screen options={{ gestureEnabled: false }}  initialParams={{ order:hasReview}}  name="Rating" component={Rating} />)}
      
-      <Stack.Screen name="Main" component={TabNavigator} />
+      <Stack.Screen name="Main" component={DrawerNavigator} />
       <Stack.Screen name="Auth" component={AuthStack} options={{ headerShown: false }} />
       <Stack.Screen
         name="LoginModal"
@@ -55,6 +57,8 @@ const MainNavigator = ({onReady}) => {
           cardStyle: { backgroundColor: 'transparent' },
         }}
       />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="TrackingScreen" component={TrackingScreen} />
  
       </Stack.Navigator>
     </NavigationContainer>
@@ -62,3 +66,5 @@ const MainNavigator = ({onReady}) => {
 };
 
 export default MainNavigator;
+
+

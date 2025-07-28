@@ -157,19 +157,36 @@ export const CALL_QUALITY_INDICATORS = {
  * @returns {Promise<object>} Initialized RTC Engine instance
  */
 export const createAgoraEngine = async (config = {}) => {
- 
+  try {
+    // Check if Agora SDK is available
+    if (!isAgoraSDKAvailable()) {
+      throw new Error('Agora SDK is not available. Please check your installation.');
+    }
 
-  const engine = createAgoraRtcEngine();
-  
-  // Initialize with default configuration
-  const initConfig = {
-    appId: AGORA_APP_ID,
-    ...config,
-  };
-  
-  engine.initialize(initConfig);
-  
-  return engine;
+    // Check if App ID is configured
+    if (!isAgoraConfigured()) {
+      throw new Error('Agora App ID is not configured. Please set AGORA_APP_ID in AgoraConfig.js');
+    }
+
+    console.log('Creating Agora RTC Engine with App ID:', AGORA_APP_ID);
+    
+    const engine = createAgoraRtcEngine();
+    
+    // Initialize with default configuration
+    const initConfig = {
+      appId: AGORA_APP_ID,
+      ...config,
+    };
+    
+    console.log('Initializing Agora engine with config:', initConfig);
+    engine.initialize(initConfig);
+    
+    console.log('Agora RTC Engine initialized successfully');
+    return engine;
+  } catch (error) {
+    console.error('Failed to create Agora engine:', error);
+    throw error;
+  }
 };
 
 /**
@@ -234,6 +251,13 @@ export const waitForAgoraSDK = async () => {
  */
 export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', privilegeExpiredTs = 0) => {
   try {
+    // For development mode, return null (no token required)
+    if (__DEV__) {
+      console.log('Development mode: Using Agora without token');
+      return null;
+    }
+
+    // For production, make API call to your backend
     const response = await api.post(`/generate-agora-token`, {
       channelName,
       uid,
@@ -241,21 +265,17 @@ export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', pr
       privilegeExpiredTs: privilegeExpiredTs || Math.floor(Date.now() / 1000) + 3600, // 1 hour default
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.success && data.token) {
-      return data.token;
+    if (response?.data?.success && response?.data?.token) {
+      return response.data.token;
     } else {
-      throw new Error(data.message || 'Failed to generate token');
+      throw new Error(response?.data?.message || 'Failed to generate token');
     }
   } catch (error) {
-    // For development, return null (no token)
-    // In production, this should throw an error or implement retry logic
+    console.error('Error getting Agora token:', error);
+    
+    // For development, return null (no token required)
     if (__DEV__) {
+      console.log('Development mode: Continuing without token');
       return null;
     }
     

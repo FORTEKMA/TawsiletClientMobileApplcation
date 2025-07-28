@@ -59,7 +59,7 @@ export const sendVoIPCallNotification = async ({
         fr: `${caller?.firstName || 'Utilisateur'} vous appelle`
       },
       mutable_content: true,
-      android_channel_id: 'voip_calls',
+   //   android_channel_id: 'voip_calls',
       android_accent_color: "#4CAF50",
       ios_badgeType: "Increase",
       ios_badgeCount: 1,
@@ -84,7 +84,8 @@ export const sendVoIPCallNotification = async ({
     console.log('VoIP call notification sent successfully:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Failed to send VoIP call notification:', error);
+
+    console.error('Failed to send VoIP call notification:', error.response);
     throw error;
   }
 };

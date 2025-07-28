@@ -30,7 +30,7 @@ import Mapbox, {
   RasterLayer,
   Light
 } from '@rnmapbox/maps';
-import { TRACKING_MAP_STYLE, MAP_PERFORMANCE_SETTINGS } from '../../utils/mapboxConfig';
+import { TRACKING_MAP_STYLE, MAP_PERFORMANCE_SETTINGS, MAPBOX_ACCESS_TOKEN } from '../../utils/mapboxConfig';
 import { API_GOOGLE } from '@env';
 import api from '../../utils/api';
 import { colors } from '../../utils/colors'; // Assuming colors are defined here, will override
@@ -39,6 +39,9 @@ import db from '../../utils/firebase';
 import DriverMarker from '../../components/DriverMarker';
 import { RouteOptimizer, DriverMovementTracker, MapPerformanceUtils, NavigationRouteManager } from '../../utils/mapUtils';
 import { getDistance } from 'geolib';
+
+// Ensure Mapbox access token is set
+Mapbox.setAccessToken(MAPBOX_ACCESS_TOKEN);
 
 const { width, height } = Dimensions.get('window');
 
@@ -755,7 +758,7 @@ const TrackingScreen = ({ route }) => {
         <MapView
           ref={mapRef}
           style={styles.map}
-          styleURL={streetViewMode ? JSON.stringify(ENHANCED_3D_STREET_STYLE) : TRACKING_MAP_STYLE}
+          styleURL={streetViewMode ? "mapbox://styles/mapbox/streets-v11" : "mapbox://styles/mapbox/streets-v11"}
           onDidFinishLoadingMap={() => setMapReady(true)}
           compassEnabled={true}
           compassViewPosition={3}

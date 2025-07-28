@@ -220,7 +220,13 @@ const TrackingScreen = ({ route }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   
-  const orderId = route.params.id;
+  // Safe parameter extraction to prevent ReadableNativeMap casting error
+  const orderId = route?.params?.id || route?.params || null;
+  
+  // Ensure orderId is a string
+  const safeOrderId = typeof orderId === 'string' ? orderId : 
+                     typeof orderId === 'object' && orderId?.id ? orderId.id :
+                     String(orderId || '');
   
   // State management
   const [order, setOrder] = useState(null);
@@ -428,7 +434,7 @@ const TrackingScreen = ({ route }) => {
     try {
       setLoading(true);
      
-      const response = await api.get(`commands/${orderId}?populate[0]=driver&populate[1]=pickUpAddress&populate[2]=dropOfAddress&populate[3]=pickUpAddress.coordonne&populate[4]=dropOfAddress.coordonne&populate[5]=driver.profilePicture&populate[6]=review&populate[7]=driver.vehicule`);
+      const response = await api.get(`commands/${safeOrderId}?populate[0]=driver&populate[1]=pickUpAddress&populate[2]=dropOfAddress&populate[3]=pickUpAddress.coordonne&populate[4]=dropOfAddress.coordonne&populate[5]=driver.profilePicture&populate[6]=review&populate[7]=driver.vehicule`);
       
       if (response?.data?.data != undefined) {
         setOrder(response.data.data); 
@@ -749,7 +755,7 @@ const TrackingScreen = ({ route }) => {
         <MapView
           ref={mapRef}
           style={styles.map}
-          styleURL={streetViewMode ? ENHANCED_3D_STREET_STYLE : TRACKING_MAP_STYLE}
+          styleURL={streetViewMode ? JSON.stringify(ENHANCED_3D_STREET_STYLE) : TRACKING_MAP_STYLE}
           onDidFinishLoadingMap={() => setMapReady(true)}
           compassEnabled={true}
           compassViewPosition={3}

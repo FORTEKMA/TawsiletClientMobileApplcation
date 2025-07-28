@@ -15,6 +15,8 @@ const Tracking = ({order, timer}) => {
   const [pickupCoordinate, setPickupCoordinate] = useState([0, 0]);
   const [dropCoordinate, setDropCoordinateCoordinate] = useState([0, 0]);
   const [driverPosition, setDriverPosition] = useState([0, 0]);
+  const [mapPitch, setMapPitch] = useState(60); // 3D perspective angle
+  const [followDriver, setFollowDriver] = useState(true); // Auto-follow driver
   const latitudeDelta = 0.4;
   const longitudeDelta = 0.4;
   const [region, setRegion] = useState({
@@ -68,51 +70,103 @@ const Tracking = ({order, timer}) => {
     }
   }, [order]);
 
+  // Auto-follow driver with 3D camera
+  useEffect(() => {
+    if (followDriver && driverPosition[0] !== 0 && driverPosition[1] !== 0 && mapRef.current) {
+      // Update camera to follow driver with 3D perspective
+      mapRef.current.setCamera({
+        centerCoordinate: [driverPosition[1], driverPosition[0]],
+        zoomLevel: 17,
+        pitch: mapPitch,
+        heading: 0,
+        animationDuration: 2000,
+      });
+    }
+  }, [driverPosition, followDriver, mapPitch]);
+
   const handleAnimateToDriverPosition = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: driverPosition[0],
-          longitude: driverPosition[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+    setFollowDriver(true);
+    if (mapRef.current && driverPosition[0] !== 0 && driverPosition[1] !== 0) {
+      mapRef.current.setCamera({
+        centerCoordinate: [driverPosition[1], driverPosition[0]],
+        zoomLevel: 17,
+        pitch: 60,
+        heading: 0,
+        animationDuration: 1000,
+      });
     }
   };
 
   const handleAnimateToPickupPosition = () => {
-    if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: pickupCoordinate[0],
-          longitude: pickupCoordinate[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+    setFollowDriver(false);
+    if (mapRef.current && pickupCoordinate[0] !== 0 && pickupCoordinate[1] !== 0) {
+      mapRef.current.setCamera({
+        centerCoordinate: [pickupCoordinate[1], pickupCoordinate[0]],
+        zoomLevel: 16,
+        pitch: 45,
+        heading: 0,
+        animationDuration: 1000,
+      });
     }
   };
 
   const handleAnimateToDropPosition = () => {
+    setFollowDriver(false);
+    if (mapRef.current && dropCoordinate[0] !== 0 && dropCoordinate[1] !== 0) {
+      mapRef.current.setCamera({
+        centerCoordinate: [dropCoordinate[1], dropCoordinate[0]],
+        zoomLevel: 16,
+        pitch: 45,
+        heading: 0,
+        animationDuration: 1000,
+      });
+    }
+  };
+
+  // Toggle between 2D and 3D view
+  const handleToggle3DView = () => {
+    const newPitch = mapPitch === 0 ? 60 : 0;
+    setMapPitch(newPitch);
     if (mapRef.current) {
-      mapRef.current.animateToRegion(
-        {
-          latitude: dropCoordinate[0],
-          longitude: dropCoordinate[1],
-          latitudeDelta,
-          longitudeDelta,
-        },
-        1000,
-      );
+      mapRef.current.setCamera({
+        pitch: newPitch,
+        animationDuration: 1000,
+      });
+    }
+  };
+
+  // Show overview of entire route
+  const handleShowRouteOverview = () => {
+    setFollowDriver(false);
+    if (mapRef.current && pickupCoordinate[0] !== 0 && dropCoordinate[0] !== 0) {
+      // Calculate bounds to fit both pickup and drop-off points
+      const minLat = Math.min(pickupCoordinate[0], dropCoordinate[0]);
+      const maxLat = Math.max(pickupCoordinate[0], dropCoordinate[0]);
+      const minLng = Math.min(pickupCoordinate[1], dropCoordinate[1]);
+      const maxLng = Math.max(pickupCoordinate[1], dropCoordinate[1]);
+      
+      const centerLat = (minLat + maxLat) / 2;
+      const centerLng = (minLng + maxLng) / 2;
+      
+      mapRef.current.setCamera({
+        centerCoordinate: [centerLng, centerLat],
+        zoomLevel: 12,
+        pitch: 30,
+        heading: 0,
+        animationDuration: 1500,
+      });
     }
   };
 
   const handleMapReady = () => {
     if (mapRef.current) {
-      mapRef.current.animateToRegion(region, 1000);
+      mapRef.current.setCamera({
+        centerCoordinate: [region.longitude, region.latitude],
+        zoomLevel: 16,
+        pitch: 60,
+        heading: 0,
+        animationDuration: 1000,
+      });
     }
   };
 
@@ -129,6 +183,8 @@ const Tracking = ({order, timer}) => {
           driverPosition={driverPosition}
           order={order}
           onMapReady={handleMapReady}
+          mapPitch={mapPitch}
+          followDriver={followDriver}
         />
       ) : null}
       <View style={styles.overlay2}>
@@ -139,6 +195,10 @@ const Tracking = ({order, timer}) => {
         onDriverPosition={handleAnimateToDriverPosition}
         onDropPosition={handleAnimateToDropPosition}
         onPickupPosition={handleAnimateToPickupPosition}
+        onToggle3D={handleToggle3DView}
+        onRouteOverview={handleShowRouteOverview}
+        is3DEnabled={mapPitch > 0}
+        isFollowingDriver={followDriver}
       />
     </View>
   );

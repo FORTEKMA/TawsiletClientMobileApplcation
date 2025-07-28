@@ -281,6 +281,7 @@
     "yesterday": "أمس"
   },
   "profile": {
+    "title": "الملف الشخصي",
     "confirmed": "نشط",
     "pending": "قيد الانتظار",
     "menu": {
@@ -867,5 +868,20 @@
     "voice_call": "مكالمة صوتية",
     "video_call": "مكالمة فيديو",
     "failed_to_initiate": "فشل في بدء المكالمة. يرجى المحاولة مرة أخرى."
+  },
+  "chat": {
+    "just_now": "الآن",
+    "minutes_ago": "منذ {{minutes}} دقيقة",
+    "hours_ago": "منذ {{hours}} ساعة",
+    "days_ago": "منذ {{days}} يوم",
+    "connecting": "جارٍ الاتصال...",
+    "you": "أنت",
+    "no_chats_title": "لا توجد محادثات بعد",
+    "no_chats_subtitle": "ستظهر محادثاتك مع السائقين هنا",
+    "book_ride": "احجز رحلة",
+    "loading_chats": "جارٍ تحميل المحادثات...",
+    "all_chats": "جميع المحادثات",
+    "conversations": "محادثات",
+    "search_feature_coming_soon": "ستكون ميزة البحث في المحادثات متاحة قريباً!"
   }
 }

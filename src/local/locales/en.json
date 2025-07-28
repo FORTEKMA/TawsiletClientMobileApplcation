@@ -850,5 +850,20 @@
     "voice_call": "Voice Call",
     "video_call": "Video Call",
     "failed_to_initiate": "Failed to initiate call. Please try again."
+  },
+  "chat": {
+    "just_now": "Just now",
+    "minutes_ago": "{{minutes}}m ago",
+    "hours_ago": "{{hours}}h ago",
+    "days_ago": "{{days}}d ago",
+    "connecting": "Connecting...",
+    "you": "You",
+    "no_chats_title": "No conversations yet",
+    "no_chats_subtitle": "Your chat conversations with drivers will appear here",
+    "book_ride": "Book a Ride",
+    "loading_chats": "Loading conversations...",
+    "all_chats": "All Chats",
+    "conversations": "conversations",
+    "search_feature_coming_soon": "Chat search feature will be available soon!"
   }
 }

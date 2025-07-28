@@ -886,5 +886,20 @@
     "voice_call": "Appel vocal",
     "video_call": "Appel vidéo",
     "failed_to_initiate": "Échec de l'initiation de l'appel. Veuillez réessayer."
+  },
+  "chat": {
+    "just_now": "À l'instant",
+    "minutes_ago": "il y a {{minutes}} min",
+    "hours_ago": "il y a {{hours}}h",
+    "days_ago": "il y a {{days}}j",
+    "connecting": "Connexion...",
+    "you": "Vous",
+    "no_chats_title": "Aucune conversation pour le moment",
+    "no_chats_subtitle": "Vos conversations avec les chauffeurs apparaîtront ici",
+    "book_ride": "Réserver une course",
+    "loading_chats": "Chargement des conversations...",
+    "all_chats": "Toutes les conversations",
+    "conversations": "conversations",
+    "search_feature_coming_soon": "La fonction de recherche dans les conversations sera bientôt disponible !"
   }
 } 

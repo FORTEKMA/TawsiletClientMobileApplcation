@@ -28,7 +28,6 @@ try {
   ChannelProfile = AgoraSDK.ChannelProfile;
   ClientRole = AgoraSDK.ClientRole;
 } catch (error) {
-  console.warn('Agora SDK not available:', error.message);
   // Provide fallback values
   RtcEngine = null;
   RtcLocalView = null;
@@ -95,13 +94,6 @@ const VoIPCallScreen = ({
 
   // Initialize Agora Engine
   useEffect(() => {
-    console.log('VoIPCallScreen: Initializing...');
-    console.log('VoIPCallScreen: Route params:', routeParams);
-    console.log('VoIPCallScreen: Driver data:', finalDriverData);
-    console.log('VoIPCallScreen: Order data:', orderData);
-    console.log('VoIPCallScreen: Call type:', finalCallType);
-    console.log('VoIPCallScreen: Is incoming:', isIncoming);
-    
     initializeAgoraEngine();
     startRippleAnimation();
 
@@ -113,8 +105,7 @@ const VoIPCallScreen = ({
   const initializeAgoraEngine = async () => {
     try {
       // Check if Agora SDK is available
-      if (!RtcEngine) {
-        console.warn('Agora SDK not available. Running in demo mode.');
+      if (!RtcEngine || !AgoraConfig.isAgoraSDKAvailable()) {
         setCallStatus('connected');
         callStartTime.current = Date.now();
         return;
@@ -124,22 +115,19 @@ const VoIPCallScreen = ({
       
       // Set up comprehensive event handlers
       agoraEngineRef.current.addListener("Warning", (warn) => {
-        console.log("Agora Warning:", warn);
+        // Handle warnings silently
       });
       
       agoraEngineRef.current.addListener("Error", (err) => {
-        console.error("Agora Error:", err);
         setCallStatus("error");
       });
       
       agoraEngineRef.current.addListener("JoinChannelSuccess", (channel, uid, elapsed) => {
-        console.log("JoinChannelSuccess:", channel, uid, elapsed);
         setCallStatus("connected");
         callStartTime.current = Date.now();
       });
       
       agoraEngineRef.current.addListener("UserJoined", (uid, elapsed) => {
-        console.log("UserJoined:", uid, elapsed);
         setRemoteUid(uid);
         if (isVideoEnabled) {
           setIsRemoteVideoEnabled(true);
@@ -147,7 +135,6 @@ const VoIPCallScreen = ({
       });
       
       agoraEngineRef.current.addListener("UserOffline", (uid, reason) => {
-        console.log("UserOffline:", uid, reason);
         setRemoteUid(null);
         setIsRemoteVideoEnabled(false);
         if (reason === 0) { // User left
@@ -156,7 +143,6 @@ const VoIPCallScreen = ({
       });
       
       agoraEngineRef.current.addListener("RemoteVideoStateChanged", (uid, state, reason, elapsed) => {
-        console.log("RemoteVideoStateChanged:", uid, state, reason, elapsed);
         setIsRemoteVideoEnabled(state === 2);
       });
       
@@ -201,8 +187,6 @@ const VoIPCallScreen = ({
       const token = await AgoraConfig.getAgoraToken(channelName.current, 0); // In production, get from your server
       await agoraEngineRef.current.joinChannel(token, channelName.current, null, 0);
       
-      console.log('Agora Engine initialized successfully');
-      
       // Simulate connection for demo
       setTimeout(() => {
         if (callStatus === 'connecting') {
@@ -212,7 +196,6 @@ const VoIPCallScreen = ({
       }, 2000);
       
     } catch (error) {
-      console.error('Failed to initialize Agora Engine:', error);
       setCallStatus('error');
     }
   };
@@ -229,10 +212,8 @@ const VoIPCallScreen = ({
         await agoraEngineRef.current.destroy();
         agoraEngineRef.current = null;
       }
-      
-      console.log('Agora Engine cleaned up (placeholder)');
     } catch (error) {
-      console.error('Failed to cleanup Agora Engine:', error);
+      // Handle cleanup errors silently
     }
   };
 
@@ -367,8 +348,6 @@ const VoIPCallScreen = ({
     if (agoraEngineRef.current && RtcEngine) {
       await agoraEngineRef.current.muteLocalAudioStream(newMuteState);
     }
-    
-    console.log(`Audio ${newMuteState ? 'muted' : 'unmuted'} (placeholder)`);
   };
 
   const toggleSpeaker = async () => {
@@ -378,8 +357,6 @@ const VoIPCallScreen = ({
     if (agoraEngineRef.current && RtcEngine) {
       await agoraEngineRef.current.setEnableSpeakerphone(newSpeakerState);
     }
-    
-    console.log(`Speaker ${newSpeakerState ? 'enabled' : 'disabled'} (placeholder)`);
   };
 
   const toggleVideo = async () => {
@@ -395,16 +372,12 @@ const VoIPCallScreen = ({
         await agoraEngineRef.current.stopPreview();
       }
     }
-    
-    console.log(`Video ${newVideoState ? 'enabled' : 'disabled'} (placeholder)`);
   };
 
   const switchCamera = async () => {
     if (agoraEngineRef.current && RtcEngine && isVideoEnabled) {
       await agoraEngineRef.current.switchCamera();
     }
-    
-    console.log('Camera switched (placeholder)');
   };
 
   const getStatusText = () => {
@@ -608,7 +581,7 @@ const VoIPCallScreen = ({
   const renderCallInfo = () => (
     <View style={styles.callInfoContainer}>
       <View style={styles.networkQualityContainer}>
-        <MaterialIcons name={getNetworkQualityIcon()} size={16} color="#fff" />
+        {/* <MaterialIcons name={getNetworkQualityIcon()} size={16} color="#fff" /> */}
         <Text style={styles.networkQualityText}>
           {callQuality}
         </Text>
@@ -624,8 +597,6 @@ const VoIPCallScreen = ({
       )}
     </View>
   );
-
-  console.log('VoIPCallScreen: Rendering with callStatus:', callStatus);
 
   return (
     <>
@@ -728,8 +699,8 @@ const VoIPCallScreen = ({
           <View style={styles.configNotice}>
             <MaterialCommunityIcons name="information-outline" size={16} color="rgba(255,255,255,0.6)" />
             <Text style={styles.configNoticeText}>
-              {!RtcEngine 
-                ? t('call.sdk_not_available', 'Agora SDK not available - Install and configure for VoIP calls')
+              {!RtcEngine || !AgoraConfig.isAgoraSDKAvailable()
+                ? t('call.sdk_not_available', 'Agora SDK not available - Check installation and linking')
                 : t('call.demo_mode', 'Demo Mode - Configure Agora SDK for production')
               }
             </Text>

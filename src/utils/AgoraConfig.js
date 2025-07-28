@@ -11,6 +11,15 @@
 
 import { Platform } from 'react-native';
 import api from './api';  
+
+// Test Agora SDK availability
+let AgoraSDK = null;
+try {
+  AgoraSDK = require('react-native-agora');
+} catch (error) {
+  // Agora SDK not available
+}
+
 // Replace with your actual Agora App ID from https://console.agora.io/
 export const AGORA_APP_ID = '44e3bb6a05dd4fc18a0e34e3e653aff3';
 
@@ -135,6 +144,14 @@ export const isAgoraConfigured = () => {
 };
 
 /**
+ * Check if Agora SDK is properly imported and available
+ * @returns {boolean} True if SDK is available
+ */
+export const isAgoraSDKAvailable = () => {
+  return AgoraSDK !== null && AgoraSDK.RtcEngine !== undefined;
+};
+
+/**
  * Get Agora token from your backend server
  * In production, this should make an API call to your backend
  * which generates the token using Agora's server SDK
@@ -170,12 +187,9 @@ export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', pr
       throw new Error(data.message || 'Failed to generate token');
     }
   } catch (error) {
-    console.error('Error getting Agora token:', error);
-    
     // For development, return null (no token)
     // In production, this should throw an error or implement retry logic
     if (__DEV__) {
-      console.warn('Using null token for development. This may not work in production.');
       return null;
     }
     

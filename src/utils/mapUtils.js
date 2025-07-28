@@ -49,6 +49,238 @@ export class MapTileManager {
   }
 }
 
+// 3D Navigation Route Manager
+export class NavigationRouteManager {
+  constructor() {
+    this.routeSteps = [];
+    this.currentStep = 0;
+    this.routeDistance = 0;
+    this.routeDuration = 0;
+    this.waypoints = [];
+  }
+
+  // Generate 3D navigation route with turn-by-turn instructions
+  generateNavigationRoute(origin, destination, waypoints = []) {
+    const route = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            routeType: 'navigation',
+            distance: 0,
+            duration: 0,
+            steps: []
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: []
+          }
+        }
+      ]
+    };
+
+    // Add origin
+    const coordinates = [origin];
+    
+    // Add waypoints
+    if (waypoints.length > 0) {
+      coordinates.push(...waypoints);
+    }
+    
+    // Add destination
+    coordinates.push(destination);
+    
+    // Generate intermediate points for smooth 3D navigation
+    const smoothCoordinates = this.generateSmoothRoute(coordinates);
+    
+    // Calculate route properties
+    const distance = this.calculateRouteDistance(smoothCoordinates);
+    const duration = this.estimateRouteDuration(distance);
+    
+    // Generate turn-by-turn instructions
+    const steps = this.generateRouteSteps(smoothCoordinates);
+    
+    route.features[0].geometry.coordinates = smoothCoordinates;
+    route.features[0].properties.distance = distance;
+    route.features[0].properties.duration = duration;
+    route.features[0].properties.steps = steps;
+    
+    this.routeSteps = steps;
+    this.routeDistance = distance;
+    this.routeDuration = duration;
+    
+    return route;
+  }
+
+  // Generate smooth route with more points for 3D navigation
+  generateSmoothRoute(coordinates) {
+    const smoothCoordinates = [];
+    
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const start = coordinates[i];
+      const end = coordinates[i + 1];
+      
+      // Add start point
+      smoothCoordinates.push(start);
+      
+      // Generate intermediate points
+      const intermediatePoints = this.generateIntermediatePoints(start, end, 8);
+      smoothCoordinates.push(...intermediatePoints);
+      
+      // Add end point (except for last segment)
+      if (i < coordinates.length - 2) {
+        smoothCoordinates.push(end);
+      }
+    }
+    
+    // Add final destination
+    smoothCoordinates.push(coordinates[coordinates.length - 1]);
+    
+    return smoothCoordinates;
+  }
+
+  // Generate intermediate points for smooth 3D navigation
+  generateIntermediatePoints(start, end, numPoints = 8) {
+    const points = [];
+    const [startLng, startLat] = start;
+    const [endLng, endLat] = end;
+    
+    for (let i = 1; i <= numPoints; i++) {
+      const ratio = i / (numPoints + 1);
+      const lng = startLng + (endLng - startLng) * ratio;
+      const lat = startLat + (endLat - startLat) * ratio;
+      points.push([lng, lat]);
+    }
+    
+    return points;
+  }
+
+  // Calculate total route distance
+  calculateRouteDistance(coordinates) {
+    let totalDistance = 0;
+    
+    for (let i = 1; i < coordinates.length; i++) {
+      const distance = getDistance(
+        { latitude: coordinates[i-1][1], longitude: coordinates[i-1][0] },
+        { latitude: coordinates[i][1], longitude: coordinates[i][0] }
+      );
+      totalDistance += distance;
+    }
+    
+    return totalDistance;
+  }
+
+  // Estimate route duration based on distance and average speed
+  estimateRouteDuration(distance) {
+    const averageSpeed = 30; // km/h
+    const durationHours = distance / 1000 / averageSpeed;
+    return Math.round(durationHours * 60); // Convert to minutes
+  }
+
+  // Generate turn-by-turn instructions
+  generateRouteSteps(coordinates) {
+    const steps = [];
+    
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const current = coordinates[i];
+      const next = coordinates[i + 1];
+      
+      // Calculate bearing between points
+      const bearing = this.calculateBearing(current, next);
+      
+      // Determine turn direction
+      let instruction = this.getTurnInstruction(bearing, i === 0);
+      
+      // Calculate distance to next point
+      const distance = getDistance(
+        { latitude: current[1], longitude: current[0] },
+        { latitude: next[1], longitude: next[0] }
+      );
+      
+      steps.push({
+        index: i,
+        instruction,
+        distance,
+        bearing,
+        coordinate: current,
+        nextCoordinate: next
+      });
+    }
+    
+    return steps;
+  }
+
+  // Calculate bearing between two points
+  calculateBearing(start, end) {
+    const [startLng, startLat] = start;
+    const [endLng, endLat] = end;
+    
+    const deltaLng = (endLng - startLng) * Math.PI / 180;
+    const startLatRad = startLat * Math.PI / 180;
+    const endLatRad = endLat * Math.PI / 180;
+    
+    const y = Math.sin(deltaLng) * Math.cos(endLatRad);
+    const x = Math.cos(startLatRad) * Math.sin(endLatRad) - 
+              Math.sin(startLatRad) * Math.cos(endLatRad) * Math.cos(deltaLng);
+    
+    const bearing = Math.atan2(y, x) * 180 / Math.PI;
+    return (bearing + 360) % 360;
+  }
+
+  // Get turn instruction based on bearing
+  getTurnInstruction(bearing, isStart) {
+    if (isStart) {
+      return 'Start navigation';
+    }
+    
+    if (bearing >= 315 || bearing < 45) {
+      return 'Continue straight';
+    } else if (bearing >= 45 && bearing < 135) {
+      return 'Turn right';
+    } else if (bearing >= 135 && bearing < 225) {
+      return 'Turn around';
+    } else if (bearing >= 225 && bearing < 315) {
+      return 'Turn left';
+    }
+    
+    return 'Continue';
+  }
+
+  // Get current route step based on driver position
+  getCurrentStep(driverPosition) {
+    if (this.routeSteps.length === 0) return null;
+    
+    let closestStep = this.routeSteps[0];
+    let minDistance = Infinity;
+    
+    this.routeSteps.forEach(step => {
+      const distance = getDistance(
+        { latitude: driverPosition.latitude, longitude: driverPosition.longitude },
+        { latitude: step.coordinate[1], longitude: step.coordinate[0] }
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestStep = step;
+      }
+    });
+    
+    return closestStep;
+  }
+
+  // Get next turn instruction
+  getNextTurnInstruction(driverPosition) {
+    const currentStep = this.getCurrentStep(driverPosition);
+    if (!currentStep) return null;
+    
+    const currentIndex = currentStep.index;
+    const nextStep = this.routeSteps.find(step => step.index > currentIndex);
+    
+    return nextStep ? nextStep.instruction : 'Arrive at destination';
+  }
+}
+
 // Route optimization and smoothing
 export class RouteOptimizer {
   constructor() {
@@ -283,4 +515,5 @@ export default {
   RouteOptimizer,
   DriverMovementTracker,
   MapPerformanceUtils,
+  NavigationRouteManager,
 }; 

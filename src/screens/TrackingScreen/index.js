@@ -17,7 +17,14 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Mapbox from '@rnmapbox/maps';
+import Mapbox, { 
+  MapView, 
+  Camera, 
+  PointAnnotation, 
+  ShapeSource, 
+  LineLayer, 
+  SymbolLayer 
+} from '@rnmapbox/maps';
 import { TRACKING_MAP_STYLE, MAP_PERFORMANCE_SETTINGS } from '../../utils/mapboxConfig';
 import { API_GOOGLE } from '@env';
 import api from '../../utils/api';
@@ -25,10 +32,65 @@ import { colors } from '../../utils/colors';
 import { ref as dbRef, onValue, off } from 'firebase/database';
 import db from '../../utils/firebase';
 import DriverMarker from '../../components/DriverMarker';
-import { RouteOptimizer, DriverMovementTracker, MapPerformanceUtils } from '../../utils/mapUtils';
+import { RouteOptimizer, DriverMovementTracker, MapPerformanceUtils, NavigationRouteManager } from '../../utils/mapUtils';
 import { getDistance } from 'geolib';
 
 const { width, height } = Dimensions.get('window');
+
+// Helper function to decode Google's polyline format
+const decodePolyline = (encoded) => {
+  const poly = [];
+  let index = 0, len = encoded.length;
+  let lat = 0, lng = 0;
+
+  while (index < len) {
+    let shift = 0, result = 0;
+
+    do {
+      let b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (result >= 0x20);
+
+    let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+
+    do {
+      let b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (result >= 0x20);
+
+    let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+
+    poly.push([lng / 1E5, lat / 1E5]);
+  }
+
+  return poly;
+};
+
+// Fallback function to generate simple route
+const generateSimpleRoute = (origin, destination) => {
+  const [originLat, originLng] = origin.split(',').map(Number);
+  const [destLat, destLng] = destination.split(',').map(Number);
+  
+  // Generate intermediate points for a more realistic route
+  const numPoints = 10;
+  const coordinates = [];
+  
+  for (let i = 0; i <= numPoints; i++) {
+    const ratio = i / numPoints;
+    const lat = originLat + (destLat - originLat) * ratio;
+    const lng = originLng + (destLng - originLng) * ratio;
+    coordinates.push([lng, lat]);
+  }
+  
+  return coordinates;
+};
 
 const TrackingScreen = ({ route }) => {
   const { t } = useTranslation();
@@ -51,11 +113,17 @@ const TrackingScreen = ({ route }) => {
   const [driverIsMoving, setDriverIsMoving] = useState(false);
   const [estimatedArrival, setEstimatedArrival] = useState(null);
   const [routeDistance, setRouteDistance] = useState(null);
+  const [navigationMode, setNavigationMode] = useState(false);
+  const [routeInstructions, setRouteInstructions] = useState([]);
+  const [currentRouteStep, setCurrentRouteStep] = useState(0);
+  const [nextTurnInstruction, setNextTurnInstruction] = useState(null);
+  const [routeUpdateKey, setRouteUpdateKey] = useState(0);
   
   // Map refs
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
   const markerRef = useRef(null);
+  const routeUpdateTimeoutRef = useRef(null);
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -63,6 +131,7 @@ const TrackingScreen = ({ route }) => {
   // Initialize utilities
   const routeOptimizer = useRef(new RouteOptimizer()).current;
   const driverTracker = useRef(new DriverMovementTracker()).current;
+  const navigationManager = useRef(new NavigationRouteManager()).current;
   
   // Throttled camera update
   const throttledCameraUpdate = useRef(
@@ -88,12 +157,21 @@ const TrackingScreen = ({ route }) => {
     fetchOrder();
   }, [orderId]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (routeUpdateTimeoutRef.current) {
+        clearTimeout(routeUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Regenerate route when order status changes
   useEffect(() => {
     if (order && driverPosition) {
-      generateRouteBasedOnStatus(order, driverPosition);
+      generateRouteBasedOnStatus(order, driverPosition).catch(console.error);
     }
-  }, [order?.commandStatus, driverPosition]);
+  }, [order?.commandStatus, driverPosition, navigationMode]);
 
   // Listen to driver location updates from Firebase
   useEffect(() => {
@@ -122,9 +200,20 @@ const TrackingScreen = ({ route }) => {
           // Update estimated arrival
           updateEstimatedArrival(newPosition);
           
-          // Regenerate route based on new driver position
+          // Update turn-by-turn instructions
+          updateTurnInstructions(newPosition);
+          
+          // Regenerate route based on new driver position (debounced)
           if (order) {
-            generateRouteBasedOnStatus(order, newPosition);
+            // Clear previous timeout
+            if (routeUpdateTimeoutRef.current) {
+              clearTimeout(routeUpdateTimeoutRef.current);
+            }
+            
+            // Set new timeout for route update
+            routeUpdateTimeoutRef.current = setTimeout(() => {
+              generateRouteBasedOnStatus(order, newPosition).catch(console.error);
+            }, 1000); // Wait 1 second before updating route
           }
           
           // Focus on driver if following is enabled
@@ -169,6 +258,13 @@ const TrackingScreen = ({ route }) => {
     setEstimatedArrival(estimatedTimeMinutes);
   }, [order]);
 
+  const updateTurnInstructions = useCallback((driverPos) => {
+    if (navigationMode && navigationManager.routeSteps.length > 0) {
+      const nextInstruction = navigationManager.getNextTurnInstruction(driverPos);
+      setNextTurnInstruction(nextInstruction);
+    }
+  }, [navigationMode]);
+
   const fetchOrder = async () => {
     try {
       setLoading(true);
@@ -180,7 +276,7 @@ const TrackingScreen = ({ route }) => {
         setDriver(response.data.data.driver);
         
         // Generate route based on status
-        generateRouteBasedOnStatus(response.data.data, driverPosition);
+        generateRouteBasedOnStatus(response.data.data, driverPosition).catch(console.error);
       } else {
         setError(t('tracking.order_not_found', 'Order not found'));
       }
@@ -210,7 +306,7 @@ const TrackingScreen = ({ route }) => {
     }
   };
 
-  const generateRouteBasedOnStatus = (orderData, driverPos) => {
+  const generateRouteBasedOnStatus = async (orderData, driverPos) => {
     const pickup = orderData?.pickUpAddress?.coordonne;
     const dropoff = orderData?.dropOfAddress?.coordonne;
     const status = orderData?.commandStatus;
@@ -221,23 +317,20 @@ const TrackingScreen = ({ route }) => {
     const dropoffCoord = [dropoff.longitude, dropoff.latitude];
     
     let routeCoordinates = [];
+    let origin, destination;
     
     switch (status) {
       case 'Pending':
-       case 'Go_to_pickup':
+      case 'Canceled_by_client':
+      case 'Canceled_by_partner':
+      case 'Go_to_pickup':
         // Route from driver position to pickup
         if (driverPos) {
-          const driverCoord = [driverPos.longitude, driverPos.latitude];
-          routeCoordinates = routeOptimizer.calculateOptimalRoute(
-            driverCoord,
-            pickupCoord
-          );
+          origin = `${driverPos.latitude},${driverPos.longitude}`;
+          destination = `${pickup.latitude},${pickup.longitude}`;
         } else {
-          // Fallback to simple pickup to dropoff route
-          routeCoordinates = routeOptimizer.calculateOptimalRoute(
-            pickupCoord,
-            dropoffCoord
-          );
+          origin = `${pickup.latitude},${pickup.longitude}`;
+          destination = `${dropoff.latitude},${dropoff.longitude}`;
         }
         break;
         
@@ -245,27 +338,59 @@ const TrackingScreen = ({ route }) => {
       case 'Picked_up':
         // Route from driver position to dropoff
         if (driverPos) {
-          const driverCoord = [driverPos.longitude, driverPos.latitude];
-          routeCoordinates = routeOptimizer.calculateOptimalRoute(
-            driverCoord,
-            dropoffCoord
-          );
+          origin = `${driverPos.latitude},${driverPos.longitude}`;
+          destination = `${dropoff.latitude},${dropoff.longitude}`;
         } else {
-          // Fallback to simple pickup to dropoff route
-          routeCoordinates = routeOptimizer.calculateOptimalRoute(
-            pickupCoord,
-            dropoffCoord
-          );
+          origin = `${pickup.latitude},${pickup.longitude}`;
+          destination = `${dropoff.latitude},${dropoff.longitude}`;
         }
         break;
         
       default:
         // Simple path between pickup and dropoff for other statuses
-        routeCoordinates = routeOptimizer.calculateOptimalRoute(
-          pickupCoord,
-          dropoffCoord
-        );
+        origin = `${pickup.latitude},${pickup.longitude}`;
+        destination = `${dropoff.latitude},${dropoff.longitude}`;
         break;
+    }
+    
+    try {
+      // Use Google Directions API to get actual route
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&key=${API_GOOGLE}`
+      );
+      
+      const data = await response.json();
+      
+      if (data.routes && data.routes.length > 0) {
+        const route = data.routes[0];
+        const points = route.overview_polyline.points;
+        
+        // Decode the polyline to get coordinates
+        routeCoordinates = decodePolyline(points);
+        
+        // Calculate distance and duration
+        const distance = route.legs[0].distance.value; // meters
+        const duration = route.legs[0].duration.value; // seconds
+        
+        setRouteDistance(distance);
+        
+        // Generate turn-by-turn instructions
+        const steps = route.legs[0].steps.map(step => ({
+          instruction: step.html_instructions.replace(/<[^>]*>/g, ''),
+          distance: step.distance.text,
+          duration: step.duration.text,
+          maneuver: step.maneuver?.instruction || step.html_instructions.replace(/<[^>]*>/g, '')
+        }));
+        
+        setRouteInstructions(steps);
+      } else {
+        // Fallback to simple straight line if API fails
+        routeCoordinates = generateSimpleRoute(origin, destination);
+      }
+    } catch (error) {
+      console.error('Failed to fetch route:', error);
+      // Fallback to simple straight line
+      routeCoordinates = generateSimpleRoute(origin, destination);
     }
     
     // Convert to GeoJSON LineString format for Mapbox
@@ -278,18 +403,8 @@ const TrackingScreen = ({ route }) => {
       properties: {}
     };
     
-    // Calculate route distance
-    let totalDistance = 0;
-    for (let i = 1; i < routeCoordinates.length; i++) {
-      const distance = getDistance(
-        { latitude: routeCoordinates[i-1][1], longitude: routeCoordinates[i-1][0] },
-        { latitude: routeCoordinates[i][1], longitude: routeCoordinates[i][0] }
-      );
-      totalDistance += distance;
-    }
-    setRouteDistance(totalDistance);
-    
     setRouteCoordinates(routeShape);
+    setRouteUpdateKey(prev => prev + 1);
   };
 
   const handleChatPress = () => {
@@ -360,6 +475,33 @@ const TrackingScreen = ({ route }) => {
           paddingTop: 50,
           paddingBottom: 50,
         });
+      }
+    }
+  };
+
+  const toggleNavigationMode = () => {
+    setNavigationMode(!navigationMode);
+    if (!navigationMode && cameraRef.current) {
+      // Enable 3D navigation view
+      cameraRef.current.setCamera({
+        pitch: 45,
+        heading: 0,
+        animationDuration: 1000,
+      });
+      // Regenerate route with navigation mode
+      if (order && driverPosition) {
+        generateRouteBasedOnStatus(order, driverPosition);
+      }
+    } else if (navigationMode && cameraRef.current) {
+      // Return to 2D view
+      cameraRef.current.setCamera({
+        pitch: 0,
+        heading: 0,
+        animationDuration: 1000,
+      });
+      // Regenerate route without navigation mode
+      if (order && driverPosition) {
+        generateRouteBasedOnStatus(order, driverPosition);
       }
     }
   };
@@ -481,105 +623,121 @@ const TrackingScreen = ({ route }) => {
                 {getStatusText(order?.commandStatus)}
               </Text>
             </View>
-            {routeCoordinates && (
-              <View style={[styles.routeBadge, { backgroundColor: getRouteColor(order?.commandStatus) }]}>
-                <MaterialCommunityIcons name="map-marker-path" size={12} color="#fff" />
-                <Text style={styles.routeText}>
-                  {getRouteTypeText(order?.commandStatus)}
-                </Text>
-              </View>
-            )}
+           
           </View>
         </View>
       </Animated.View> 
 
     
       <View style={styles.mapContainer}>
-       <Mapbox.MapView
+       <MapView
           ref={mapRef}
           style={styles.map}
-       //  styleURL={TRACKING_MAP_STYLE}
-     onMapReady={() => setMapReady(true)}
-        {...MAP_PERFORMANCE_SETTINGS}
+          styleURL={navigationMode ? 'mapbox://styles/mapbox/navigation-night-v1' : 'mapbox://styles/mapbox/streets-v11'}
+          onMapReady={() => setMapReady(true)}
+          {...MAP_PERFORMANCE_SETTINGS}
+          pitchEnabled={navigationMode}
+          rotateEnabled={navigationMode}
         >
-            <Mapbox.Camera
+            <Camera
             ref={cameraRef}
             defaultSettings={{
               centerCoordinate: [
                 order?.pickUpAddress?.coordonne?.longitude || 10.1815,
                 order?.pickUpAddress?.coordonne?.latitude || 36.8065,
               ],
-              zoomLevel: 14,
+              zoomLevel: navigationMode ? 16 : 14,
               minZoomLevel: 10,
               maxZoomLevel: 18,
+              pitch: navigationMode ? 45 : 0,
+              heading: 0,
             }}
           />  
 
        {routeCoordinates && routeCoordinates.geometry && (
-            <Mapbox.ShapeSource id="routeSource" shape={routeCoordinates}>
-              <Mapbox.LineLayer
-                id="routeLine"
+            <ShapeSource 
+              key={`route-${order?.commandStatus}-${navigationMode ? '3d' : '2d'}-${routeUpdateKey}`}
+              id={`routeSource-${order?.commandStatus}-${navigationMode ? '3d' : '2d'}`} 
+              shape={routeCoordinates}
+            >
+              {/* Route glow effect for 3D mode */}
+              {navigationMode && (
+                <LineLayer
+                  id={`routeGlow-${order?.commandStatus}-3d`}
+                  style={{
+                    lineColor: getRouteColor(order?.commandStatus),
+                    lineWidth: 12,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    lineOpacity: 0.3,
+                    lineBlur: 4,
+                  }}
+                />
+              )}
+              <LineLayer
+                id={`routeLine-${order?.commandStatus}-${navigationMode ? '3d' : '2d'}`}
                 style={{
                   lineColor: getRouteColor(order?.commandStatus),
-                  lineWidth: 5,
+                  lineWidth: navigationMode ? 6 : 3,
                   lineCap: 'round',
                   lineJoin: 'round',
                   lineDasharray: getRouteDashArray(order?.commandStatus),
+                  lineOpacity: 0.8,
                 }}
               />
               {/* Route direction arrows */}
-              <Mapbox.SymbolLayer
-                id="routeArrows"
+              <SymbolLayer
+                id={`routeArrows-${order?.commandStatus}-${navigationMode ? '3d' : '2d'}`}
                 style={{
                   symbolPlacement: 'line',
-                  symbolSpacing: 200,
+                  symbolSpacing: navigationMode ? 100 : 200,
                   iconImage: 'arrow',
-                  iconSize: 0.8,
+                  iconSize: navigationMode ? 1.2 : 0.8,
                   iconAllowOverlap: true,
                   iconIgnorePlacement: true,
+                  iconRotationAlignment: 'map',
                 }}
               />
-            </Mapbox.ShapeSource>
+            </ShapeSource>
           )}  
 
        
         {order?.pickUpAddress?.coordonne && (
-            <Mapbox.PointAnnotation
+            <PointAnnotation
               id="pickup"
               coordinate={[
                 order.pickUpAddress.coordonne.longitude,
                 order.pickUpAddress.coordonne.latitude,
               ]}
             >
-              <View style={styles.pickupMarker}>
-                <MaterialCommunityIcons name="map-marker" size={24} color="#4CAF50" />
+              <View style={[styles.pickupMarker, navigationMode && styles.pickupMarker3D]}>
+                <MaterialCommunityIcons name="map-marker" size={navigationMode ? 32 : 24} color="#4CAF50" />
               </View>
               <Mapbox.Callout title={t('tracking.pickup_location', 'Pickup Location')} />
-            </Mapbox.PointAnnotation>
+            </PointAnnotation>
           )}  
 
            
         {order?.dropOfAddress?.coordonne && (
-            <Mapbox.PointAnnotation
+            <PointAnnotation
               id="dropoff"
               coordinate={[
                 order.dropOfAddress.coordonne.longitude,
                 order.dropOfAddress.coordonne.latitude,
               ]}
             >
-              <View style={styles.dropoffMarker}>
-                <MaterialCommunityIcons name="map-marker" size={24} color="#2196F3" />
+              <View style={[styles.dropoffMarker, navigationMode && styles.dropoffMarker3D]}>
+                <MaterialCommunityIcons name="map-marker" size={navigationMode ? 32 : 24} color="#2196F3" />
               </View>
               <Mapbox.Callout title={t('tracking.dropoff_location', 'Dropoff Location')} />
-            </Mapbox.PointAnnotation>
+            </PointAnnotation>
           )}   
 
          
          {driverPosition && (
-            <Mapbox.PointAnnotation
+            <PointAnnotation
               id="driver"
             ref={markerRef}
-              //icon={require('../../assets/eco.png')}s
               coordinate={[driverPosition.longitude, driverPosition.latitude]}
             >
               <DriverMarker 
@@ -590,11 +748,12 @@ const TrackingScreen = ({ route }) => {
                     markerRef.current.refresh()
                   }}
                   isMoving={driverIsMoving}
+                  is3D={navigationMode}
                 />  
            
-            </Mapbox.PointAnnotation>
+            </PointAnnotation>
           )}  
-       </Mapbox.MapView> 
+                </MapView> 
 
         
       <View style={styles.mapControls}>
@@ -621,8 +780,29 @@ const TrackingScreen = ({ route }) => {
             onPress={focusOnRoute}
           >
             <MaterialCommunityIcons name="map-marker-path" size={20} color="#333" />
-          </TouchableOpacity> 
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.mapControlButton, navigationMode && styles.activeMapControlButton]}
+            onPress={toggleNavigationMode}
+          >
+            <MaterialCommunityIcons 
+              name={navigationMode ? "cube" : "cube-outline"} 
+              size={20} 
+              color={navigationMode ? "#fff" : "#333"} 
+            />
+          </TouchableOpacity>
         </View>  
+
+        {/* Turn-by-turn instruction overlay for 3D mode */}
+        {navigationMode && nextTurnInstruction && (
+          <Animated.View style={[styles.turnInstructionOverlay, { opacity: fadeAnim }]}>
+            <View style={styles.turnInstructionContainer}>
+              <MaterialCommunityIcons name="navigation" size={24} color="#fff" />
+              <Text style={styles.turnInstructionText}>{nextTurnInstruction}</Text>
+            </View>
+          </Animated.View>
+        )}
       </View>
 
      
@@ -813,6 +993,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  pickupMarker3D: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
   dropoffMarker: {
     width: 40,
     height: 40,
@@ -825,6 +1013,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
+  },
+  dropoffMarker3D: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   driverMarkerContainer: {
     width: 50,
@@ -971,6 +1167,27 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  turnInstructionOverlay: {
+    position: 'absolute',
+    top: 80,
+    left: 16,
+    right: 16,
+    zIndex: 1000,
+  },
+  turnInstructionContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 12,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  turnInstructionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
   },
 });
 

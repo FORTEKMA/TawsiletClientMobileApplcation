@@ -27,6 +27,7 @@
     "@react-native-google-signin/google-signin": "^14.0.0",
     "@react-native-picker/picker": "^2.10.2",
     "@react-navigation/drawer": "^6.6.4",
+    "@rnmapbox/maps": "^10.1.40",
     "@sayem314/react-native-keep-awake": "^1.3.1",
     "@sentry/react-native": "^6.14.0",
     "geofire-common": "^6.0.0",

@@ -19,14 +19,14 @@ import {
   Vibration,
 } from 'react-native';
 import { useSelector } from 'react-redux';
-import { ref, push, onValue, off, serverTimestamp, query, orderByChild, update, set, onDisconnect } from 'firebase/database';
+import { ref, push, onValue, off, serverTimestamp, query, orderByChild, update, set, onDisconnect, get } from 'firebase/database';
 import db from '../../utils/firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
-import ImagePicker from 'react-native-image-picker';
+ import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -318,7 +318,7 @@ const ChatScreen = () => {
       maxHeight: 1024,
     };
 
-    ImagePicker.launchImageLibrary(options, async (response) => {
+    launchImageLibrary(options, async (response) => {
       if (response.assets && response.assets[0]) {
         setIsUploading(true);
         try {
@@ -405,7 +405,7 @@ const ChatScreen = () => {
       ]}>
         {showAvatar && !isMyMessage && (
           <Image
-            source={{ uri: driverData?.avatar || 'https://via.placeholder.com/40' }}
+            source={{ uri: driverData?.profilePicture?.url || 'https://via.placeholder.com/40' }}
             style={styles.avatar}
           />
         )}
@@ -464,7 +464,7 @@ const ChatScreen = () => {
     return (
       <View style={styles.typingContainer}>
         <Image
-          source={{ uri: driverData?.avatar || 'https://via.placeholder.com/40' }}
+          source={{ uri: driverData?.profilePicture?.url || 'https://via.placeholder.com/40' }}
           style={styles.typingAvatar}
         />
         <View style={styles.typingBubble}>
@@ -524,21 +524,21 @@ const ChatScreen = () => {
           <View style={styles.headerLeft}>
             <View style={styles.avatarContainer}>
               <Image
-                source={{ uri: driverData?.avatar || 'https://via.placeholder.com/40' }}
+                  source={{ uri: driverData?.profilePicture?.url || 'https://via.placeholder.com/40' }}
                 style={styles.headerAvatar}
               />
               {isOnline && <View style={styles.onlineIndicator} />}
             </View>
             <View style={styles.headerInfo}>
               <Text style={styles.headerName}>
-                {driverData?.name || t('chat.driver', 'Driver')}
+                {driverData?.firstName + ' ' + driverData?.lastName || t('chat.driver', 'Driver')}
               </Text>
               <Text style={styles.headerStatus}>
                 {isOnline 
                   ? t('chat.online', 'Online')
                   : lastSeen 
                     ? t('chat.last_seen', `Last seen ${formatLastSeen(lastSeen)}`)
-                    : driverData?.vehicle_info || t('chat.offline', 'Offline')
+                    : driverData?.vehicule?.mark + ' ' + driverData?.vehicule?.matriculation || t('chat.offline', 'Offline')
                 }
               </Text>
             </View>
@@ -548,8 +548,8 @@ const ChatScreen = () => {
         {/* Messages List */}
         <KeyboardAvoidingView
           style={styles.chatContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+          behavior={Platform.OS === 'ios' ? 'padding' : null}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : null}
         >
           <FlatList
             ref={flatListRef}
@@ -608,6 +608,7 @@ const ChatScreen = () => {
         <Modal
           visible={showAttachmentModal}
           transparent
+          onBackdropPress={() => setShowAttachmentModal(false)}
           animationType="slide"
           onRequestClose={() => setShowAttachmentModal(false)}
         >
@@ -628,15 +629,7 @@ const ChatScreen = () => {
                   {t('chat.document', 'Document')}
                 </Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.cancelButton} 
-                onPress={() => setShowAttachmentModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>
-                  {t('common.cancel', 'Cancel')}
-                </Text>
-              </TouchableOpacity>
+               
             </View>
           </View>
         </Modal>

@@ -62,7 +62,7 @@ const VoIPCallScreen = ({
 }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
-  const currentUser = useSelector(state => state.user?.user);
+  const currentUser = useSelector(state => state.user?.currentUser);
   
   // Extract route params
   const routeParams = route?.params || {};
@@ -140,7 +140,7 @@ const VoIPCallScreen = ({
         channelName: generateCallChannelName(),
         orderData: orderData,
       };
-
+console.log("callParams",currentUser)  
       if (validateVoIPCallParams(callParams)) {
         sendVoIPCallNotification(callParams)
           .catch(error => {
@@ -160,14 +160,18 @@ const VoIPCallScreen = ({
     try {
       // Check if Agora SDK is available
       if (!isAgoraSDKAvailable()) {
+        console.log('Agora SDK not available, simulating connection');
         setCallStatus('connected');
         callStartTime.current = Date.now();
         return;
       }
  
+      console.log('Initializing Agora engine...');
+      
       // Create and initialize Agora engine using new API
       agoraEngineRef.current = await createAgoraEngine();
        
+      console.log('Setting up event listeners...');
       
       // Set up comprehensive event handlers using the new API
       agoraEngineRef.current.addListener("Warning", (warn) => {
@@ -227,6 +231,8 @@ const VoIPCallScreen = ({
         }
       });
       
+      console.log('Configuring engine settings...');
+      
       // Configure engine for optimal call quality using AgoraConfig
       const audioConfig = getPlatformAudioConfig();
       await agoraEngineRef.current.setChannelProfile(CHANNEL_PROFILE.COMMUNICATION);
@@ -250,9 +256,13 @@ const VoIPCallScreen = ({
       
       // Generate and use unique channel name
       const uniqueChannelName = generateCallChannelName();
+      console.log('Generated channel name:', uniqueChannelName);
       
-      // Join channel with proper media options
+      // Get token (null for development)
       const token = await getAgoraToken(uniqueChannelName, 0);
+      console.log('Token obtained:', token ? 'Yes' : 'No (development mode)');
+      
+      // Join channel with proper media options for v4.x
       const mediaOptions = {
         clientRoleType: CLIENT_ROLE.BROADCASTER,
         channelProfile: CHANNEL_PROFILE.COMMUNICATION,
@@ -262,19 +272,34 @@ const VoIPCallScreen = ({
         autoSubscribeVideo: isVideoEnabled,
       };
       
-      await agoraEngineRef.current.joinChannel(token, uniqueChannelName, 0, mediaOptions);
+      console.log('Joining channel with options:', mediaOptions);
       
-      // Simulate connection for demo
-      setTimeout(() => {
-        if (callStatus === 'connecting') {
-          setCallStatus('connected');
-          callStartTime.current = Date.now();
-        }
-      }, 2000);
+      const joinResult = await agoraEngineRef.current.joinChannel(token, uniqueChannelName, 0, mediaOptions);
+      console.log('Join channel result:', joinResult);
+      
+      // If join fails, simulate connection for demo
+      if (joinResult !== 0) {
+        console.log('Join channel failed, simulating connection for demo');
+        setTimeout(() => {
+          if (callStatus === 'connecting') {
+            setCallStatus('connected');
+            callStartTime.current = Date.now();
+          }
+        }, 2000);
+      }
       
     } catch (error) {
       console.error('Agora initialization error:', error);
       setCallStatus('error');
+      
+      // Simulate connection for demo if Agora fails
+      setTimeout(() => {
+        if (callStatus === 'error') {
+          console.log('Simulating connection due to Agora error');
+          setCallStatus('connected');
+          callStartTime.current = Date.now();
+        }
+      }, 2000);
     }
   };
 

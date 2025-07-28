@@ -18,12 +18,12 @@ import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Mapbox, { 
-  MapView, 
-  Camera, 
-  PointAnnotation, 
-  ShapeSource, 
-  LineLayer, 
+import Mapbox, {
+  MapView,
+  Camera,
+  PointAnnotation,
+  ShapeSource,
+  LineLayer,
   SymbolLayer,
   FillLayer,
   CircleLayer,
@@ -33,7 +33,7 @@ import Mapbox, {
 import { TRACKING_MAP_STYLE, MAP_PERFORMANCE_SETTINGS } from '../../utils/mapboxConfig';
 import { API_GOOGLE } from '@env';
 import api from '../../utils/api';
-import { colors } from '../../utils/colors';
+import { colors } from '../../utils/colors'; // Assuming colors are defined here, will override
 import { ref as dbRef, onValue, off } from 'firebase/database';
 import db from '../../utils/firebase';
 import DriverMarker from '../../components/DriverMarker';
@@ -98,10 +98,10 @@ const ENHANCED_3D_STREET_STYLE = {
           'interpolate',
           ['linear'],
           ['get', 'height'],
-          0, '#e6f3ff',
-          50, '#cce7ff',
-          100, '#99d6ff',
-          200, '#66c2ff'
+          0, '#cccccc',
+          50, '#999999',
+          100, '#666666',
+          200, '#333333'
         ],
         'fill-extrusion-height': ['get', 'height'],
         'fill-extrusion-base': 0,
@@ -129,7 +129,7 @@ const ENHANCED_3D_STREET_STYLE = {
       'source-layer': 'road',
       filter: ['==', 'class', 'secondary'],
       paint: {
-        'line-color': '#f8f8f8',
+        'line-color': '#f0f0f0',
         'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 18, 6],
         'line-opacity': 0.8
       }
@@ -549,7 +549,7 @@ const TrackingScreen = ({ route }) => {
         coordinates: routeCoordinates
       },
       properties: {
-        color: '#007AFF',
+        color: '#000000',
         width: streetViewMode ? STREET_STYLE_3D_CONFIG.routeWidth : 4,
         opacity: 0.8,
         style: streetViewMode ? '3d-street' : 'standard'
@@ -704,7 +704,7 @@ const TrackingScreen = ({ route }) => {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color="#000000" />
           <Text style={styles.loadingText}>{t('tracking.loading', 'Loading tracking information...')}</Text>
         </View>
       </SafeAreaView>
@@ -716,7 +716,7 @@ const TrackingScreen = ({ route }) => {
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
         <View style={styles.errorContainer}>
-          <MaterialCommunityIcons name="alert-circle" size={64} color={colors.error} />
+          <MaterialCommunityIcons name="alert-circle" size={64} color="#000000" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchOrder}>
             <Text style={styles.retryButtonText}>{t('common.retry', 'Retry')}</Text>
@@ -777,7 +777,7 @@ const TrackingScreen = ({ route }) => {
               <LineLayer
                 id="routeLine"
                 style={{
-                  lineColor: streetViewMode ? '#007AFF' : colors.primary,
+                  lineColor: streetViewMode ? '#000000' : '#000000',
                   lineWidth: streetViewMode ? STREET_STYLE_3D_CONFIG.routeWidth : 4,
                   lineOpacity: 0.9,
                   lineCap: 'round',
@@ -786,9 +786,9 @@ const TrackingScreen = ({ route }) => {
                     'interpolate',
                     ['linear'],
                     ['line-progress'],
-                    0, '#007AFF',
-                    0.5, '#00D4FF',
-                    1, '#007AFF'
+                    0, '#000000',
+                    0.5, '#333333',
+                    1, '#000000'
                   ]
                 }}
               />
@@ -850,7 +850,7 @@ const TrackingScreen = ({ route }) => {
               ]}
             >
               <View style={[styles.locationMarker, styles.pickupMarker]}>
-                <MaterialCommunityIcons name="map-marker" size={30} color={colors.success} />
+                <MaterialCommunityIcons name="map-marker" size={30} color="#000000" />
               </View>
             </PointAnnotation>
           )}
@@ -866,7 +866,7 @@ const TrackingScreen = ({ route }) => {
               ]}
             >
               <View style={[styles.locationMarker, styles.dropoffMarker]}>
-                <MaterialCommunityIcons name="flag-checkered" size={30} color={colors.error} />
+                <MaterialCommunityIcons name="flag-checkered" size={30} color="#000000" />
               </View>
             </PointAnnotation>
           )}
@@ -881,7 +881,7 @@ const TrackingScreen = ({ route }) => {
             <MaterialCommunityIcons 
               name="rotate-3d-variant" 
               size={24} 
-              color={streetViewMode ? colors.primary : '#666'} 
+              color={streetViewMode ? '#000000' : '#666666'} 
             />
           </TouchableOpacity>
           
@@ -892,7 +892,7 @@ const TrackingScreen = ({ route }) => {
             <MaterialCommunityIcons 
               name="navigation" 
               size={24} 
-              color={navigationMode ? colors.primary : '#666'} 
+              color={navigationMode ? '#000000' : '#666666'} 
             />
           </TouchableOpacity>
           
@@ -903,12 +903,12 @@ const TrackingScreen = ({ route }) => {
             <MaterialCommunityIcons 
               name="crosshairs-gps" 
               size={24} 
-              color={isFollowingDriver ? colors.primary : '#666'} 
+              color={isFollowingDriver ? '#000000' : '#666666'} 
             />
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.controlButton} onPress={focusOnRoute}>
-            <MaterialCommunityIcons name="map-search" size={24} color="#666" />
+            <MaterialCommunityIcons name="map-search" size={24} color="#666666" />
           </TouchableOpacity>
         </View>
       </View>
@@ -925,7 +925,7 @@ const TrackingScreen = ({ route }) => {
             <MaterialCommunityIcons 
               name={getManeuverIcon(nextTurnInstruction.maneuver)} 
               size={32} 
-              color={colors.primary} 
+              color="#000000" 
             />
             <View style={styles.navigationText}>
               <Text style={styles.navigationInstruction} numberOfLines={2}>
@@ -970,10 +970,10 @@ const TrackingScreen = ({ route }) => {
         
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton} onPress={handleChatPress}>
-            <MaterialCommunityIcons name="message-text" size={24} color={colors.primary} />
+            <MaterialCommunityIcons name="message-text" size={24} color="#000000" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleCallPress}>
-            <MaterialCommunityIcons name="phone" size={24} color={colors.primary} />
+            <MaterialCommunityIcons name="phone" size={24} color="#000000" />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -1018,12 +1018,12 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: 16,
     fontSize: 16,
-    color: colors.error,
+    color: '#000000',
     textAlign: 'center',
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#000000',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -1063,7 +1063,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   controlButtonActive: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   navigationPanel: {
     position: 'absolute',
@@ -1154,7 +1154,7 @@ const styles = StyleSheet.create({
   eta: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#000000',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1164,7 +1164,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1191,10 +1191,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusMoving: {
-    backgroundColor: colors.success,
+    backgroundColor: '#000000',
   },
   statusStopped: {
-    backgroundColor: colors.warning,
+    backgroundColor: '#666666',
   },
   statusText: {
     fontSize: 12,
@@ -1205,7 +1205,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary,
+    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -1225,7 +1225,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   driverMarkerMoving: {
-    borderColor: colors.success,
+    borderColor: '#000000',
     borderWidth: 4,
   },
   driverMarkerInner: {
@@ -1252,12 +1252,12 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   pickupMarker: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 20,
     padding: 8,
   },
   dropoffMarker: {
-    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 20,
     padding: 8,
   },

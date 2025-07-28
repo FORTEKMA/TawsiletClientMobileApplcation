@@ -7,7 +7,7 @@ import { colors } from '../../../utils/colors';
 import OrderCancelConfirmationModal from './OrderCancelConfirmationModal';
 import OrderCancellationReasonSheet from './OrderCancellationReasonSheet';
 import OrderReportProblemModal from './OrderReportProblemModal';
-import VoIPCallScreen from '../../VoIPCallScreen';
+
 import { useNavigation } from '@react-navigation/native';
 import api from '../../../utils/api';
 import BackgroundTimer from 'react-native-background-timer';
@@ -716,25 +716,7 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
         onClose={() => setShowReportModal(false)}
       />
 
-      {/* VoIP Call Screen */}
-      <VoIPCallScreen
-        visible={showCall}
-        onClose={() => {
-          setShowCall(false);
-          setCurrentCallId(null);
-        }}
-        driverData={{
-          id: driver?.id,
-          name: driverName,
-          avatar: driverAvatar,
-          vehicle_info: `${carModel} • ${carPlate}`,
-          rating: driverRating,
-        }}
-        callType={callType}
-        onAccept={handleAcceptCall}
-        onDecline={handleDeclineCall}
-        onEndCall={handleEndCall}
-      />
+      {/* VoIP Call Screen - Removed modal approach, now uses navigation */}
     </Animated.View>
   );
 };

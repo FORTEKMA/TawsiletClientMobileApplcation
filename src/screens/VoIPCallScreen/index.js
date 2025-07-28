@@ -13,33 +13,48 @@ import {
   SafeAreaView,
   BackHandler,
 } from 'react-native';
-import Modal from 'react-native-modal';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useTranslation } from 'react-i18next';
-import { RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole } from 'react-native-agora';
+// Import Agora SDK with error handling
+let RtcEngine, RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole;
+
+try {
+  const AgoraSDK = require('react-native-agora');
+  RtcEngine = AgoraSDK.RtcEngine;
+  RtcLocalView = AgoraSDK.RtcLocalView;
+  RtcRemoteView = AgoraSDK.RtcRemoteView;
+  VideoRenderMode = AgoraSDK.VideoRenderMode;
+  ChannelProfile = AgoraSDK.ChannelProfile;
+  ClientRole = AgoraSDK.ClientRole;
+} catch (error) {
+  console.warn('Agora SDK not available:', error.message);
+  // Provide fallback values
+  RtcEngine = null;
+  RtcLocalView = null;
+  RtcRemoteView = null;
+  VideoRenderMode = { Hidden: 1 };
+  ChannelProfile = { Communication: 0 };
+  ClientRole = { Broadcaster: 1 };
+}
 import AgoraConfig from '../../utils/AgoraConfig';
+import { useNavigation } from '@react-navigation/native';
  
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const VoIPCallScreen = ({
-  visible,
-  onClose,
-  driverData,
-  callType = 'outgoing', // 'outgoing' or 'incoming'
-  onAccept,
-  onDecline,
-  onEndCall,
   route,
 }) => {
   const { t } = useTranslation();
+  const navigation = useNavigation();
   
-  // Extract route params if navigated directly
+  // Extract route params
   const routeParams = route?.params || {};
-  const finalDriverData = driverData || routeParams.driverData;
-  const finalCallType = callType || routeParams.callType || 'outgoing';
-  const isIncoming = routeParams.isIncoming || callType === 'incoming';
+  const finalDriverData = routeParams.driverData || {};
+  const finalCallType = routeParams.callType || 'outgoing';
+  const isIncoming = routeParams.isIncoming || finalCallType === 'incoming';
   const orderId = routeParams.orderId;
+  const orderData = routeParams.orderData || {};
 
   // Call states
   const [callStatus, setCallStatus] = useState(isIncoming ? 'ringing' : 'connecting');
@@ -71,30 +86,40 @@ const VoIPCallScreen = ({
   // Handle Android back button
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (visible) {
-        handleEndCall();
-        return true;
-      }
-      return false;
+      handleEndCall();
+      return true;
     });
 
     return () => backHandler.remove();
-  }, [visible]);
+  }, []);
 
   // Initialize Agora Engine
   useEffect(() => {
-    if (visible) {
-      initializeAgoraEngine();
-      startRippleAnimation();
-    }
+    console.log('VoIPCallScreen: Initializing...');
+    console.log('VoIPCallScreen: Route params:', routeParams);
+    console.log('VoIPCallScreen: Driver data:', finalDriverData);
+    console.log('VoIPCallScreen: Order data:', orderData);
+    console.log('VoIPCallScreen: Call type:', finalCallType);
+    console.log('VoIPCallScreen: Is incoming:', isIncoming);
+    
+    initializeAgoraEngine();
+    startRippleAnimation();
 
     return () => {
       cleanupAgoraEngine();
     };
-  }, [visible]);
+  }, []);
 
   const initializeAgoraEngine = async () => {
     try {
+      // Check if Agora SDK is available
+      if (!RtcEngine) {
+        console.warn('Agora SDK not available. Running in demo mode.');
+        setCallStatus('connected');
+        callStartTime.current = Date.now();
+        return;
+      }
+
       agoraEngineRef.current = await RtcEngine.create(routeParams.appId || AgoraConfig.AGORA_APP_ID);
       
       // Set up comprehensive event handlers
@@ -199,7 +224,7 @@ const VoIPCallScreen = ({
         timerRef.current = null;
       }
       
-      if (agoraEngineRef.current) {
+      if (agoraEngineRef.current && RtcEngine) {
         await agoraEngineRef.current.leaveChannel();
         await agoraEngineRef.current.destroy();
         agoraEngineRef.current = null;
@@ -213,38 +238,23 @@ const VoIPCallScreen = ({
 
   // Initialize animations
   useEffect(() => {
-    if (visible) {
-      Animated.parallel([
-        Animated.timing(slideAnimation, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnimation, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    Animated.parallel([
+      Animated.timing(slideAnimation, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnimation, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-      if (isIncoming || callStatus === 'connecting') {
-        startAvatarPulse();
-      }
-    } else {
-      Animated.parallel([
-        Animated.timing(slideAnimation, {
-          toValue: screenHeight,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnimation, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+    if (isIncoming || callStatus === 'connecting') {
+      startAvatarPulse();
     }
-  }, [visible]);
+  }, []);
 
   // Start call duration timer when connected
   useEffect(() => {
@@ -325,8 +335,6 @@ const VoIPCallScreen = ({
       stopAvatarPulse();
       
       await initializeAgoraEngine();
-      
-      if (onAccept) onAccept();
     });
   };
 
@@ -337,8 +345,7 @@ const VoIPCallScreen = ({
       
       await cleanupAgoraEngine();
       
-      if (onDecline) onDecline();
-      setTimeout(() => onClose && onClose(), 1000);
+      setTimeout(() => navigation.goBack(), 1000);
     });
   };
 
@@ -349,8 +356,7 @@ const VoIPCallScreen = ({
       
       await cleanupAgoraEngine();
       
-      if (onEndCall) onEndCall();
-      setTimeout(() => onClose && onClose(), 1000);
+      setTimeout(() => navigation.goBack(), 1000);
     });
   };
 
@@ -358,7 +364,7 @@ const VoIPCallScreen = ({
     const newMuteState = !isMuted;
     setIsMuted(newMuteState);
     
-    if (agoraEngineRef.current) {
+    if (agoraEngineRef.current && RtcEngine) {
       await agoraEngineRef.current.muteLocalAudioStream(newMuteState);
     }
     
@@ -369,7 +375,7 @@ const VoIPCallScreen = ({
     const newSpeakerState = !isSpeakerOn;
     setIsSpeakerOn(newSpeakerState);
     
-    if (agoraEngineRef.current) {
+    if (agoraEngineRef.current && RtcEngine) {
       await agoraEngineRef.current.setEnableSpeakerphone(newSpeakerState);
     }
     
@@ -380,7 +386,7 @@ const VoIPCallScreen = ({
     const newVideoState = !isVideoEnabled;
     setIsVideoEnabled(newVideoState);
     
-    if (agoraEngineRef.current) {
+    if (agoraEngineRef.current && RtcEngine) {
       if (newVideoState) {
         await agoraEngineRef.current.enableLocalVideo(true);
         await agoraEngineRef.current.startPreview();
@@ -394,7 +400,7 @@ const VoIPCallScreen = ({
   };
 
   const switchCamera = async () => {
-    if (agoraEngineRef.current && isVideoEnabled) {
+    if (agoraEngineRef.current && RtcEngine && isVideoEnabled) {
       await agoraEngineRef.current.switchCamera();
     }
     
@@ -443,14 +449,15 @@ const VoIPCallScreen = ({
         {isRemoteVideoEnabled && remoteUid && (
           <View style={styles.remoteVideoContainer}>
             {/* NOTE: Actual Agora SDK would render remote video here */}
-            <RtcRemoteView.SurfaceView
-              style={styles.remoteVideo}
-              uid={remoteUid}
-              channelId={channelName.current}
-              renderMode={VideoRenderMode.Hidden}
-            />
+            {RtcRemoteView ? (
+              <RtcRemoteView.SurfaceView
+                style={styles.remoteVideo}
+                uid={remoteUid}
+                channelId={channelName.current}
+                renderMode={VideoRenderMode.Hidden}
+              />
+            ) : null}
             <View
-              colors={['#667eea', '#764ba2']}
               style={styles.placeholderVideo}
             >
               <MaterialCommunityIcons name="video" size={60} color="rgba(255,255,255,0.7)" />
@@ -463,13 +470,14 @@ const VoIPCallScreen = ({
         {isVideoEnabled && (
           <View style={styles.localVideoContainer}>
             {/* NOTE: Actual Agora SDK would render local video here */}
-            <RtcLocalView.SurfaceView
-              style={styles.localVideo}
-              channelId={channelName.current}
-              renderMode={VideoRenderMode.Hidden}
-            />
+            {RtcLocalView ? (
+              <RtcLocalView.SurfaceView
+                style={styles.localVideo}
+                channelId={channelName.current}
+                renderMode={VideoRenderMode.Hidden}
+              />
+            ) : null}
             <View
-              colors={['#11998e', '#38ef7d']}
               style={styles.placeholderLocalVideo}
             >
               <MaterialCommunityIcons name="account-circle" size={40} color="rgba(255,255,255,0.8)" />
@@ -617,18 +625,10 @@ const VoIPCallScreen = ({
     </View>
   );
 
+  console.log('VoIPCallScreen: Rendering with callStatus:', callStatus);
+
   return (
-    <Modal
-      isVisible={visible}
-      style={styles.modal}
-      backdropOpacity={1}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
-      backdropTransitionInTiming={400}
-      backdropTransitionOutTiming={300}
-      onBackdropPress={null}
-      onBackButtonPress={handleEndCall}
-    >
+    <>
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
       
       <SafeAreaView style={styles.safeArea}>
@@ -643,7 +643,6 @@ const VoIPCallScreen = ({
         >
           {/* Background gradient */}
           <View
-           
             style={styles.backgroundGradient}
           />
 
@@ -668,7 +667,7 @@ const VoIPCallScreen = ({
               >
                 <Image
                   source={{ 
-                    uri: finalDriverData?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+                    uri: finalDriverData?.avatar || finalDriverData?.profilePicture?.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
                   }}
                   style={styles.driverAvatar}
                 />
@@ -680,7 +679,7 @@ const VoIPCallScreen = ({
               </Animated.View>
 
               <Text style={styles.driverName}>
-                {finalDriverData?.name || t('call.driver', 'Driver')}
+                {finalDriverData?.name || `${finalDriverData?.firstName || ''} ${finalDriverData?.lastName || ''}`.trim() || t('call.driver', 'Driver')}
               </Text>
               
               <Text style={styles.driverInfo}>
@@ -693,6 +692,15 @@ const VoIPCallScreen = ({
                   {finalDriverData?.rating || '4.8'}
                 </Text>
               </View>
+              
+              {orderData?.id && (
+                <View style={styles.orderInfoContainer}>
+                  <MaterialCommunityIcons name="receipt" size={14} color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.orderInfoText}>
+                    Order #{orderData.id}
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -720,22 +728,19 @@ const VoIPCallScreen = ({
           <View style={styles.configNotice}>
             <MaterialCommunityIcons name="information-outline" size={16} color="rgba(255,255,255,0.6)" />
             <Text style={styles.configNoticeText}>
-              {t('call.demo_mode', 'Demo Mode - Configure Agora SDK for production')}
+              {!RtcEngine 
+                ? t('call.sdk_not_available', 'Agora SDK not available - Install and configure for VoIP calls')
+                : t('call.demo_mode', 'Demo Mode - Configure Agora SDK for production')
+              }
             </Text>
           </View>
         </Animated.View>
       </SafeAreaView>
-    </Modal>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: {
-    margin: 0,
-    backgroundColor: 'red',
-    height: '100%',
-    width: '100%',
-  },
   safeArea: {
     flex: 1,
     backgroundColor: '#000',
@@ -752,6 +757,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: '#1a1a2e',
   },
   videoContainer: {
     position: 'absolute',
@@ -917,6 +923,21 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  orderInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginTop: 8,
+    gap: 4,
+  },
+  orderInfoText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 12,
+    fontWeight: '500',
   },
   statusContainer: {
     alignItems: 'center',

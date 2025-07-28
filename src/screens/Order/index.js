@@ -12,13 +12,14 @@ import {
   Dimensions,
   Image,
 } from "react-native";
-import { useIsFocused } from "@react-navigation/native";
-import { colors } from "../../utils/colors";
+ import { colors } from "../../utils/colors";
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import api from '../../utils/api';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import CallTypeAlert from '../../components/CallTypeAlert';
+import OrderPlaceholder from '../../components/OrderPlaceholder';
 import { 
   trackScreenView, 
   trackOrderDetailsViewed 
@@ -32,13 +33,13 @@ const Order = ({ route }) => {
   
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const isFocused = useIsFocused();
+  const [showCallAlert, setShowCallAlert] = useState(false);
+ 
   const navigation = useNavigation();
 
   // Track screen view on mount
   useEffect(() => {
     trackScreenView('OrderDetails', { order_id: id });
-   // trackOrderDetailsViewed(id);
   }, []);
 
   const fetchOrder = async () => {
@@ -56,10 +57,10 @@ const Order = ({ route }) => {
   };
  
   useEffect(() => {
-    if (isFocused) {
+    
       fetchOrder();
-    }
-  }, [isFocused, id]);
+ 
+  }, [id]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -106,12 +107,7 @@ const Order = ({ route }) => {
   };
 
   if (loading || !order) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>{t('order.loading')}</Text>
-      </SafeAreaView>
-    );
+    return <OrderPlaceholder />;
   }
 
   const driver = order?.driver || {};
@@ -208,40 +204,7 @@ const Order = ({ route }) => {
                 
                 <TouchableOpacity 
                   style={styles.callButton}
-                  onPress={() => {
-                    // Enhanced VoIP call functionality
-                    Alert.alert(
-                      t('order.call_driver'),
-                      t('order.call_driver_message'),
-                      [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        { 
-                          text: t('order.voice_call'), 
-                          onPress: () => {
-                            // Navigate to VoIP call screen with voice call
-                            navigation.navigate('VoIPCallScreen', {
-                              callType: 'voice',
-                              driverData: driver,
-                              orderId: order.id,
-                              isIncoming: false
-                            });
-                          }
-                        },
-                        { 
-                          text: t('order.video_call'), 
-                          onPress: () => {
-                            // Navigate to VoIP call screen with video call
-                            navigation.navigate('VoIPCallScreen', {
-                              callType: 'video',
-                              driverData: driver,
-                              orderId: order.id,
-                              isIncoming: false
-                            });
-                          }
-                        },
-                      ]
-                    );
-                  }}
+                  onPress={() => setShowCallAlert(true)}
                 >
                   <MaterialCommunityIcons name="phone" size={20} color="#fff" />
                   <Text style={styles.actionButtonText}>{t('order.call')}</Text>
@@ -299,7 +262,7 @@ const Order = ({ route }) => {
           
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>{t('order.base_fare')}</Text>
-            <Text style={styles.paymentValue}>{formatPrice(order.price)}</Text>
+            <Text style={styles.paymentValue}>{formatPrice(order.totalPrice)}</Text>
           </View>
           
           {order.additionalCharges > 0 && (
@@ -314,7 +277,7 @@ const Order = ({ route }) => {
           <View style={styles.paymentRow}>
             <Text style={styles.totalLabel}>{t('order.total_amount')}</Text>
             <Text style={styles.totalValue}>
-              {formatPrice((order.price || 0) + (order.additionalCharges || 0))}
+              {formatPrice((order.totalPrice || 0) + (order.additionalCharges || 0))}
             </Text>
           </View>
           
@@ -356,6 +319,79 @@ const Order = ({ route }) => {
         {/* Bottom Spacing */}
         <View style={styles.bottomSpacing} />
       </ScrollView>
+      
+      {/* Custom Call Type Alert */}
+      <CallTypeAlert
+        visible={showCallAlert}
+        onClose={() => setShowCallAlert(false)}
+        onVoiceCall={() => {
+          setShowCallAlert(false);
+          navigation.navigate('VoIPCallScreen', {
+            callType: 'voice',
+            driverData: {
+              id: driver.id,
+              name: driverName,
+              avatar: driverAvatar,
+              rating: driverRating,
+              vehicle_info: `${carModel} • ${carPlate}`,
+              phone: driver.phone || '',
+              firstName: driver.firstName || '',
+              lastName: driver.lastName || '',
+              vehicule: driver.vehicule || {},
+              profilePicture: driver.profilePicture || {}
+            },
+            orderId: order.id,
+            orderData: {
+              id: order.id,
+              status: order.commandStatus,
+              totalPrice: order.totalPrice,
+              additionalCharges: order.additionalCharges,
+              pickUpAddress: order.pickUpAddress,
+              dropOfAddress: order.dropOfAddress,
+              createdAt: order.createdAt,
+              updatedAt: order.updatedAt
+            },
+            isIncoming: false
+          });
+        }}
+        onVideoCall={() => {
+          setShowCallAlert(false);
+          navigation.navigate('VoIPCallScreen', {
+            callType: 'video',
+            driverData: {
+              id: driver.id,
+              name: driverName,
+              avatar: driverAvatar,
+              rating: driverRating,
+              vehicle_info: `${carModel} • ${carPlate}`,
+              phone: driver.phone || '',
+              firstName: driver.firstName || '',
+              lastName: driver.lastName || '',
+              vehicule: driver.vehicule || {},
+              profilePicture: driver.profilePicture || {}
+            },
+            orderId: order.id,
+            orderData: {
+              id: order.id,
+              status: order.commandStatus,
+              totalPrice: order.totalPrice,
+              additionalCharges: order.additionalCharges,
+              pickUpAddress: order.pickUpAddress,
+              dropOfAddress: order.dropOfAddress,
+              createdAt: order.createdAt,
+              updatedAt: order.updatedAt
+            },
+            isIncoming: false
+          });
+        }}
+        title={t('order.call_driver')}
+        message={t('order.call_driver_message')}
+        voiceCallText={t('order.voice_call')}
+        videoCallText={t('order.video_call')}
+        voiceCallSubtext={t('order.voice_call_subtext')}
+        videoCallSubtext={t('order.video_call_subtext')}
+        cancelText={t('common.cancel')}
+      />
     </SafeAreaView>
   );
 };
@@ -364,17 +400,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
   },
   header: {
     flexDirection: 'row',
@@ -417,18 +442,14 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   statusCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+   borderWidth:1,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -464,11 +485,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     marginTop: 16,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+ 
   },
   trackButtonText: {
     fontSize: 16,
@@ -481,11 +498,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth:1,
   },
   cardTitle: {
     fontSize: 16,

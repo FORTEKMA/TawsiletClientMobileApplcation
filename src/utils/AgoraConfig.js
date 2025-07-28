@@ -10,13 +10,12 @@
  */
 
 import { Platform } from 'react-native';
-
+import api from './api';  
 // Replace with your actual Agora App ID from https://console.agora.io/
 export const AGORA_APP_ID = '44e3bb6a05dd4fc18a0e34e3e653aff3';
 
 // Your backend server URL for token generation
-export const TOKEN_SERVER_URL = 'YOUR_BACKEND_URL';
-
+ 
 // Agora Channel Profile
 export const CHANNEL_PROFILE = {
   COMMUNICATION: 0, // 1-on-1 calls (recommended for taxi app)
@@ -148,23 +147,15 @@ export const isAgoraConfigured = () => {
  */
 export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', privilegeExpiredTs = 0) => {
   try {
-    if (!TOKEN_SERVER_URL || TOKEN_SERVER_URL === 'YOUR_BACKEND_URL') {
-      console.warn('Token server URL not configured. Using null token for development.');
-      return null;
-    }
+   
 
-    const response = await fetch(`${TOKEN_SERVER_URL}/generate-agora-token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify({
+    const response = await api.post(`/generate-agora-token`, {
+      
         channelName,
         uid,
         role,
         privilegeExpiredTs: privilegeExpiredTs || Math.floor(Date.now() / 1000) + 3600, // 1 hour default
-      }),
+    
     });
     
     if (!response.ok) {
@@ -333,7 +324,7 @@ export const INSTALLATION_INSTRUCTIONS = {
     '1. Get your Agora App ID from https://console.agora.io/',
     '2. Replace AGORA_APP_ID in this file with your actual App ID',
     '3. Set up token generation on your backend server',
-    '4. Update TOKEN_SERVER_URL with your backend URL',
+   
     '5. Configure permissions in AndroidManifest.xml and Info.plist',
     '6. Test the integration with a simple voice call',
   ],
@@ -342,7 +333,7 @@ export const INSTALLATION_INSTRUCTIONS = {
 // Export default configuration object
 export default {
   AGORA_APP_ID,
-  TOKEN_SERVER_URL,
+  
   CHANNEL_PROFILE,
   CLIENT_ROLE,
   AUDIO_PROFILE,

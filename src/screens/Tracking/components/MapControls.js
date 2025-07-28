@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Pressable, Text, View, TouchableOpacity, Animated } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  Alert,
+} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { styles } from '../styles';
-import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
 import { useNavigation } from '@react-navigation/native';
-import VoIPCallScreen from '../../../screens/VoIPCallScreen';
-import voipManager from '../../../utils/VoIPManager';
+import VoIPManager from '../../../utils/VoIPManager';
 
 const MapControls = ({
   onDriverPosition,
@@ -17,75 +19,95 @@ const MapControls = ({
   requestId,
 }) => {
   const { t } = useTranslation();
-  const user = useSelector(state => state.user.currentUser);
   const navigation = useNavigation();
   const [showCall, setShowCall] = useState(false);
-  const [callType, setCallType] = useState("outgoing");
+  const [callType, setCallType] = useState('voice');
   const [currentCallId, setCurrentCallId] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Initialize VoIP manager
-  useEffect(() => {
-    if (user?.id) {
-      voipManager.initialize(user.id, 'user');
-      
-      // Set incoming call handler
-      voipManager.setIncomingCallHandler((callId, callData) => {
-        setCurrentCallId(callId);
-        setCallType('incoming');
-        setShowCall(true);
-      });
+  // VoIP Manager instance
+  const voipManager = VoIPManager.getInstance();
 
-      // Set call status change handler
-      voipManager.setCallStatusChangeHandler((status, callData) => {
-        if (status === 'ended' || status === 'declined') {
-          setShowCall(false);
-          setCurrentCallId(null);
-        }
-      });
-    }
+  useEffect(() => {
+    // Listen for incoming calls
+    const handleIncomingCall = (callData) => {
+      setCurrentCallId(callData.callId);
+      setCallType(callData.type);
+      setShowCall(true);
+    };
+
+    voipManager.on('incomingCall', handleIncomingCall);
 
     return () => {
-      voipManager.cleanup();
+      voipManager.off('incomingCall', handleIncomingCall);
     };
-  }, [user?.id]);
+  }, [voipManager]);
 
   const handleChatPress = () => {
     navigation.navigate('ChatScreen', {
-      driverData,
-      requestId,
-      userType: 'user'
+      driverId: driverData?.id,
+      requestId: requestId,
     });
   };
 
   const handleCallPress = async () => {
-    if (!driverData || !requestId) return;
-
     try {
-      const callerData = {
-        id: user.id,
-        name: user.name || 'User',
-        avatar: user.avatar,
-      };
-
-      const { callId } = await voipManager.initiateCall(
-        driverData.id,
-        'driver',
-        requestId,
-        callerData
+      // Show call type selection
+      Alert.alert(
+        t('call.select_call_type', 'Select Call Type'),
+        t('call.choose_call_type', 'Choose how you want to call the driver'),
+        [
+          {
+            text: t('call.voice_call', 'Voice Call'),
+            onPress: () => initiateCall('voice'),
+          },
+          {
+            text: t('call.video_call', 'Video Call'),
+            onPress: () => initiateCall('video'),
+          },
+          {
+            text: t('common.cancel', 'Cancel'),
+            style: 'cancel',
+          },
+        ]
       );
-
-      setCurrentCallId(callId);
-      setCallType('outgoing');
-      setShowCall(true);
     } catch (error) {
-      console.error('Error initiating call:', error);
+      console.error('Failed to initiate call:', error);
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('call.failed_to_initiate', 'Failed to initiate call. Please try again.')
+      );
+    }
+  };
+
+  const initiateCall = async (type) => {
+    try {
+      const callId = await voipManager.initiateCall(driverData?.id, type);
+      setCurrentCallId(callId);
+      setCallType(type);
+      
+      // Navigate to VoIP call screen
+      navigation.navigate('VoIPCallScreen', {
+        callType: type,
+        driverData: driverData,
+        requestId: requestId,
+        isIncoming: false,
+        callId: callId
+      });
+    } catch (error) {
+      console.error('Call initiation failed:', error);
+      Alert.alert(
+        t('common.error', 'Error'),
+        t('call.initiation_failed', 'Failed to start call. Please try again.')
+      );
     }
   };
 
   const handleAcceptCall = async () => {
     if (currentCallId) {
       await voipManager.acceptCall(currentCallId);
+      setShowCall(false);
+      setCurrentCallId(null);
     }
   };
 
@@ -167,20 +189,6 @@ const MapControls = ({
           <MaterialCommunityIcons name="phone" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
-
-      {/* VoIP Call Screen */}
-      <VoIPCallScreen
-        visible={showCall}
-        onClose={() => {
-          setShowCall(false);
-          setCurrentCallId(null);
-        }}
-        driverData={driverData}
-        callType={callType}
-        onAccept={handleAcceptCall}
-        onDecline={handleDeclineCall}
-        onEndCall={handleEndCall}
-      />
     </>
   );
 };

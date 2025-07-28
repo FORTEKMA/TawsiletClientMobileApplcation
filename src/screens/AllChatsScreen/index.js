@@ -23,7 +23,7 @@ import db from '../../utils/firebase';
 import { colors } from '../../utils/colors';
 import { 
   trackScreenView, 
-  trackChatListViewed,
+ 
   trackChatOpened 
 } from '../../utils/analytics';
 
@@ -41,7 +41,7 @@ const AllChatsScreen = () => {
   // Track screen view on mount
   useEffect(() => {
     trackScreenView('AllChats');
-    trackChatListViewed();
+ 
     
     // Animate screen entrance
     Animated.timing(fadeAnim, {
@@ -376,7 +376,7 @@ const AllChatsScreen = () => {
           </Text>
         </View>
         
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={styles.searchButton}
           onPress={() => {
             // TODO: Implement search functionality
@@ -387,7 +387,7 @@ const AllChatsScreen = () => {
           }}
         >
           <Ionicons name="search" size={24} color={colors.primary} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </Animated.View>
 
       {/* Chat List */}

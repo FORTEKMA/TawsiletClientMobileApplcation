@@ -1,4 +1,4 @@
-import React from 'react';
+import React,{useEffect} from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { 
   View, 
@@ -16,7 +16,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
+
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
 // Import existing screens/navigators
@@ -26,8 +26,8 @@ import ProfileStack from './ProfileStack';
 import HomeStackNavigator from './HomeNavigation';
 import AllChatsScreen from '../screens/AllChatsScreen';
 import { colors } from '../utils/colors';
-import { logOut } from '../store/userSlice/userSlice';
-
+import { logOut,getCurrentUser } from '../store/userSlice/userSlice';
+ 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const Drawer = createDrawerNavigator();
 
@@ -35,17 +35,19 @@ const Drawer = createDrawerNavigator();
 const CustomDrawerContent = ({ navigation, state }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  useEffect(() => { 
+
+    dispatch(getCurrentUser());
+  },[])
   const currentUser = useSelector(state => state.user.currentUser);
-  
+ 
   // Check if user is guest
   const isGuest = !currentUser || currentUser.isGuest || !currentUser.id;
-  
-  const userName = isGuest 
+   const userName = isGuest 
     ? t('drawer.guest_user', 'Guest User')
     : `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || t('drawer.user', 'User');
-  
-  const userAvatar = isGuest 
-    ? 'https://via.placeholder.com/150/E0E0E0/666666?text=Guest'
+   const userAvatar = isGuest 
+    ? 'https://via.placeholder.com/150/E0E0E0/666666?text=' + encodeURIComponent(t('drawer.guest_user_short', 'Guest'))
     : currentUser?.profilePicture?.url || 'https://via.placeholder.com/150/007AFF/FFFFFF?text=' + (userName.charAt(0) || 'U');
   
   const userEmail = isGuest ? '' : currentUser?.email || '';
@@ -194,7 +196,7 @@ const CustomDrawerContent = ({ navigation, state }) => {
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
       
       {/* Header Section with Gradient */}
-      <LinearGradient
+        <View
         colors={[colors.primary, '#0066CC']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -241,7 +243,7 @@ const CustomDrawerContent = ({ navigation, state }) => {
             {isGuest ? t('drawer.guest_mode', 'Guest Mode') : t('drawer.signed_in', 'Signed In')}
           </Text>
         </View>
-      </LinearGradient>
+      </View>
 
       {/* Menu Items */}
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
@@ -278,7 +280,7 @@ const CustomDrawerContent = ({ navigation, state }) => {
                   {item.label}
                 </Text>
                 
-                {item.badge && renderBadge(item.badge)}
+                {item.badge ? renderBadge(item.badge):null}
                 
                 {isDisabled && (
                   <MaterialCommunityIcons name="lock" size={16} color="#C7C7CC" />
@@ -454,24 +456,27 @@ const styles = StyleSheet.create({
   userDetails: {
     marginLeft: wp(3),
     flex: 1,
-  },
+   },
   
   userName: {
     fontSize: hp(2.4),
     fontWeight: '700',
     color: '#FFFFFF',
     marginBottom: 4,
+    color:"#000"
   },
   
   userEmail: {
     fontSize: hp(1.5),
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 2,
+       color:"#000"
   },
   
   userPhone: {
     fontSize: hp(1.5),
-    color: 'rgba(255, 255, 255, 0.9)',
+    
+    color:"#000"
   },
   
   signInPrompt: {
@@ -505,8 +510,8 @@ const styles = StyleSheet.create({
   
   statusText: {
     fontSize: hp(1.4),
-    color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '500',
+    color:"#000"
   },
   
   menuContainer: {

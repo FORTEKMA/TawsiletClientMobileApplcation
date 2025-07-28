@@ -76,6 +76,10 @@
 	<string>We need your location to show you the nearest Tawsilet services</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to update your profile image</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to microphone for voice calls</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to camera for video calls</string>
   <key>ITSAppUsesNonExemptEncryption</key>
   <false/>
 

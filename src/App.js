@@ -103,12 +103,14 @@ const App=()=> {
           navigationRef.navigate('OrderDetails', { id: commandId });
         }
 
-        // Handle VoIP call notifications
+        // Handle VoIP call notifications (for foreground/background clicks)
         if (data.type === 'voip_call') {
           const { channelName, caller } = data;
           const callUUID = uuidv4();
+          // Store call data for later retrieval when the app is opened/answered
+          AsyncStorage.setItem(`call_${callUUID}`, JSON.stringify({ channelName, caller, callType: data.callType, orderData: data.orderData }));
           RNCallKeep.displayIncomingCall(callUUID, caller.phoneNumber, caller.firstName, 'generic', true);
-          navigationRef.navigate('IncomingCallScreen', { callUUID, channelName, caller });
+          // Navigation will happen on 'answerCall' event
         }
 
       } catch (e) {
@@ -219,6 +221,20 @@ const App=()=> {
           // Navigation will happen on 'answerCall' event
         }
       });
+    });
+
+    // OneSignal background message handler for Android
+    OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event) => {
+      const data = event.notification.additionalData || event.notification.data || {};
+      if (data.type === 'voip_call') {
+        console.log('OneSignal foregroundWillDisplay: VoIP call received');
+        // Prevent OneSignal from displaying a regular notification
+        event.preventDefault();
+        const { channelName, caller } = data;
+        const callUUID = uuidv4();
+        AsyncStorage.setItem(`call_${callUUID}`, JSON.stringify({ channelName, caller, callType: data.callType, orderData: data.orderData }));
+        RNCallKeep.displayIncomingCall(callUUID, caller.phoneNumber, caller.firstName, 'generic', true);
+      }
     });
 
     setupLanguage()
@@ -333,7 +349,5 @@ const styles = StyleSheet.create({
 
 // Only wrap with Sentry in production mode
 export default __DEV__ ? withStallion(App) : withStallion(Sentry.wrap(App));
-
-
 
 

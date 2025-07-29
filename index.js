@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 AppRegistry.registerComponent(appName, () => App);
 
-// Register VoIP push notification event listener
+// Register VoIP push notification event listener for iOS
 VoipPushNotification.addEventListener('register', (token) => {
   // --- send token to your apn server ----
   console.log('VoIP Push Notification Registered:', token);
@@ -38,18 +38,14 @@ VoipPushNotification.addEventListener('notification', (notification) => {
       'generic',
       true // selfManaged
     );
-
-    // You might want to store callUUID and other details to manage the call later
-    // For now, we'll pass them to the IncomingCallScreen
-    // This part needs to be handled in App.js or a global state management
-    // to navigate to IncomingCallScreen when the app is invoked.
-    // The navigation logic is already in App.js useEffect for 'click' event.
-    // This listener is primarily for when the app is killed or in background.
   } else {
     console.warn('VoIP notification missing caller or channelName:', callData);
   }
 });
 
 VoipPushNotification.registerVoipToken();
+
+// Register Headless JS Task for Android VoIP notifications
+AppRegistry.registerHeadlessTask('RNNotificationBackgroundService', () => require('./voipHeadlessTask'));
 
 

@@ -3,27 +3,27 @@
  * Fast and easy VoIP notification testing
  */
 
-const axios = require('axios');
-require('dotenv').config();
+const axios = require("axios");
+require("dotenv").config();
 
 // Quick configuration
 const QUICK_CONFIG = {
-  ONESIGNAL_APP_ID: process.env.ONESIGNAL_APP_ID || 'e71c2a66-73f5-4e3b-b8a0-e58bf6f52ec0',
-  ONESIGNAL_API_KEY: process.env.ONESIGNAL_API_KEY || 'YOUR_REST_API_KEY_HERE',
+  ONESIGNAL_APP_ID: process.env.ONESIGNAL_APP_ID || "e71c2a66-73f5-4e3b-b8a0-e58bf6f52ec0",
+  ONESIGNAL_API_KEY: process.env.ONESIGNAL_API_KEY || "YOUR_REST_API_KEY_HERE",
 };
 
 /**
  * Quick voice call test to specific user
  */
 async function quickVoiceTest(userId = null, playerId = null) {
-  console.log('📞 Sending quick voice call...');
+  console.log("📞 Sending quick voice call...");
   
   if (userId) {
     console.log(`👤 Targeting user: ${userId}`);
   } else if (playerId) {
     console.log(`📱 Targeting player: ${playerId}`);
   } else {
-    console.log('📢 Sending to all users (no specific target)');
+    console.log("📢 Sending to all users (no specific target)");
   }
   
   try {
@@ -53,17 +53,17 @@ async function quickVoiceTest(userId = null, playerId = null) {
       app_id: QUICK_CONFIG.ONESIGNAL_APP_ID,
       target_channel: "push",
       headings: {
-        en: 'Voice Call',
-        ar: 'مكالمة صوتية',
-        fr: 'Appel vocal'
+        en: "Voice Call",
+        ar: "مكالمة صوتية",
+        fr: "Appel vocal"
       },
       contents: {
-        en: 'Ahmed is calling you',
-        ar: 'أحمد يتصل بك',
-        fr: 'Ahmed vous appelle'
+        en: "Ahmed is calling you",
+        ar: "أحمد يتصل بك",
+        fr: "Ahmed vous appelle"
       },
       mutable_content: true,
-      android_channel_id: '4ff9eb18-a657-46ce-9f83-749fd9056b49',
+      android_channel_id: "4ff9eb18-a657-46ce-9f83-749fd9056b49",
       android_accent_color: "#4CAF50",
       android_category: "call",
       android_priority: "high",
@@ -74,6 +74,7 @@ async function quickVoiceTest(userId = null, playerId = null) {
       android_sound: "notification_sound",
       ios_sound: "notification_sound.wav",
       android_visibility: 1,
+      content_available: true, // For iOS to wake up the app
     };
 
     // Add targeting based on provided parameters
@@ -86,24 +87,24 @@ async function quickVoiceTest(userId = null, playerId = null) {
     }
 
     const response = await axios.post(
-      'https://onesignal.com/api/v1/notifications',
+      "https://onesignal.com/api/v1/notifications",
       notificationPayload,
       {
         headers: {
           Authorization: `Basic ${QUICK_CONFIG.ONESIGNAL_API_KEY}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
 
-    console.log('✅ Voice call sent successfully!');
-    console.log('📱 Notification ID:', response.data.id);
-    console.log('📞 Channel:', callData.channelName);
-    console.log('👤 Caller:', callData.caller.firstName, callData.caller.lastName);
+    console.log("✅ Voice call sent successfully!");
+    console.log("📱 Notification ID:", response.data.id);
+    console.log("📞 Channel:", callData.channelName);
+    console.log("👤 Caller:", callData.caller.firstName, callData.caller.lastName);
     
     return response.data;
   } catch (error) {
-    console.error('❌ Voice call failed:', error.response?.data || error.message);
+    console.error("❌ Voice call failed:", error.response?.data || error.message);
     throw error;
   }
 }
@@ -112,14 +113,14 @@ async function quickVoiceTest(userId = null, playerId = null) {
  * Quick video call test to specific user
  */
 async function quickVideoTest(userId = null, playerId = null) {
-  console.log('📹 Sending quick video call...');
+  console.log("📹 Sending quick video call...");
   
   if (userId) {
     console.log(`👤 Targeting user: ${userId}`);
   } else if (playerId) {
     console.log(`📱 Targeting player: ${playerId}`);
   } else {
-    console.log('📢 Sending to all users (no specific target)');
+    console.log("📢 Sending to all users (no specific target)");
   }
   
   try {
@@ -148,17 +149,17 @@ async function quickVideoTest(userId = null, playerId = null) {
       app_id: QUICK_CONFIG.ONESIGNAL_APP_ID,
       target_channel: "push",
       headings: {
-        en: 'Video Call',
-        ar: 'مكالمة فيديو',
-        fr: 'Appel vidéo'
+        en: "Video Call",
+        ar: "مكالمة فيديو",
+        fr: "Appel vidéo"
       },
       contents: {
-        en: 'Sarah is calling you',
-        ar: 'سارة تتصل بك',
-        fr: 'Sarah vous appelle'
+        en: "Sarah is calling you",
+        ar: "سارة تتصل بك",
+        fr: "Sarah vous appelle"
       },
       mutable_content: true,
-      android_channel_id: '4ff9eb18-a657-46ce-9f83-749fd9056b49',
+      android_channel_id: "4ff9eb18-a657-46ce-9f83-749fd9056b49",
       android_accent_color: "#4CAF50",
       android_category: "call",
       android_priority: "high",
@@ -169,6 +170,7 @@ async function quickVideoTest(userId = null, playerId = null) {
       android_sound: "notification_sound",
       ios_sound: "notification_sound.wav",
       android_visibility: 1,
+      content_available: true, // For iOS to wake up the app
     };
 
     // Add targeting based on provided parameters
@@ -181,24 +183,24 @@ async function quickVideoTest(userId = null, playerId = null) {
     }
 
     const response = await axios.post(
-      'https://onesignal.com/api/v1/notifications',
+      "https://onesignal.com/api/v1/notifications",
       notificationPayload,
       {
         headers: {
           Authorization: `Basic ${QUICK_CONFIG.ONESIGNAL_API_KEY}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
 
-    console.log('✅ Video call sent successfully!');
-    console.log('📱 Notification ID:', response.data.id);
-    console.log('📹 Channel:', callData.channelName);
-    console.log('👤 Caller:', callData.caller.firstName, callData.caller.lastName);
+    console.log("✅ Video call sent successfully!");
+    console.log("📱 Notification ID:", response.data.id);
+    console.log("📹 Channel:", callData.channelName);
+    console.log("👤 Caller:", callData.caller.firstName, callData.caller.lastName);
     
     return response.data;
   } catch (error) {
-    console.error('❌ Video call failed:', error.response?.data || error.message);
+    console.error("❌ Video call failed:", error.response?.data || error.message);
     throw error;
   }
 }
@@ -206,7 +208,7 @@ async function quickVideoTest(userId = null, playerId = null) {
 /**
  * Quick call action test to specific user
  */
-async function quickActionTest(action = 'accepted', userId = null, playerId = null) {
+async function quickActionTest(action = "accepted", userId = null, playerId = null) {
   console.log(`🔄 Sending quick ${action} action...`);
   
   if (userId) {
@@ -214,7 +216,7 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
   } else if (playerId) {
     console.log(`📱 Targeting player: ${playerId}`);
   } else {
-    console.log('📢 Sending to all users (no specific target)');
+    console.log("📢 Sending to all users (no specific target)");
   }
   
   try {
@@ -237,19 +239,19 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
 
     const actionMessages = {
       accepted: {
-        en: 'Call accepted',
-        ar: 'تم قبول المكالمة',
-        fr: 'Appel accepté'
+        en: "Call accepted",
+        ar: "تم قبول المكالمة",
+        fr: "Appel accepté"
       },
       declined: {
-        en: 'Call declined',
-        ar: 'تم رفض المكالمة',
-        fr: 'Appel refusé'
+        en: "Call declined",
+        ar: "تم رفض المكالمة",
+        fr: "Appel refusé"
       },
       ended: {
-        en: 'Call ended',
-        ar: 'تم إنهاء المكالمة',
-        fr: 'Appel terminé'
+        en: "Call ended",
+        ar: "تم إنهاء المكالمة",
+        fr: "Appel terminé"
       }
     };
 
@@ -258,9 +260,9 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
       app_id: QUICK_CONFIG.ONESIGNAL_APP_ID,
       target_channel: "push",
       headings: {
-        en: 'Call Update',
-        ar: 'تحديث المكالمة',
-        fr: 'Mise à jour appel'
+        en: "Call Update",
+        ar: "تحديث المكالمة",
+        fr: "Mise إلى يوم appel"
       },
       contents: actionMessages[action] || {
         en: `Call ${action}`,
@@ -268,9 +270,10 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
         fr: `Appel ${action}`
       },
       mutable_content: true,
-      android_channel_id: '4ff9eb18-a657-46ce-9f83-749fd9056b49',
+      android_channel_id: "4ff9eb18-a657-46ce-9f83-749fd9056b49",
       priority: 10,
       data: actionData,
+      content_available: true, // For iOS to wake up the app
     };
 
     // Add targeting based on provided parameters
@@ -283,19 +286,19 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
     }
 
     const response = await axios.post(
-      'https://onesignal.com/api/v1/notifications',
+      "https://onesignal.com/api/v1/notifications",
       notificationPayload,
       {
         headers: {
           Authorization: `Basic ${QUICK_CONFIG.ONESIGNAL_API_KEY}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
 
     console.log(`✅ ${action} action sent successfully!`);
-    console.log('📱 Notification ID:', response.data.id);
-    console.log('🔄 Action:', action);
+    console.log("📱 Notification ID:", response.data.id);
+    console.log("🔄 Action:", action);
     
     return response.data;
   } catch (error) {
@@ -307,24 +310,24 @@ async function quickActionTest(action = 'accepted', userId = null, playerId = nu
 /**
  * Quick test with specific user
  */
-async function quickTestWithUser(userId, callType = 'voice') {
+async function quickTestWithUser(userId, callType = "voice") {
   console.log(`📞 Quick ${callType} call test to user: ${userId}\n`);
   
   try {
-    if (callType === 'voice') {
+    if (callType === "voice") {
       await quickVoiceTest(userId, null);
-    } else if (callType === 'video') {
+    } else if (callType === "video") {
       await quickVideoTest(userId, null);
     } else {
-      console.log('❌ Invalid call type. Use: voice or video');
+      console.log("❌ Invalid call type. Use: voice or video");
       return;
     }
     
-    console.log('\n✅ Test completed!');
-    console.log('📱 Check your app for the incoming call notification');
+    console.log("\n✅ Test completed!");
+    console.log("📱 Check your app for the incoming call notification");
     
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error("❌ Test failed:", error.message);
   }
 }
 
@@ -332,43 +335,43 @@ async function quickTestWithUser(userId, callType = 'voice') {
  * Quick all tests to specific user
  */
 async function quickAllTests(userId = null, playerId = null) {
-  console.log('🚀 Running all quick tests...\n');
+  console.log("🚀 Running all quick tests...\n");
 
   if (userId) {
     console.log(`👤 Targeting user: ${userId}\n`);
   } else if (playerId) {
     console.log(`📱 Targeting player: ${playerId}\n`);
   } else {
-    console.log('📢 Sending to all users (no specific target)\n');
+    console.log("📢 Sending to all users (no specific target)\n");
   }
 
   try {
     // Test 1: Voice call
-    console.log('1️⃣ Voice Call Test');
+    console.log("1️⃣ Voice Call Test");
     await quickVoiceTest(userId, playerId);
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Test 2: Video call
-    console.log('\n2️⃣ Video Call Test');
+    console.log("\n2️⃣ Video Call Test");
     await quickVideoTest(userId, playerId);
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Test 3: Call actions
-    console.log('\n3️⃣ Call Actions Test');
-    await quickActionTest('accepted', userId, playerId);
+    console.log("\n3️⃣ Call Actions Test");
+    await quickActionTest("accepted", userId, playerId);
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await quickActionTest('declined', userId, playerId);
+    await quickActionTest("declined", userId, playerId);
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await quickActionTest('ended', userId, playerId);
+    await quickActionTest("ended", userId, playerId);
 
-    console.log('\n🎉 All quick tests completed successfully!');
-    console.log('\n📱 Check your app for:');
-    console.log('   - Incoming call notifications');
-    console.log('   - Call screen navigation');
-    console.log('   - Call action handling');
+    console.log("\n🎉 All quick tests completed successfully!");
+    console.log("\n📱 Check your app for:");
+    console.log("   - Incoming call notifications");
+    console.log("   - Call screen navigation");
+    console.log("   - Call action handling");
 
   } catch (error) {
-    console.error('❌ Quick tests failed:', error.message);
+    console.error("❌ Quick tests failed:", error.message);
   }
 }
 
@@ -380,10 +383,10 @@ function getUserTarget() {
   const userId = args[1];
   const playerId = args[2];
   
-  if (userId && userId !== '""') {
-    return { type: 'user_id', value: userId };
-  } else if (playerId && playerId !== '""') {
-    return { type: 'player_id', value: playerId };
+  if (userId && userId !== "\"\"") {
+    return { type: "user_id", value: userId };
+  } else if (playerId && playerId !== "\"\"") {
+    return { type: "player_id", value: playerId };
   }
   
   return null;
@@ -452,35 +455,35 @@ async function main() {
   const args = process.argv.slice(2);
   const command = args[0];
 
-  console.log('📞 Quick VoIP Test Script\n');
+  console.log("📞 Quick VoIP Test Script\n");
 
   // Check if API key is configured
-  if (QUICK_CONFIG.ONESIGNAL_API_KEY === 'YOUR_REST_API_KEY_HERE') {
-    console.log('❌ Error: OneSignal REST API Key not configured!');
-    console.log('📝 Please add your API key to .env file:');
-    console.log('   ONESIGNAL_API_KEY=your_api_key_here');
-    console.log('🔑 Get your API key from: https://app.onesignal.com/apps/' + QUICK_CONFIG.ONESIGNAL_APP_ID + '/settings/keys_and_ids');
+  if (QUICK_CONFIG.ONESIGNAL_API_KEY === "YOUR_REST_API_KEY_HERE") {
+    console.log("❌ Error: OneSignal REST API Key not configured!");
+    console.log("📝 Please add your API key to .env file:");
+    console.log("   ONESIGNAL_API_KEY=your_api_key_here");
+    console.log("🔑 Get your API key from: https://app.onesignal.com/apps/" + QUICK_CONFIG.ONESIGNAL_APP_ID + "/settings/keys_and_ids");
     return;
   }
 
   try {
     switch (command) {
-      case 'voice':
+      case "voice":
         const voiceUserId = args[1] || null;
         const voicePlayerId = args[2] || null;
         await quickVoiceTest(voiceUserId, voicePlayerId);
         break;
 
-      case 'video':
+      case "video":
         const videoUserId = args[1] || null;
         const videoPlayerId = args[2] || null;
         await quickVideoTest(videoUserId, videoPlayerId);
         break;
 
-      case 'action':
+      case "action":
         const action = args[1];
-        if (!action || !['accepted', 'declined', 'ended'].includes(action)) {
-          console.log('❌ Invalid action. Use: accepted, declined, or ended');
+        if (!action || !["accepted", "declined", "ended"].includes(action)) {
+          console.log("❌ Invalid action. Use: accepted, declined, or ended");
           return;
         }
         const actionUserId = args[2] || null;
@@ -488,18 +491,18 @@ async function main() {
         await quickActionTest(action, actionUserId, actionPlayerId);
         break;
 
-      case 'all':
+      case "all":
         const allUserId = args[1] || null;
         const allPlayerId = args[2] || null;
         await quickAllTests(allUserId, allPlayerId);
         break;
 
-      case 'test':
+      case "test":
         const testUserId = args[1];
-        const testCallType = args[2] || 'voice';
+        const testCallType = args[2] || "voice";
         if (!testUserId) {
-          console.log('❌ Please provide a user ID for testing');
-          console.log('Usage: node quick-voip-test.js test <user_id> [voice|video]');
+          console.log("❌ Please provide a user ID for testing");
+          console.log("Usage: node quick-voip-test.js test <user_id> [voice|video]");
           return;
         }
         await quickTestWithUser(testUserId, testCallType);
@@ -511,7 +514,7 @@ async function main() {
     }
 
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error("❌ Error:", error.message);
   }
 }
 
@@ -526,3 +529,4 @@ module.exports = {
   quickActionTest,
   quickAllTests
 }; 
+

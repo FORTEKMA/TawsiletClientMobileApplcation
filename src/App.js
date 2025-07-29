@@ -40,8 +40,7 @@ import CheckConnection from './components/CheckConnection';
 import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 import api from './utils/api';
 
-import RNCallKeep from 'react-native-callkeep';
-import { v4 as uuidv4 } from 'uuid';
+import VoIPManager from './utils/VoIPManager'; // Import VoIPManager
 
 // Only initialize Sentry in production mode
 if (!__DEV__) {
@@ -59,7 +58,7 @@ let persistor = persistStore(store);
 const App=()=> {
   useKeepAwake();
   const { isRestartRequired } = useStallionUpdate();
-   const [isModalVisible, setModalVisible] = useState(false);
+   const [isModalVisible, setModalVisible] = useState('');
   const [notificationBody, setNotificationBody] = useState('');
   const [updateRequired, setUpdateRequired] = useState(false);
   const [storeUrl, setStoreUrl] = useState(null);
@@ -90,8 +89,9 @@ const App=()=> {
     OneSignal.User.setLanguage("fr");
     OneSignal.Notifications.requestPermission(true)
     
+    // Setup CallKeep using VoIPManager
+    VoIPManager.setupCallKeep();
 
-    
     // Add notification opened handler
     OneSignal.Notifications.addEventListener('click', (event) => {
       try {
@@ -103,12 +103,9 @@ const App=()=> {
           navigationRef.navigate('OrderDetails', { id: commandId });
         }
 
-        // Handle VoIP call notifications
+        // Handle VoIP call notifications (for foreground/background clicks)
         if (data.type === 'voip_call') {
-          const { channelName, caller } = data;
-          const callUUID = uuidv4();
-          RNCallKeep.displayIncomingCall(callUUID, caller.phoneNumber, caller.firstName, 'generic', true);
-          navigationRef.navigate('IncomingCallScreen', { callUUID, channelName, caller });
+          VoIPManager.displayIncomingCall(data);
         }
 
       } catch (e) {
@@ -116,109 +113,15 @@ const App=()=> {
       }
     });
 
-    // Initialize CallKeep
-    const options = {
-      ios: {
-        appName: 'Tawsilet',
-        handleType: 'generic',
-        selfManaged: true, // Crucial for preventing phone account permission
-        supportsVideo: true,
-        maximumCallGroups: '1',
-        maximumCallsPerCallGroup: '1',
-        ringtoneSound: 'incoming_call.mp3',
-      },
-      android: {
-        alertTitle: 'Permissions required',
-        alertDescription: 'This application needs to access your phone accounts to make calls',
-        cancelButton: 'Cancel',
-        okButton: 'ok',
-        additionalPermissions: [],
-        selfManaged: true, // Crucial for preventing phone account permission
-        foregroundService: { // Required for Android 12+
-          onHold: false,
-          onGoing: false,
-          callback: () => {},
-          disconnect: () => {},
-        },
-      },
-    };
-
-    RNCallKeep.setup(options);
-
-    // CallKeep event listeners
-    RNCallKeep.addEventListener('answerCall', ({ callUUID }) => {
-      // Retrieve call data associated with callUUID
-      AsyncStorage.getItem(`call_${callUUID}`).then(callDataString => {
-        if (callDataString) {
-          const callData = JSON.parse(callDataString);
-          // Navigate to VoIPCallScreen with the retrieved data
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('VoIPCallScreen', { ...callData, callUUID, isIncoming: true });
-          }
-          AsyncStorage.removeItem(`call_${callUUID}`); // Clean up stored data
-        } else {
-          console.warn(`No call data found for UUID: ${callUUID}`);
-          // Fallback if data not found, maybe navigate to a generic call screen
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('VoIPCallScreen', { callUUID, isIncoming: true });
-          }
-        }
-      });
-      RNCallKeep.endCall(callUUID);
-    });
-
-    RNCallKeep.addEventListener('endCall', ({ callUUID }) => {
-      // Handle end call event
-      // Clean up resources
-      AsyncStorage.removeItem(`call_${callUUID}`); // Ensure data is removed on end call
-    });
-
-    RNCallKeep.addEventListener('didDisplayIncomingCall', ({ callUUID, handle, name }) => {
-      // You might want to play a custom sound here
-    });
-
-    RNCallKeep.addEventListener('didPerformSetMutedCallAction', ({ muted, callUUID }) => {
-      // Handle mute/unmute
-    });
-
-    RNCallKeep.addEventListener('didToggleHoldCallAction', ({ hold, callUUID }) => {
-      // Handle hold/unhold
-    });
-
-    RNCallKeep.addEventListener('didPerformDTMFAction', ({ digits, callUUID }) => {
-      // Handle DTMF tones
-    });
-
-    RNCallKeep.addEventListener('didActivateAudioSession', () => {
-      // You might want to start audio playback here
-    });
-
-    RNCallKeep.addEventListener('didDeactivateAudioSession', () => {
-      // You might want to stop audio playback here
-    });
-
-    RNCallKeep.addEventListener('didChangeAudioRoute', ({ uuid, input }) => {
-      // Handle audio route changes (e.g., speaker, earpiece)
-    });
-
-    RNCallKeep.addEventListener('didLoadWithEvents', (events) => {
-      // Process any pending events that occurred while the app was closed
-      events.forEach(event => {
-        if (event.name === 'RNCallKeepDidReceiveStartCallAction') {
-          // Handle incoming call when app is killed
-          const { handle, callUUID, name } = event.data;
-          // Assuming 'handle' contains the channelName and 'name' is the caller's first name
-          // We need to reconstruct the full callData object
-          const simulatedCallData = {
-            channelName: handle,
-            caller: { phoneNumber: handle, firstName: name },
-            // Add other necessary fields if available in event.data or from a stored context
-          };
-          AsyncStorage.setItem(`call_${callUUID}`, JSON.stringify(simulatedCallData));
-          RNCallKeep.displayIncomingCall(callUUID, handle, name, 'generic', true);
-          // Navigation will happen on 'answerCall' event
-        }
-      });
+    // OneSignal background message handler for Android
+    OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event) => {
+      const data = event.notification.additionalData || event.notification.data || {};
+      if (data.type === 'voip_call') {
+        console.log('OneSignal foregroundWillDisplay: VoIP call received');
+        // Prevent OneSignal from displaying a regular notification
+        event.preventDefault();
+        VoIPManager.displayIncomingCall(data);
+      }
     });
 
     setupLanguage()
@@ -333,7 +236,5 @@ const styles = StyleSheet.create({
 
 // Only wrap with Sentry in production mode
 export default __DEV__ ? withStallion(App) : withStallion(Sentry.wrap(App));
-
-
 
 

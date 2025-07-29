@@ -8,7 +8,8 @@ import {
   Modal,
   Platform,
   SafeAreaView,
-  I18nManager
+  I18nManager,
+  AppState
 } from 'react-native';
 import { useKeepAwake } from '@sayem314/react-native-keep-awake';
 import * as amplitude from '@amplitude/analytics-react-native';
@@ -18,7 +19,6 @@ import 'react-native-gesture-handler';
 import { withStallion, useStallionUpdate, restart } from 'react-native-stallion';
 import Toast from 'react-native-toast-message';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
 
 import { checkVersion } from "react-native-check-version";
 import UpdateBlockScreen from "./components/UpdateBlockScreen"
@@ -39,6 +39,9 @@ import i18n from "./local";
 import CheckConnection from './components/CheckConnection';
 import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 import api from './utils/api';
+
+import RNCallKeep from 'react-native-callkeep';
+import { v4 as uuidv4 } from 'uuid';
 
 // Only initialize Sentry in production mode
 if (!__DEV__) {
@@ -99,12 +102,101 @@ const App=()=> {
         if (commandId && navigationRef.isReady()) {
           navigationRef.navigate('OrderDetails', { id: commandId });
         }
+
+        // Handle VoIP call notifications
+        if (data.type === 'voip_call') {
+          const { channelName, caller } = data;
+          const callUUID = uuidv4();
+          RNCallKeep.displayIncomingCall(callUUID, caller.phoneNumber, caller.firstName, 'generic', true);
+          navigationRef.navigate('IncomingCallScreen', { callUUID, channelName, caller });
+        }
+
       } catch (e) {
         console.error('Error handling notification open:', e);
       }
     });
 
+    // Initialize CallKeep
+    const options = {
+      ios: {
+        appName: 'Tawsilet',
+        handleType: 'generic',
+        selfManaged: true, // Crucial for preventing phone account permission
+        supportsVideo: true,
+        maximumCallGroups: '1',
+        maximumCallsPerCallGroup: '1',
+        ringtoneSound: 'incoming_call.mp3',
+      },
+      android: {
+        alertTitle: 'Permissions required',
+        alertDescription: 'This application needs to access your phone accounts to make calls',
+        cancelButton: 'Cancel',
+        okButton: 'ok',
+        additionalPermissions: [],
+        selfManaged: true, // Crucial for preventing phone account permission
+        foregroundService: { // Required for Android 12+
+          onHold: false,
+          onGoing: false,
+          callback: () => {},
+          disconnect: () => {},
+        },
+      },
+    };
 
+    RNCallKeep.setup(options);
+
+    // CallKeep event listeners
+    RNCallKeep.addEventListener('answerCall', ({ callUUID }) => {
+      // Handle answer call event
+      // Navigate to VoIPCallScreen
+      navigationRef.navigate('VoIPCallScreen', { callUUID });
+      RNCallKeep.endCall(callUUID);
+    });
+
+    RNCallKeep.addEventListener('endCall', ({ callUUID }) => {
+      // Handle end call event
+      // Clean up resources
+    });
+
+    RNCallKeep.addEventListener('didDisplayIncomingCall', ({ callUUID, handle, callUUID, name }) => {
+      // You might want to play a custom sound here
+    });
+
+    RNCallKeep.addEventListener('didPerformSetMutedCallAction', ({ muted, callUUID }) => {
+      // Handle mute/unmute
+    });
+
+    RNCallKeep.addEventListener('didToggleHoldCallAction', ({ hold, callUUID }) => {
+      // Handle hold/unhold
+    });
+
+    RNCallKeep.addEventListener('didPerformDTMFAction', ({ digits, callUUID }) => {
+      // Handle DTMF tones
+    });
+
+    RNCallKeep.addEventListener('didActivateAudioSession', () => {
+      // You might want to start audio playback here
+    });
+
+    RNCallKeep.addEventListener('didDeactivateAudioSession', () => {
+      // You might want to stop audio playback here
+    });
+
+    RNCallKeep.addEventListener('didChangeAudioRoute', ({ uuid, input }) => {
+      // Handle audio route changes (e.g., speaker, earpiece)
+    });
+
+    RNCallKeep.addEventListener('didLoadWithEvents', (events) => {
+      // Process any pending events that occurred while the app was closed
+      events.forEach(event => {
+        if (event.name === 'RNCallKeepDidReceiveStartCallAction') {
+          // Handle incoming call when app is killed
+          const { handle, callUUID, name } = event.data;
+          RNCallKeep.displayIncomingCall(callUUID, handle, name, 'generic', true);
+          navigationRef.navigate('IncomingCallScreen', { callUUID, channelName: handle, caller: { phoneNumber: handle, firstName: name } });
+        }
+      });
+    });
 
     setupLanguage()
 
@@ -218,3 +310,5 @@ const styles = StyleSheet.create({
 
 // Only wrap with Sentry in production mode
 export default __DEV__ ? withStallion(App) : withStallion(Sentry.wrap(App));
+
+

@@ -7,6 +7,7 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate;
 import android.os.Bundle; // here
 import com.facebook.FacebookSdk;
 import org.devio.rn.splashscreen.SplashScreen;
+import android.content.Intent;
 
 public class MainActivity extends ReactActivity {
 
@@ -39,4 +40,12 @@ public class MainActivity extends ReactActivity {
     SplashScreen.show(this, R.style.SplashScreen_SplashTheme, R.id.lottie);
     SplashScreen.setAnimationFinished(true);
   }
+
+  @Override
+  public void onNewIntent(Intent intent) {
+      super.onNewIntent(intent);
+      setIntent(intent);
+  }
 }
+
+

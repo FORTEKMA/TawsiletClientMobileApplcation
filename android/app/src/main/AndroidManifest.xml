@@ -13,7 +13,12 @@
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    
+
+    <!-- Permissions for react-native-callkeep -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     
     <application
@@ -27,7 +32,6 @@
 
     <!-- Google Maps API Key -->
     <meta-data
-
         android:name="com.google.android.geo.API_KEY"
         android:value="AIzaSyA8oEc5WKQqAXtSKpSH4igelH5wlPDaowE" />
  
@@ -56,5 +60,16 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- CallKeep ConnectionService -->
+      <service android:name="io.wazo.callkeep.VoiceConnectionService"
+          android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+          android:exported="true">
+          <intent-filter>
+              <action android:name="android.telecom.ConnectionService" />
+          </intent-filter>
+      </service>
+
     </application>
 </manifest>
+

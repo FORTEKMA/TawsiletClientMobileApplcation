@@ -74,3 +74,9 @@ end
 target 'OneSignalNotificationServiceExtension' do
   pod 'OneSignalXCFramework', '>= 5.0.0', '< 6.0'
 end
+
+
+  pod 'react-native-callkeep', :path => '../node_modules/react-native-callkeep'
+  pod 'react-native-voip-push-notification', :path => '../node_modules/react-native-voip-push-notification'
+
+

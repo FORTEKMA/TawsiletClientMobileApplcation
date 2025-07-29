@@ -47,6 +47,7 @@
     "react-native-autocomplete-input": "^5.4.0",
     "react-native-background-timer": "^2.4.1",
     "react-native-calendars": "^1.1302.0",
+    "react-native-callkeep": "^4.3.16",
     "react-native-check-version": "^1.4.0",
     "react-native-country-codes-picker": "^2.3.4",
     "react-native-country-flag": "^2.0.2",
@@ -89,6 +90,8 @@
     "react-native-toast-message": "^2.3.2",
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "^10.0.0",
+    "react-native-voip-push-notification": "^3.3.3",
+    "react-native-callkeep": "^4.3.16",
     "uuid": "^11.1.0",
     "yup": "^1.6.1"
   },

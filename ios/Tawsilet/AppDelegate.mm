@@ -11,6 +11,9 @@
 #import "RNSplashScreen.h"
 #import "Tawsilet-Swift.h"
 
+#import <RNCallKeep/RNCallKeep.h>
+#import <react_native_voip_push_notification/RNVoipPushNotificationManager.h>
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -45,10 +48,28 @@
   LottieAnimationView *animationView = (LottieAnimationView *) animationUIView;
   [t playWithAnimationView:animationView];
   [RNSplashScreen setAnimationFinished:true];
+
+  // VoIP Push Notification setup
+  [[RNVoipPushNotificationManager sharedInstance] didFinishLaunchingWithOptions:launchOptions];
+
   return YES;
 }
 
- 
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+  [[RNVoipPushNotificationManager sharedInstance] didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+  [[RNVoipPushNotificationManager sharedInstance] didFailToRegisterForRemoteNotificationsWithError:error];
+}
+
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
+  [[RNVoipPushNotificationManager sharedInstance] didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
+}
+
+- (void)pushRegistry:(PKPushRegistry *)registry didReceiveIncomingPushWithPayload:(PKPushPayload *)payload forType:(NSString *)type completion:(void (^)(void))completion {
+  [[RNVoipPushNotificationManager sharedInstance] didReceiveIncomingPushWithPayload:payload forType:type completion:completion];
+}
 
 - (NSURL *)bundleURL
   {
@@ -70,3 +91,5 @@
 
 
 @end
+
+

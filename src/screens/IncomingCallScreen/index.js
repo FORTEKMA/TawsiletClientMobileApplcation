@@ -18,12 +18,12 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
-import { 
+import {
   sendVoIPCallActionNotification,
   generateVoIPChannelName,
 } from '../../utils/VoIPManager';
-import { createAgoraEngine } from '../../utils/AgoraConfig';
 import { styles } from './styles';
+import RNCallKeep from 'react-native-callkeep';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -31,16 +31,9 @@ const IncomingCallScreen = ({ route }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const currentUser = useSelector(state => state.user?.currentUser);
-  
-  // Extract call data from route params or notification data
-  const callData = route?.params?.callData || {};
-  const {
-    caller,
-    callType = 'voice',
-    channelName,
-    orderData = {},
-    notificationId,
-  } = callData;
+
+  // Extract call data from route params
+  const { callUUID, caller, callType = 'voice', channelName, orderData = {} } = route.params;
 
   // State management
   const [callStatus, setCallStatus] = useState('ringing');
@@ -53,11 +46,6 @@ const IncomingCallScreen = ({ route }) => {
   const avatarPulseAnimation = useRef(new Animated.Value(1)).current;
   const buttonScaleAnimation = useRef(new Animated.Value(1)).current;
   const rippleAnimation = useRef(new Animated.Value(0)).current;
-
-  // Refs
-  const vibrationInterval = useRef(null);
-  const ringtoneTimeout = useRef(null);
-  const agoraEngineRef = useRef(null);
 
   // Handle Android back button
   useEffect(() => {
@@ -87,25 +75,12 @@ const IncomingCallScreen = ({ route }) => {
 
     // Start avatar pulse animation
     startAvatarPulse();
-    
-    // Start vibration pattern
-    startVibration();
-    
+
     // Start ripple animation
     startRippleAnimation();
 
-    // Auto-decline after 30 seconds if not answered
-    ringtoneTimeout.current = setTimeout(() => {
-      if (callStatus === 'ringing') {
-        handleDeclineCall();
-      }
-    }, 30000);
-
     return () => {
-      stopVibration();
-      if (ringtoneTimeout.current) {
-        clearTimeout(ringtoneTimeout.current);
-      }
+      // Clean up any ongoing animations or effects if needed
     };
   }, []);
 
@@ -124,20 +99,6 @@ const IncomingCallScreen = ({ route }) => {
         }),
       ])
     ).start();
-  };
-
-  const startVibration = () => {
-    if (Platform.OS === 'android') {
-      // Vibration pattern: wait 1s, vibrate 2s, wait 1s, repeat
-      const pattern = [0, 1000, 2000, 1000];
-      Vibration.vibrate(pattern, true);
-    }
-  };
-
-  const stopVibration = () => {
-    if (Platform.OS === 'android') {
-      Vibration.cancel();
-    }
   };
 
   const startRippleAnimation = () => {
@@ -167,12 +128,14 @@ const IncomingCallScreen = ({ route }) => {
 
   const handleAcceptCall = async () => {
     if (isAccepting || isDeclining) return;
-    
+
     setIsAccepting(true);
-    stopVibration();
-    
+
     animateButton(async () => {
       try {
+        // Answer the call via CallKeep
+        RNCallKeep.answerIncomingCall(callUUID);
+
         // Send accept notification to caller
         const actionParams = {
           driverId: caller?.id,
@@ -185,11 +148,12 @@ const IncomingCallScreen = ({ route }) => {
           channelName: channelName,
           orderData: orderData,
         };
-        
+
         await sendVoIPCallActionNotification(actionParams);
-        
+
         // Navigate to VoIP call screen
         navigation.replace('VoIPCallScreen', {
+          callUUID: callUUID,
           driverData: caller,
           callType: callType,
           isIncoming: true,
@@ -197,7 +161,7 @@ const IncomingCallScreen = ({ route }) => {
           orderData: orderData,
           channelName: channelName,
         });
-        
+
       } catch (error) {
         console.error('Failed to accept call:', error);
         Alert.alert(
@@ -211,12 +175,14 @@ const IncomingCallScreen = ({ route }) => {
 
   const handleDeclineCall = async () => {
     if (isAccepting || isDeclining) return;
-    
+
     setIsDeclining(true);
-    stopVibration();
-    
+
     animateButton(async () => {
       try {
+        // End the call via CallKeep
+        RNCallKeep.endCall(callUUID);
+
         // Send decline notification to caller
         const actionParams = {
           driverId: caller?.id,
@@ -229,12 +195,12 @@ const IncomingCallScreen = ({ route }) => {
           channelName: channelName,
           orderData: orderData,
         };
-        
+
         await sendVoIPCallActionNotification(actionParams);
-        
+
         // Navigate back
         navigation.goBack();
-        
+
       } catch (error) {
         console.error('Failed to decline call:', error);
         navigation.goBack();
@@ -243,7 +209,7 @@ const IncomingCallScreen = ({ route }) => {
   };
 
   const getCallTypeText = () => {
-    return callType === 'video' 
+    return callType === 'video'
       ? t('call.incoming_video', 'Incoming Video Call')
       : t('call.incoming_voice', 'Incoming Voice Call');
   };
@@ -260,15 +226,15 @@ const IncomingCallScreen = ({ route }) => {
   };
 
   const getCallerAvatar = () => {
-    return caller?.avatar || 
-           caller?.profilePicture?.url || 
+    return caller?.avatar ||
+           caller?.profilePicture?.url ||
            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
   };
 
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
-      
+
       <SafeAreaView style={styles.safeArea}>
         <Animated.View
           style={[
@@ -329,7 +295,7 @@ const IncomingCallScreen = ({ route }) => {
             </Animated.View>
 
             <Text style={styles.callerName}>{getCallerName()}</Text>
-            
+
             <Text style={styles.callTypeText}>{getCallTypeText()}</Text>
 
             {orderData?.id && (
@@ -355,7 +321,7 @@ const IncomingCallScreen = ({ route }) => {
                   <MaterialCommunityIcons name="phone-hangup" size={32} color="#fff" />
                 </TouchableOpacity>
               </Animated.View>
-              
+
               <Animated.View style={{ transform: [{ scale: buttonScaleAnimation }] }}>
                 <TouchableOpacity
                   style={[styles.callButton, styles.acceptButton]}
@@ -378,8 +344,8 @@ const IncomingCallScreen = ({ route }) => {
           {(isAccepting || isDeclining) && (
             <View style={styles.loadingContainer}>
               <Text style={styles.loadingText}>
-                {isAccepting 
-                  ? t('call.connecting', 'Connecting...') 
+                {isAccepting
+                  ? t('call.connecting', 'Connecting...')
                   : t('call.declining', 'Declining...')
                 }
               </Text>
@@ -391,6 +357,5 @@ const IncomingCallScreen = ({ route }) => {
   );
 };
 
+export default IncomingCallScreen;
 
-
-export default IncomingCallScreen; 

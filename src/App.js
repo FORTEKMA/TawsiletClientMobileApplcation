@@ -39,6 +39,7 @@ import i18n from "./local";
 import CheckConnection from './components/CheckConnection';
 import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 import api from './utils/api';
+
 // Only initialize Sentry in production mode
 if (!__DEV__) {
   Sentry.init({
@@ -86,10 +87,14 @@ const App=()=> {
     OneSignal.User.setLanguage("fr");
     OneSignal.Notifications.requestPermission(true)
     
+
+    
     // Add notification opened handler
     OneSignal.Notifications.addEventListener('click', (event) => {
       try {
         const data = event?.notification?.additionalData || event?.notification?.data || {};
+        
+        // Handle regular order notifications
         const commandId = data.commandId || data.command_id || data.id;
         if (commandId && navigationRef.isReady()) {
           navigationRef.navigate('OrderDetails', { id: commandId });
@@ -98,6 +103,8 @@ const App=()=> {
         console.error('Error handling notification open:', e);
       }
     });
+
+
 
     setupLanguage()
 

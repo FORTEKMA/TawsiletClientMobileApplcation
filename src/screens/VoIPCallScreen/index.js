@@ -44,7 +44,9 @@ try {
   ClientRole = { Broadcaster: 1 };
 }
 import AgoraConfig, { 
+  AGORA_APP_ID,
   isAgoraSDKAvailable, 
+  isAgoraConfigured,
   getAgoraToken, 
   getPlatformAudioConfig,
   CHANNEL_PROFILE,
@@ -121,8 +123,24 @@ const VoIPCallScreen = ({
     return channelName.current;
   };
 
+  // Debug function to check Agora setup
+  const debugAgoraSetup = () => {
+    console.log('=== Agora Setup Debug ===');
+    console.log('Agora SDK Available:', isAgoraSDKAvailable());
+    console.log('Agora Configured:', isAgoraConfigured());
+    console.log('App ID:', AGORA_APP_ID);
+    console.log('Channel Name:', channelName.current);
+    console.log('Call Type:', finalCallType);
+    console.log('Is Video Enabled:', isVideoEnabled);
+    console.log('Is Incoming:', isIncoming);
+    console.log('Current User:', currentUser);
+    console.log('Driver Data:', finalDriverData);
+    console.log('========================');
+  };
+
   // Initialize Agora Engine
   useEffect(() => {
+    debugAgoraSetup(); // Add debug logging
     initializeAgoraEngine();
     startRippleAnimation();
 
@@ -654,37 +672,7 @@ console.log("callParams",currentUser)
     );
   };
 
-  const renderRippleEffect = () => {
-    if (callStatus !== 'ringing' && callStatus !== 'connecting') return null;
-
-    return (
-      <View style={styles.rippleContainer}>
-        {[0, 1, 2].map((index) => (
-          <Animated.View
-            key={index}
-            style={[
-              styles.ripple,
-              {
-                opacity: rippleAnimation.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.8, 0],
-                }),
-                transform: [
-                  {
-                    scale: rippleAnimation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [0.5, 2],
-                    }),
-                  },
-                ],
-                animationDelay: index * 700,
-              },
-            ]}
-          />
-        ))}
-      </View>
-    );
-  };
+ 
 
   const renderIncomingCallButtons = () => (
     <View style={styles.incomingButtonsContainer}>
@@ -810,7 +798,7 @@ console.log("callParams",currentUser)
           {/* Driver Info */}
           {(!isVideoEnabled || !isRemoteVideoEnabled) && (
             <View style={styles.driverInfoContainer}>
-              {renderRippleEffect()}
+           
               
               <Animated.View
                 style={[

@@ -876,9 +876,14 @@
       "canceled_by_partner": "Annulé par le chauffeur"
     },
     "loading": "Chargement des informations de suivi...",
-    "title": "Suivi de la commande",
+    "title": "Suivre le chauffeur",
     "pickup_location": "Lieu de prise en charge",
-    "dropoff_location": "Lieu de dépose"
+    "dropoff_location": "Lieu de dépose",
+    "driver_moving": "Le chauffeur se déplace",
+    "driver_stopped": "Le chauffeur est arrêté",
+    "focusing": "FOCALISATION",
+    "follow": "SUIVRE",
+    "three_d": "3D"
   },
   "call": {
     "select_call_type": "Sélectionner le type d'appel",

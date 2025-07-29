@@ -10,6 +10,8 @@ import Rating from "../screens/Rating"
 import Login from '../screens/Login';
 import ChatScreen from '../screens/ChatScreen'; // Import ChatScreen
 import TrackingScreen from '../screens/TrackingScreen'; // Import TrackingScreen
+import VoIPCallScreen from '../screens/VoIPCallScreen';
+import IncomingCallScreen from '../screens/IncomingCallScreen';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { startTrackingUserLocation } from "../utils/userLocationTracker"
 
@@ -59,6 +61,17 @@ const MainNavigator = ({onReady}) => {
       />
       <Stack.Screen name="ChatScreen" component={ChatScreen} />
       <Stack.Screen name="TrackingScreen" component={TrackingScreen} />
+      <Stack.Screen name="VoIPCallScreen" component={VoIPCallScreen} />
+      <Stack.Screen 
+        name="IncomingCallScreen" 
+        component={IncomingCallScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+          gestureEnabled: false,
+          cardStyle: { backgroundColor: 'transparent' },
+        }}
+      />
  
       </Stack.Navigator>
     </NavigationContainer>

@@ -252,10 +252,7 @@ export const waitForAgoraSDK = async () => {
 export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', privilegeExpiredTs = 0) => {
   try {
     // For development mode, return null (no token required)
-    if (__DEV__) {
-      console.log('Development mode: Using Agora without token');
-      return null;
-    }
+   
 
     // For production, make API call to your backend
     const response = await api.post(`/generate-agora-token`, {
@@ -274,10 +271,7 @@ export const getAgoraToken = async (channelName, uid = 0, role = 'publisher', pr
     console.error('Error getting Agora token:', error);
     
     // For development, return null (no token required)
-    if (__DEV__) {
-      console.log('Development mode: Continuing without token');
-      return null;
-    }
+    
     
     throw error;
   }

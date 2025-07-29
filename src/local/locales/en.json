@@ -840,9 +840,14 @@
       "canceled_by_partner": "Canceled by Partner"
     },
     "loading": "Loading tracking information...",
-    "title": "Track Order",
+    "title": "Track Driver",
     "pickup_location": "Pickup Location",
-    "dropoff_location": "Dropoff Location"
+    "dropoff_location": "Dropoff Location",
+    "driver_moving": "Driver is moving",
+    "driver_stopped": "Driver stopped",
+    "focusing": "FOCUSING",
+    "follow": "FOLLOW",
+    "three_d": "3D"
   },
   "call": {
     "select_call_type": "Select Call Type",

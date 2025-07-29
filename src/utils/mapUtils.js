@@ -57,6 +57,100 @@ export class NavigationRouteManager {
     this.routeDistance = 0;
     this.routeDuration = 0;
     this.waypoints = [];
+    this.routeCoordinates = [];
+    this.routeInstructions = [];
+  }
+
+  // Set route data from external source (Google Directions API, etc.)
+  setRoute(coordinates, instructions = []) {
+    this.routeCoordinates = coordinates;
+    this.routeInstructions = instructions;
+    
+    // Generate route steps from coordinates if instructions not provided
+    if (instructions.length === 0 && coordinates.length > 1) {
+      this.routeSteps = this.generateRouteStepsFromCoordinates(coordinates);
+    } else {
+      this.routeSteps = instructions.map((instruction, index) => ({
+        index,
+        instruction: instruction.instruction || instruction,
+        distance: instruction.distance || '0 m',
+        bearing: instruction.bearing || 0,
+        coordinate: coordinates[index] || [0, 0],
+        nextCoordinate: coordinates[index + 1] || coordinates[index] || [0, 0],
+        maneuver: instruction.maneuver || 'straight'
+      }));
+    }
+    
+    // Calculate route metrics
+    this.routeDistance = this.calculateRouteDistance(coordinates);
+    this.routeDuration = this.estimateRouteDuration(this.routeDistance);
+    
+    return {
+      coordinates: this.routeCoordinates,
+      instructions: this.routeInstructions,
+      steps: this.routeSteps,
+      distance: this.routeDistance,
+      duration: this.routeDuration
+    };
+  }
+
+  // Generate route steps from coordinates when instructions are not available
+  generateRouteStepsFromCoordinates(coordinates) {
+    const steps = [];
+    
+    for (let i = 0; i < coordinates.length - 1; i++) {
+      const current = coordinates[i];
+      const next = coordinates[i + 1];
+      
+      // Calculate bearing between points
+      const bearing = this.calculateBearing(current, next);
+      
+      // Determine turn direction
+      let instruction = this.getTurnInstruction(bearing, i === 0);
+      
+      // Calculate distance to next point
+      const distance = getDistance(
+        { latitude: current[1], longitude: current[0] },
+        { latitude: next[1], longitude: next[0] }
+      );
+      
+      steps.push({
+        index: i,
+        instruction,
+        distance: `${Math.round(distance)} m`,
+        bearing,
+        coordinate: current,
+        nextCoordinate: next,
+        maneuver: this.getManeuverFromBearing(bearing)
+      });
+    }
+    
+    return steps;
+  }
+
+  // Get maneuver type from bearing
+  getManeuverFromBearing(bearing) {
+    if (bearing >= 315 || bearing < 45) {
+      return 'straight';
+    } else if (bearing >= 45 && bearing < 135) {
+      return 'turn-right';
+    } else if (bearing >= 135 && bearing < 225) {
+      return 'uturn-left';
+    } else if (bearing >= 225 && bearing < 315) {
+      return 'turn-left';
+    }
+    return 'straight';
+  }
+
+  // Get current route data
+  getRoute() {
+    return {
+      coordinates: this.routeCoordinates,
+      instructions: this.routeInstructions,
+      steps: this.routeSteps,
+      distance: this.routeDistance,
+      duration: this.routeDuration
+    };
   }
 
   // Generate 3D navigation route with turn-by-turn instructions

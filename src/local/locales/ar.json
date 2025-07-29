@@ -858,9 +858,14 @@
       "canceled_by_partner": "تم الإلغاء من قبل السائق"
     },
     "loading": "جاري تحميل معلومات التتبع...",
-    "title": "تتبع الطلب",
+    "title": "تتبع السائق",
     "pickup_location": "موقع الاستلام",
-    "dropoff_location": "موقع التسليم"
+    "dropoff_location": "موقع التسليم",
+    "driver_moving": "السائق يتحرك",
+    "driver_stopped": "السائق متوقف",
+    "focusing": "تركيز",
+    "follow": "متابعة",
+    "three_d": "ثلاثي الأبعاد"
   },
   "call": {
     "select_call_type": "اختر نوع الاتصال",

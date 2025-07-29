@@ -3,17 +3,14 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
-  Alert,
   Dimensions,
   Animated,
-  Image,
   Platform,
-  ScrollView,
 } from 'react-native';
+import { styles } from './styles';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -59,104 +56,9 @@ const STREET_STYLE_3D_CONFIG = {
   shadowIntensity: 0.7,
   ambientLightIntensity: 0.4,
   directionalLightIntensity: 0.6,
-};
-
-// Enhanced 3D Map Style with Street Details
-const ENHANCED_3D_STREET_STYLE = {
-  version: 8,
-  name: 'Enhanced 3D Street Style',
-  sources: {
-    'mapbox-streets': {
-      type: 'vector',
-      url: 'mapbox://mapbox.mapbox-streets-v8'
-    },
-    'mapbox-satellite': {
-      type: 'raster',
-      url: 'mapbox://mapbox.satellite',
-      tileSize: 256
-    },
-    'composite': {
-      type: 'vector',
-      url: 'mapbox://mapbox.mapbox-streets-v8,mapbox.mapbox-terrain-v2'
-    }
-  },
-  layers: [
-    // Satellite base layer for realistic street view
-    {
-      id: 'satellite',
-      type: 'raster',
-      source: 'mapbox-satellite',
-      layout: { visibility: 'visible' },
-      paint: { 'raster-opacity': 0.8 }
-    },
-    // Enhanced building extrusions for 3D effect
-    {
-      id: 'building-extrusion',
-      type: 'fill-extrusion',
-      source: 'composite',
-      'source-layer': 'building',
-      filter: ['has', 'height'],
-      paint: {
-        'fill-extrusion-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'height'],
-          0, '#cccccc',
-          50, '#999999',
-          100, '#666666',
-          200, '#333333'
-        ],
-        'fill-extrusion-height': ['get', 'height'],
-        'fill-extrusion-base': 0,
-        'fill-extrusion-opacity': 0.8,
-        'fill-extrusion-vertical-gradient': true
-      }
-    },
-    // Enhanced road styling
-    {
-      id: 'road-primary',
-      type: 'line',
-      source: 'composite',
-      'source-layer': 'road',
-      filter: ['==', 'class', 'primary'],
-      paint: {
-        'line-color': '#ffffff',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 2, 18, 8],
-        'line-opacity': 0.9
-      }
-    },
-    {
-      id: 'road-secondary',
-      type: 'line',
-      source: 'composite',
-      'source-layer': 'road',
-      filter: ['==', 'class', 'secondary'],
-      paint: {
-        'line-color': '#f0f0f0',
-        'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1.5, 18, 6],
-        'line-opacity': 0.8
-      }
-    },
-    // Street labels with enhanced visibility
-    {
-      id: 'road-label',
-      type: 'symbol',
-      source: 'composite',
-      'source-layer': 'road',
-      layout: {
-        'text-field': '{name}',
-        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-        'text-size': ['interpolate', ['linear'], ['zoom'], 10, 8, 18, 14],
-        'symbol-placement': 'line',
-        'text-rotation-alignment': 'map'
-      },
-      paint: {
-        'text-color': '#333333',
-        'text-halo-color': '#ffffff',
-        'text-halo-width': 2
-      }
-    }
-  ]
+  buildingOpacity: 0.8,
+  roadOpacity: 0.9,
+  labelVisibility: true,
 };
 
 // Helper function to decode Google's polyline format
@@ -236,9 +138,6 @@ const TrackingScreen = ({ route }) => {
   const [driver, setDriver] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showCall, setShowCall] = useState(false);
-  const [callType, setCallType] = useState('voice');
-  const [currentCallId, setCurrentCallId] = useState(null);
   const [driverPosition, setDriverPosition] = useState(null);
   const [mapReady, setMapReady] = useState(false);
   const [routeCoordinates, setRouteCoordinates] = useState([]);
@@ -246,26 +145,21 @@ const TrackingScreen = ({ route }) => {
   const [driverIsMoving, setDriverIsMoving] = useState(false);
   const [estimatedArrival, setEstimatedArrival] = useState(null);
   const [routeDistance, setRouteDistance] = useState(null);
-  const [navigationMode, setNavigationMode] = useState(true); // Default to 3D navigation mode
-  const [routeInstructions, setRouteInstructions] = useState([]);
-  const [currentRouteStep, setCurrentRouteStep] = useState(0);
-  const [nextTurnInstruction, setNextTurnInstruction] = useState(null);
   const [routeUpdateKey, setRouteUpdateKey] = useState(0);
   const [streetViewMode, setStreetViewMode] = useState(true);
-  const [mapStyle, setMapStyle] = useState('street3d');
-  const [showTrafficLayer, setShowTrafficLayer] = useState(true);
   const [cameraFollowBearing, setCameraFollowBearing] = useState(0);
+  const [isFocusingOnAllCoordinates, setIsFocusingOnAllCoordinates] = useState(false);
+  const [routeInstructions, setRouteInstructions] = useState([]);
   
   // Map refs
   const mapRef = useRef(null);
   const cameraRef = useRef(null);
-  const markerRef = useRef(null);
   const routeUpdateTimeoutRef = useRef(null);
+  const driverMarkerRef = useRef(null);
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
-  const navigationPanelAnim = useRef(new Animated.Value(-200)).current;
   
   // Initialize utilities
   const routeOptimizer = useRef(new RouteOptimizer()).current;
@@ -289,13 +183,6 @@ const TrackingScreen = ({ route }) => {
     }, 500)
   ).current;
 
-  // Extract driver information
-  const driverName = driver?.firstName + ' ' + driver?.lastName || t('tracking.driver', 'Driver');
-  const driverAvatar = driver?.profilePicture?.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
-  const driverRating = driver?.rating || '4.8';
-  const carModel = driver?.vehicule?.mark || t('tracking.vehicle', 'Vehicle');
-  const carPlate = driver?.vehicule?.matriculation || 'ABC-123';
-
   useEffect(() => {
     fetchOrder();
   }, [orderId]);
@@ -314,7 +201,31 @@ const TrackingScreen = ({ route }) => {
     if (order && driverPosition) {
       generateEnhanced3DRouteBasedOnStatus(order, driverPosition).catch(console.error);
     }
-  }, [order?.commandStatus, driverPosition, navigationMode, streetViewMode]);
+  }, [order?.commandStatus, driverPosition, streetViewMode]);
+
+  // Focus on all coordinates when map is ready and data is loaded
+  useEffect(() => {
+    if (mapReady && order && !loading) {
+      // Small delay to ensure all data is properly loaded
+      const timer = setTimeout(() => {
+        focusOnAllCoordinates();
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [mapReady, order, driverPosition, loading, focusOnAllCoordinates]);
+
+  // Focus on coordinates when driver position updates (if not following driver)
+  useEffect(() => {
+    if (mapReady && driverPosition && !isFollowingDriver) {
+      // Only update focus if we're not following the driver
+      const timer = setTimeout(() => {
+        focusOnAllCoordinates();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [driverPosition, isFollowingDriver, mapReady, focusOnAllCoordinates]);
 
   // Listen to driver location updates from Firebase with enhanced tracking
   useEffect(() => {
@@ -349,9 +260,6 @@ const TrackingScreen = ({ route }) => {
           
           // Update estimated arrival
           updateEstimatedArrival(newPosition);
-          
-          // Update turn-by-turn instructions
-          updateTurnInstructions(newPosition);
           
           // Enhanced route regeneration with debouncing
           if (order) {
@@ -397,15 +305,9 @@ const TrackingScreen = ({ route }) => {
       ]).start();
       
       // Show navigation panel if in navigation mode
-      if (navigationMode) {
-        Animated.timing(navigationPanelAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start();
-      }
+      // Removed navigationPanelAnim animation
     }
-  }, [loading, error, navigationMode]);
+  }, [loading, error]);
 
   const updateEstimatedArrival = useCallback((driverPos) => {
     if (!order?.pickUpAddress?.coordonne) return;
@@ -422,17 +324,6 @@ const TrackingScreen = ({ route }) => {
     setEstimatedArrival(Math.max(1, estimatedTimeMinutes));
   }, [order]);
 
-  const updateTurnInstructions = useCallback((driverPos) => {
-    if (navigationMode && routeInstructions.length > 0) {
-      // Find the next instruction based on driver position
-      const nextInstruction = routeInstructions.find((instruction, index) => {
-        // Logic to determine if this is the next instruction
-        return index >= currentRouteStep;
-      });
-      setNextTurnInstruction(nextInstruction);
-    }
-  }, [navigationMode, routeInstructions, currentRouteStep]);
-
   const fetchOrder = async () => {
     try {
       setLoading(true);
@@ -446,11 +337,11 @@ const TrackingScreen = ({ route }) => {
         // Generate enhanced 3D route based on status
         generateEnhanced3DRouteBasedOnStatus(response.data.data, driverPosition).catch(console.error);
       } else {
-        setError(t('tracking.order_not_found', 'Order not found'));
+        setError(t('tracking.order_not_found'));
       }
     } catch (error) {
       console.error('Failed to fetch order:', error);
-      setError(t('tracking.fetch_error', 'Failed to load order details'));
+      setError(t('tracking.fetch_error'));
     } finally {
       setLoading(false);
     }
@@ -538,16 +429,26 @@ const TrackingScreen = ({ route }) => {
         setRouteInstructions(steps);
         
         // Initialize navigation manager with enhanced route data
-        if (navigationManager) {
+        if (navigationManager && typeof navigationManager.setRoute === 'function') {
           navigationManager.setRoute(routeCoordinates, steps);
         }
       } else {
         // Enhanced fallback route generation
         routeCoordinates = generateEnhanced3DRoute(origin, destination);
+        
+        // Initialize navigation manager with fallback route
+        if (navigationManager && typeof navigationManager.setRoute === 'function') {
+          navigationManager.setRoute(routeCoordinates, []);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch enhanced route:', error);
       routeCoordinates = generateEnhanced3DRoute(origin, destination);
+      
+      // Initialize navigation manager with fallback route
+      if (navigationManager && typeof navigationManager.setRoute === 'function') {
+        navigationManager.setRoute(routeCoordinates, []);
+      }
     }
     
     // Convert to enhanced GeoJSON with additional properties
@@ -569,45 +470,23 @@ const TrackingScreen = ({ route }) => {
     setRouteUpdateKey(prev => prev + 1);
   };
 
-  const handleChatPress = () => {
-    navigation.navigate('ChatScreen', {
-      driverId: driver?.id,
-      orderId: orderId,
-    });
-  };
-
-  const handleCallPress = async () => {
-    try {
-      Alert.alert(
-        t('call.select_call_type', 'Select Call Type'),
-        t('call.choose_call_type', 'Choose how you want to call the driver'),
-        [
-          {
-            text: t('call.voice_call', 'Voice Call'),
-            onPress: () => initiateCall('voice'),
-          },
-          {
-            text: t('call.video_call', 'Video Call'),
-            onPress: () => initiateCall('video'),
-          },
-          {
-            text: t('common.cancel', 'Cancel'),
-            style: 'cancel',
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Failed to initiate call:', error);
-      Alert.alert(
-        t('common.error', 'Error'),
-        t('call.failed_to_initiate', 'Failed to initiate call. Please try again.')
-      );
-    }
-  };
-
-  const initiateCall = async (type) => {
-    console.log('Initiating call:', type);
-  };
+  // Get order status color and text
+  const getOrderStatusInfo = useCallback((status) => {
+    const statusConfig = {
+      'Pending': { color: '#FFA500', text: t('order.status.pending', 'Pending') },
+      'Assigned_to_driver': { color: '#007AFF', text: t('order.status.assigned', 'Assigned') },
+      'Driver_on_route_to_pickup': { color: '#007AFF', text: t('order.status.on_route', 'On Route') },
+      'Arrived_at_pickup': { color: '#FF9500', text: t('order.status.arrived', 'Arrived') },
+      'Picked_up': { color: '#34C759', text: t('order.status.picked_up', 'Picked Up') },
+      'On_route_to_delivery': { color: '#34C759', text: t('order.status.delivering', 'Delivering') },
+      'Arrived_at_delivery': { color: '#34C759', text: t('order.status.delivered', 'Delivered') },
+      'Completed': { color: '#34C759', text: t('order.status.completed', 'Completed') },
+      'Canceled_by_client': { color: '#FF3B30', text: t('order.status.canceled', 'Canceled') },
+      'Canceled_by_partner': { color: '#FF3B30', text: t('order.status.canceled', 'Canceled') },
+    };
+    
+    return statusConfig[status] || { color: '#666666', text: status || 'Unknown' };
+  }, [t]);
 
   const toggleFollowDriver = () => {
     setIsFollowingDriver(!isFollowingDriver);
@@ -635,25 +514,6 @@ const TrackingScreen = ({ route }) => {
     }
   };
 
-  const toggleNavigationMode = () => {
-    setNavigationMode(!navigationMode);
-    
-    // Animate navigation panel
-    Animated.timing(navigationPanelAnim, {
-      toValue: !navigationMode ? 0 : -200,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-    
-    if (!navigationMode && cameraRef.current) {
-      cameraRef.current.setCamera({
-        pitch: STREET_STYLE_3D_CONFIG.pitch,
-        zoomLevel: STREET_STYLE_3D_CONFIG.navigationZoom,
-        animationDuration: 1000,
-      });
-    }
-  };
-
   const focusOnDriver = () => {
     if (driverPosition && cameraRef.current) {
       const options = streetViewMode ? {
@@ -665,48 +525,162 @@ const TrackingScreen = ({ route }) => {
     }
   };
 
-  const focusOnRoute = () => {
-    if (routeCoordinates && routeCoordinates.geometry && cameraRef.current) {
-      const coordinates = routeCoordinates.geometry.coordinates;
-      const bounds = MapPerformanceUtils.calculateBounds(coordinates, 0.2);
-      if (bounds) {
-        cameraRef.current.fitBounds([
-          [bounds.west, bounds.south],
-          [bounds.east, bounds.north],
-        ], {
-          paddingLeft: 50,
-          paddingRight: 50,
-          paddingTop: 100,
-          paddingBottom: 200,
+  // Calculate optimal zoom level based on bounds
+  const calculateOptimalZoom = useCallback((bounds) => {
+    if (!bounds) return 15;
+    
+    const latDiff = bounds.north - bounds.south;
+    const lngDiff = bounds.east - bounds.west;
+    const maxDiff = Math.max(latDiff, lngDiff);
+    
+    if (maxDiff > 0.1) return 10;
+    if (maxDiff > 0.05) return 12;
+    if (maxDiff > 0.01) return 14;
+    if (maxDiff > 0.005) return 16;
+    if (maxDiff > 0.001) return 18;
+    return 20;
+  }, []);
+
+  // Calculate center point from bounds
+  const calculateCenterFromBounds = useCallback((bounds) => {
+    if (!bounds) return null;
+    
+    const centerLng = (bounds.west + bounds.east) / 2;
+    const centerLat = (bounds.south + bounds.north) / 2;
+    
+    return [centerLng, centerLat];
+  }, []);
+
+  // Focus map on all coordinates (driver, pickup, dropoff)
+  const focusOnAllCoordinates = useCallback(() => {
+    if (!mapRef.current || !mapReady) return;
+    
+    setIsFocusingOnAllCoordinates(true);
+    
+    const coordinates = [];
+    
+    // Add driver position if available
+    if (driverPosition) {
+      coordinates.push([driverPosition.longitude, driverPosition.latitude]);
+    }
+    
+    // Add pickup location
+    if (order?.pickUpAddress?.coordonne) {
+      coordinates.push([
+        order.pickUpAddress.coordonne.longitude,
+        order.pickUpAddress.coordonne.latitude
+      ]);
+    }
+    
+    // Add dropoff location
+    if (order?.dropOfAddress?.coordonne) {
+      coordinates.push([
+        order.dropOfAddress.coordonne.longitude,
+        order.dropOfAddress.coordonne.latitude
+      ]);
+    }
+    
+    // If we have coordinates, fit them to the map
+    if (coordinates.length > 0) {
+      if (coordinates.length === 1) {
+        // Single point - center on it with appropriate zoom
+        cameraRef.current?.setCamera({
+          centerCoordinate: coordinates[0],
+          zoomLevel: streetViewMode ? STREET_STYLE_3D_CONFIG.zoom : 15,
+          pitch: streetViewMode ? STREET_STYLE_3D_CONFIG.pitch : 0,
           animationDuration: 1500,
         });
+      } else {
+        // Multiple points - calculate bounds and set camera
+        const bounds = MapPerformanceUtils.calculateBounds(coordinates, 0.2);
+        if (bounds) {
+          const centerCoordinate = calculateCenterFromBounds(bounds);
+          const zoomLevel = calculateOptimalZoom(bounds);
+          
+          cameraRef.current?.setCamera({
+            centerCoordinate,
+            zoomLevel: streetViewMode ? Math.min(zoomLevel, STREET_STYLE_3D_CONFIG.zoom) : zoomLevel,
+            pitch: streetViewMode ? STREET_STYLE_3D_CONFIG.pitch : 0,
+            animationDuration: 1500,
+          });
+        }
       }
     }
-  };
-
-  const getManeuverIcon = (maneuver) => {
-    const iconMap = {
-      'turn-left': 'turn-left',
-      'turn-right': 'turn-right',
-      'turn-slight-left': 'turn-slight-left',
-      'turn-slight-right': 'turn-slight-right',
-      'turn-sharp-left': 'turn-sharp-left',
-      'turn-sharp-right': 'turn-sharp-right',
-      'uturn-left': 'u-turn-left',
-      'uturn-right': 'u-turn-right',
-      'straight': 'arrow-up',
-      'ramp-left': 'merge-left',
-      'ramp-right': 'merge-right',
-      'merge': 'merge',
-      'fork-left': 'call-split',
-      'fork-right': 'call-split',
-      'ferry': 'ferry',
-      'roundabout-left': 'rotate-left',
-      'roundabout-right': 'rotate-right',
-    };
     
-    return iconMap[maneuver] || 'navigation';
-  };
+    // Reset the focusing state after animation
+    setTimeout(() => {
+      setIsFocusingOnAllCoordinates(false);
+    }, 1600);
+  }, [mapReady, driverPosition, order, streetViewMode, calculateCenterFromBounds, calculateOptimalZoom]);
+
+ 
+  // Calculate route progress based on driver position
+  const calculateRouteProgress = useCallback((routeCoords, driverPos) => {
+    if (!routeCoords || !routeCoords.geometry || !driverPos) return 0;
+    
+    const coordinates = routeCoords.geometry.coordinates;
+    if (coordinates.length < 2) return 0;
+    
+    let totalDistance = 0;
+    let traveledDistance = 0;
+    let closestPointIndex = 0;
+    let minDistance = Infinity;
+    
+    // Find the closest point on the route to the driver
+    for (let i = 0; i < coordinates.length; i++) {
+      const distance = getDistance(
+        { latitude: driverPos.latitude, longitude: driverPos.longitude },
+        { latitude: coordinates[i][1], longitude: coordinates[i][0] }
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPointIndex = i;
+      }
+    }
+    
+    // Calculate total route distance
+    for (let i = 1; i < coordinates.length; i++) {
+      totalDistance += getDistance(
+        { latitude: coordinates[i-1][1], longitude: coordinates[i-1][0] },
+        { latitude: coordinates[i][1], longitude: coordinates[i][0] }
+      );
+    }
+    
+    // Calculate traveled distance
+    for (let i = 1; i <= closestPointIndex; i++) {
+      traveledDistance += getDistance(
+        { latitude: coordinates[i-1][1], longitude: coordinates[i-1][0] },
+        { latitude: coordinates[i][1], longitude: coordinates[i][0] }
+      );
+    }
+    
+    return totalDistance > 0 ? traveledDistance / totalDistance : 0;
+  }, []);
+
+  // Get route color based on status and mode
+  const getRouteColor = useCallback((status, is3D = false) => {
+    if (is3D) {
+      return '#000000'; // Black for 3D mode
+    }
+    
+    switch (status) {
+      case 'Go_to_pickup':
+        return '#FF9500'; // Orange for going to pickup
+      case 'Picked_up':
+      case 'On_route_to_delivery':
+        return '#34C759'; // Green for delivery route
+      case 'Arrived_at_pickup':
+        return '#007AFF'; // Blue for arrived at pickup
+      default:
+        return '#007AFF'; // Default blue
+    }
+  }, []);
+
+  // Get route width based on mode
+  const getRouteWidth = useCallback((is3D = false) => {
+    return is3D ? STREET_STYLE_3D_CONFIG.routeWidth : 6;
+  }, []);
 
   if (loading) {
     return (
@@ -714,7 +688,7 @@ const TrackingScreen = ({ route }) => {
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#000000" />
-          <Text style={styles.loadingText}>{t('tracking.loading', 'Loading tracking information...')}</Text>
+          <Text style={styles.loadingText}>{t('tracking.loading')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -728,7 +702,7 @@ const TrackingScreen = ({ route }) => {
           <MaterialCommunityIcons name="alert-circle" size={64} color="#000000" />
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchOrder}>
-            <Text style={styles.retryButtonText}>{t('common.retry', 'Retry')}</Text>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -748,7 +722,7 @@ const TrackingScreen = ({ route }) => {
           <MaterialCommunityIcons name="arrow-left" size={24} color="#000000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {t('tracking.title', 'Track Driver')}
+          {t('tracking.title')}
         </Text>
         <View style={styles.headerRight} />
       </View>
@@ -779,10 +753,20 @@ const TrackingScreen = ({ route }) => {
             position: [1.5, 90, 80]
           }} />
           
+          {/* Additional directional light for 3D effect */}
+          {streetViewMode && (
+            <Light style={{
+              anchor: 'viewport',
+              color: '#ffffff',
+              intensity: STREET_STYLE_3D_CONFIG.directionalLightIntensity,
+              position: [0, 45, 45]
+            }} />
+          )}
+          
           {/* Enhanced Camera with 3D capabilities */}
           <Camera
             ref={cameraRef}
-            zoomLevel={streetViewMode ? STREET_STYLE_3D_CONFIG.navigationZoom : 15}
+            zoomLevel={streetViewMode ? STREET_STYLE_3D_CONFIG.zoom : 15}
             pitch={streetViewMode ? STREET_STYLE_3D_CONFIG.pitch : 0}
             bearing={cameraFollowBearing}
             animationDuration={STREET_STYLE_3D_CONFIG.animationDuration}
@@ -797,21 +781,41 @@ const TrackingScreen = ({ route }) => {
               id="routeSource"
               shape={routeCoordinates}
             >
+              {/* Route background/glow effect */}
+              <LineLayer
+                id="routeBackground"
+                style={{
+                  lineColor: '#ffffff',
+                  lineWidth: getRouteWidth(streetViewMode) + 4,
+                  lineOpacity: 0.3,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+              
+              {/* Main route line */}
               <LineLayer
                 id="routeLine"
                 style={{
-                  lineColor: streetViewMode ? '#000000' : '#000000',
-                  lineWidth: streetViewMode ? STREET_STYLE_3D_CONFIG.routeWidth : 4,
+                  lineColor: getRouteColor(order?.commandStatus, streetViewMode),
+                  lineWidth: getRouteWidth(streetViewMode),
                   lineOpacity: 0.9,
                   lineCap: 'round',
                   lineJoin: 'round',
-                  lineGradient: [
+                  lineGradient: streetViewMode ? [
                     'interpolate',
                     ['linear'],
                     ['line-progress'],
                     0, '#000000',
                     0.5, '#333333',
                     1, '#000000'
+                  ] : [
+                    'interpolate',
+                    ['linear'],
+                    ['line-progress'],
+                    0, getRouteColor(order?.commandStatus, false),
+                    0.5, '#0056CC',
+                    1, getRouteColor(order?.commandStatus, false)
                   ]
                 }}
               />
@@ -822,7 +826,7 @@ const TrackingScreen = ({ route }) => {
                   id="routeShadow"
                   style={{
                     lineColor: 'rgba(0, 0, 0, 0.3)',
-                    lineWidth: STREET_STYLE_3D_CONFIG.routeWidth + 2,
+                    lineWidth: getRouteWidth(streetViewMode) + 2,
                     lineOpacity: 0.5,
                     lineCap: 'round',
                     lineJoin: 'round',
@@ -830,6 +834,50 @@ const TrackingScreen = ({ route }) => {
                   }}
                 />
               )}
+              
+              {/* Route direction arrows */}
+              <SymbolLayer
+                id="routeArrows"
+                style={{
+                  symbolPlacement: 'line',
+                  symbolSpacing: 200,
+                  symbolAvoidEdges: true,
+                  iconImage: 'arrow-icon',
+                  iconSize: streetViewMode ? 0.8 : 1,
+                  iconAllowOverlap: false,
+                  iconIgnorePlacement: false,
+                  iconRotationAlignment: 'map',
+                  iconTextFit: 'both',
+                  iconTextFitPadding: [2, 2, 2, 2],
+                  textField: '▶',
+                  textSize: 12,
+                  textColor: streetViewMode ? '#ffffff' : getRouteColor(order?.commandStatus, false),
+                  textHaloColor: streetViewMode ? '#000000' : '#ffffff',
+                  textHaloWidth: 1,
+                }}
+              />
+            </ShapeSource>
+          )}
+
+          {/* Route progress indicator */}
+          {routeCoordinates && routeCoordinates.geometry && driverPosition && (
+            <ShapeSource
+              id="routeProgressSource"
+              shape={{
+                type: 'Feature',
+                geometry: {
+                  type: 'LineString',
+                  coordinates: routeCoordinates.geometry.coordinates.slice(
+                    0, 
+                    Math.floor(routeCoordinates.geometry.coordinates.length * calculateRouteProgress(routeCoordinates, driverPosition))
+                  )
+                },
+                properties: {
+                  progress: calculateRouteProgress(routeCoordinates, driverPosition)
+                }
+              }}
+            >
+           
             </ShapeSource>
           )}
 
@@ -838,27 +886,19 @@ const TrackingScreen = ({ route }) => {
             <PointAnnotation
               key="driverMarker"
               id="driverMarker"
+              ref={driverMarkerRef}
               coordinate={[driverPosition.longitude, driverPosition.latitude]}
             >
-              <View style={[
-                styles.driverMarker,
-                streetViewMode && styles.driverMarker3D,
-                driverIsMoving && styles.driverMarkerMoving
-              ]}>
-                <View style={styles.driverMarkerInner}>
-                  <MaterialCommunityIcons 
-                    name="car" 
-                    size={streetViewMode ? 24 : 20} 
-                    color="#ffffff" 
-                    style={{
-                      transform: [{ rotate: `${driverPosition.angle || 0}deg` }]
-                    }}
-                  />
-                </View>
-                {streetViewMode && (
-                  <View style={styles.driverMarkerShadow} />
-                )}
-              </View>
+              <DriverMarker
+                angle={driverPosition.angle || 0}
+                type={driverPosition.type || 1}
+                isMoving={driverIsMoving}
+                is3D={streetViewMode}
+                onLoad={() => {
+                  driverMarkerRef.current.refresh();
+               
+                }}
+              />
             </PointAnnotation>
           )}
 
@@ -906,17 +946,11 @@ const TrackingScreen = ({ route }) => {
               size={24} 
               color={streetViewMode ? '#000000' : '#666666'} 
             />
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={[styles.controlButton, navigationMode && styles.controlButtonActive]}
-            onPress={toggleNavigationMode}
-          >
-            <MaterialCommunityIcons 
-              name="navigation" 
-              size={24} 
-              color={navigationMode ? '#000000' : '#666666'} 
-            />
+            {streetViewMode && (
+              <View style={styles.controlButtonIndicator}>
+                <Text style={styles.controlButtonIndicatorText}>{t('tracking.three_d')}</Text>
+              </View>
+            )}
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -928,78 +962,21 @@ const TrackingScreen = ({ route }) => {
               size={24} 
               color={isFollowingDriver ? '#000000' : '#666666'} 
             />
+            {isFollowingDriver && (
+              <View style={styles.controlButtonIndicator}>
+                <Text style={styles.controlButtonIndicatorText}>{t('tracking.follow')}</Text>
+              </View>
+            )}
           </TouchableOpacity>
+         
           
-          <TouchableOpacity style={styles.controlButton} onPress={focusOnRoute}>
-            <MaterialCommunityIcons name="map-search" size={24} color="#666666" />
+          <TouchableOpacity style={styles.controlButton} onPress={focusOnAllCoordinates}>
+            <MaterialCommunityIcons name="map-marker-multiple" size={24} color="#666666" />
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Enhanced Navigation Panel */}
-      {navigationMode && nextTurnInstruction && (
-        <Animated.View 
-          style={[
-            styles.navigationPanel,
-            { transform: [{ translateY: navigationPanelAnim }] }
-          ]}
-        >
-          <View style={styles.navigationContent}>
-            <MaterialCommunityIcons 
-              name={getManeuverIcon(nextTurnInstruction.maneuver)} 
-              size={32} 
-              color="#000000" 
-            />
-            <View style={styles.navigationText}>
-              <Text style={styles.navigationInstruction} numberOfLines={2}>
-                {nextTurnInstruction.instruction}
-              </Text>
-              <Text style={styles.navigationDistance}>
-                {nextTurnInstruction.distance}
-              </Text>
-            </View>
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Enhanced Driver Info Panel */}
-      <Animated.View 
-        style={[
-          styles.driverInfoPanel,
-          { 
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
-        ]}
-      >
-        <View style={styles.driverInfo}>
-          <Image source={{ uri: driverAvatar }} style={styles.driverAvatar} />
-          <View style={styles.driverDetails}>
-            <View style={styles.driverNameRow}>
-              <Text style={styles.driverName}>{driverName}</Text>
-              <View style={styles.ratingContainer}>
-                <MaterialCommunityIcons name="star" size={16} color="#FFD700" />
-                <Text style={styles.rating}>{driverRating}</Text>
-              </View>
-            </View>
-            <Text style={styles.carInfo}>{carModel} • {carPlate}</Text>
-            {estimatedArrival && (
-              <Text style={styles.eta}>
-                {t('tracking.eta', 'ETA')}: {estimatedArrival} {t('tracking.minutes', 'min')}
-              </Text>
-            )}
-          </View>
-        </View>
-        
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleChatPress}>
-            <MaterialCommunityIcons name="message-text" size={24} color="#000000" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleCallPress}>
-            <MaterialCommunityIcons name="phone" size={24} color="#000000" />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+ 
+    
 
       {/* Enhanced Status Indicator */}
       <View style={styles.statusIndicator}>
@@ -1008,316 +985,43 @@ const TrackingScreen = ({ route }) => {
           driverIsMoving ? styles.statusMoving : styles.statusStopped
         ]} />
         <Text style={styles.statusText}>
-          {driverIsMoving ? t('tracking.driver_moving', 'Driver is moving') : t('tracking.driver_stopped', 'Driver stopped')}
+          {driverIsMoving ? t('tracking.driver_moving') : t('tracking.driver_stopped')}
         </Text>
+        {streetViewMode && (
+          <View style={styles.status3DIndicator}>
+            <MaterialCommunityIcons name="rotate-3d-variant" size={12} color="#000000" />
+            <Text style={styles.status3DText}>{t('tracking.three_d')}</Text>
+          </View>
+        )}
+        {isFocusingOnAllCoordinates && (
+          <View style={styles.statusFocusIndicator}>
+            <MaterialCommunityIcons name="map-marker-multiple" size={12} color="#007AFF" />
+            <Text style={styles.statusFocusText}>{t('tracking.focusing')}</Text>
+          </View>
+        )}
+        {order?.commandStatus && (
+          <View style={[
+            styles.statusOrderIndicator,
+            { backgroundColor: getOrderStatusInfo(order.commandStatus).color + '20' }
+          ]}>
+            <View style={[
+              styles.statusOrderDot,
+              { backgroundColor: getOrderStatusInfo(order.commandStatus).color }
+            ]} />
+            <Text style={[
+              styles.statusOrderText,
+              { color: getOrderStatusInfo(order.commandStatus).color }
+            ]}>
+              {getOrderStatusInfo(order.commandStatus).text}
+            </Text>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  headerRight: {
-    width: 40,
-    height: 40,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#000000',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#000000',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  mapContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  map: {
-    flex: 1,
-  },
-  controlPanel: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 12,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  controlButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  controlButtonActive: {
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-  },
-  navigationPanel: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    right: 100,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  navigationContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  navigationText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  navigationInstruction: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 4,
-  },
-  navigationDistance: {
-    fontSize: 14,
-    color: '#666666',
-  },
-  driverInfoPanel: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  driverInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  driverAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-  },
-  driverDetails: {
-    flex: 1,
-  },
-  driverNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  driverName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333333',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    marginLeft: 4,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  carInfo: {
-    fontSize: 14,
-    color: '#666666',
-    marginBottom: 4,
-  },
-  eta: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#000000',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  actionButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statusIndicator: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  statusMoving: {
-    backgroundColor: '#000000',
-  },
-  statusStopped: {
-    backgroundColor: '#666666',
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#333333',
-  },
-  driverMarker: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  driverMarker3D: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  driverMarkerMoving: {
-    borderColor: '#000000',
-    borderWidth: 4,
-  },
-  driverMarkerInner: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  driverMarkerShadow: {
-    position: 'absolute',
-    bottom: -8,
-    left: 4,
-    right: 4,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    transform: [{ scaleX: 0.8 }],
-  },
-  locationMarker: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  pickupMarker: {
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 20,
-    padding: 8,
-  },
-  dropoffMarker: {
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 20,
-    padding: 8,
-  },
-});
+
 
 export default TrackingScreen;
 

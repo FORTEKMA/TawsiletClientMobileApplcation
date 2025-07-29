@@ -7,14 +7,12 @@ import App from './src/App';
 import {name as appName} from './app.json';
 
 import VoipPushNotification from 'react-native-voip-push-notification';
-import RNCallKeep from 'react-native-callkeep';
-import { v4 as uuidv4 } from 'uuid';
+import VoIPManager from './src/utils/VoIPManager'; // Import VoIPManager
 
 AppRegistry.registerComponent(appName, () => App);
 
 // Register VoIP push notification event listener for iOS
 VoipPushNotification.addEventListener('register', (token) => {
-  // --- send token to your apn server ----
   console.log('VoIP Push Notification Registered:', token);
 });
 
@@ -26,20 +24,11 @@ VoipPushNotification.addEventListener('notification', (notification) => {
 
   // Extract call data from the notification
   const callData = notification.data || {};
-  const { channelName, caller } = callData;
 
-  if (caller && channelName) {
-    const callUUID = uuidv4();
-    // Display the incoming call using CallKeep
-    RNCallKeep.displayIncomingCall(
-      callUUID,
-      caller.phoneNumber, // Use phone number as handle
-      caller.firstName,   // Use first name as caller name
-      'generic',
-      true // selfManaged
-    );
+  if (callData.type === 'voip_call') {
+    VoIPManager.displayIncomingCall(callData);
   } else {
-    console.warn('VoIP notification missing caller or channelName:', callData);
+    console.warn('VoIP notification missing type voip_call:', callData);
   }
 });
 

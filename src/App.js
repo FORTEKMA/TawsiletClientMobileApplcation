@@ -147,15 +147,30 @@ const App=()=> {
 
     // CallKeep event listeners
     RNCallKeep.addEventListener('answerCall', ({ callUUID }) => {
-      // Handle answer call event
-      // Navigate to VoIPCallScreen
-      navigationRef.navigate('VoIPCallScreen', { callUUID });
+      // Retrieve call data associated with callUUID
+      AsyncStorage.getItem(`call_${callUUID}`).then(callDataString => {
+        if (callDataString) {
+          const callData = JSON.parse(callDataString);
+          // Navigate to VoIPCallScreen with the retrieved data
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('VoIPCallScreen', { ...callData, callUUID, isIncoming: true });
+          }
+          AsyncStorage.removeItem(`call_${callUUID}`); // Clean up stored data
+        } else {
+          console.warn(`No call data found for UUID: ${callUUID}`);
+          // Fallback if data not found, maybe navigate to a generic call screen
+          if (navigationRef.isReady()) {
+            navigationRef.navigate('VoIPCallScreen', { callUUID, isIncoming: true });
+          }
+        }
+      });
       RNCallKeep.endCall(callUUID);
     });
 
     RNCallKeep.addEventListener('endCall', ({ callUUID }) => {
       // Handle end call event
       // Clean up resources
+      AsyncStorage.removeItem(`call_${callUUID}`); // Ensure data is removed on end call
     });
 
     RNCallKeep.addEventListener('didDisplayIncomingCall', ({ callUUID, handle, name }) => {
@@ -192,8 +207,16 @@ const App=()=> {
         if (event.name === 'RNCallKeepDidReceiveStartCallAction') {
           // Handle incoming call when app is killed
           const { handle, callUUID, name } = event.data;
+          // Assuming 'handle' contains the channelName and 'name' is the caller's first name
+          // We need to reconstruct the full callData object
+          const simulatedCallData = {
+            channelName: handle,
+            caller: { phoneNumber: handle, firstName: name },
+            // Add other necessary fields if available in event.data or from a stored context
+          };
+          AsyncStorage.setItem(`call_${callUUID}`, JSON.stringify(simulatedCallData));
           RNCallKeep.displayIncomingCall(callUUID, handle, name, 'generic', true);
-          navigationRef.navigate('IncomingCallScreen', { callUUID, channelName: handle, caller: { phoneNumber: handle, firstName: name } });
+          // Navigation will happen on 'answerCall' event
         }
       });
     });
@@ -310,5 +333,7 @@ const styles = StyleSheet.create({
 
 // Only wrap with Sentry in production mode
 export default __DEV__ ? withStallion(App) : withStallion(Sentry.wrap(App));
+
+
 
 

@@ -158,7 +158,7 @@ const App=()=> {
       // Clean up resources
     });
 
-    RNCallKeep.addEventListener('didDisplayIncomingCall', ({ callUUID, handle, callUUID, name }) => {
+    RNCallKeep.addEventListener('didDisplayIncomingCall', ({ callUUID, handle, name }) => {
       // You might want to play a custom sound here
     });
 

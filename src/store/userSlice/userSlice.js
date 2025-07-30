@@ -369,262 +369,260 @@ export const userSlice = createSlice({
     },
 
   },
-  extraReducers: {
-    [changePassword.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [changePassword.fulfilled]: (state, action) => {
-    
-      state.status = 'success';
-      if (action.payload.user.user_role === 'client') {
-        // state.currentUser = action.payload.user;
-        state.token = action.payload.jwt;
-      }
-      state.isLoading = false;
-    },
-    [changePassword.rejected]: (state, action) => {
-      state.status = 'fail';
-      state.isLoading = false;
- 
-    },
-    [forgetPassword.pending]: state => {
-      state.status = 'pending';
-      // state.isLoading = true;
-    },
-    [forgetPassword.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.forgetPsw = action.payload;
-      // state.isLoading = false;
-    },
-    [forgetPassword.rejected]: state => {
-      state.status = 'fail';
-      // state.isLoading = false;
-    },
-    [setEmailForgetPassword.pending]: state => {
-      state.status = 'pending';
-      // state.isLoading = true;
-    },
-    [setEmailForgetPassword.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.email = action.payload;
-      // state.isLoading = false;
-    },
-    [setEmailForgetPassword.rejected]: state => {
-      state.status = 'fail';
-      // state.isLoading = false;
-    },
-    [resetPassword.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-   
-    [resetPassword.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-    },
-    [resetPassword.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [userRegister.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [userRegister.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-      
-      // Handle error cases
-      if (action.payload.error) {
+  extraReducers: (builder) => {
+    builder
+      .addCase(changePassword.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(changePassword.fulfilled, (state, action) => {
+        state.status = 'success';
+        if (action.payload.user.user_role === 'client') {
+          // state.currentUser = action.payload.user;
+          state.token = action.payload.jwt;
+        }
+        state.isLoading = false;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
         state.status = 'fail';
-        if (action.payload.error === 'blocked') {
-          state.message = 'This account is blocked. Please contact support.';
-        } else if (action.payload.error === 'invalid_role') {
-          state.message = 'This account is not for this app.';
-        } else {
-          state.message = action.payload.message || 'Registration failed';
-        }
-        return;
-      }
-      
-      // Handle successful registration
-      if (action.payload.jwt && action?.payload?.user?.user_role === 'client') {
-        state.token = action.payload.jwt;
-        state.currentUser = action.payload.user;
-        
-        // Set Amplitude user properties after successful registration
-        setAmplitudeUserProperties(action.payload.user);
-        // Start location tracking after registration
-        if (action.payload.user.documentId) {
-          startTrackingUserLocation(action.payload.user.documentId);
-        }
-      } else if (action.payload.jwt === -1 && action?.payload?.user?.user_role === 'client') {
-        // Handle guest user
-        state.token = action.payload.jwt;
-        state.currentUser = action.payload.user;
-        
-        // Set Amplitude user properties for guest user
-        const guestUser = {
-          ...action.payload.user,
-          id: 'guest',
-          documentId: 'guest',
-          is_guest: true
-        };
-        setAmplitudeUserProperties(guestUser);
-        // Optionally, do not track guest users
-      }
-    },
-    [userRegister.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [updateUser.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [updateUser.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-      
-      // Update Amplitude user properties when user profile is updated
-      if (action.payload) {
-        updateAmplitudeUserProfile(action.payload);
-      }
-    },
-    [updateUser.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [userLogin.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [userLogin.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-      
-      // Handle error cases
-      if (action.payload.error) {
+        state.isLoading = false;
+      })
+      .addCase(forgetPassword.pending, (state) => {
+        state.status = 'pending';
+        // state.isLoading = true;
+      })
+      .addCase(forgetPassword.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.forgetPsw = action.payload;
+        // state.isLoading = false;
+      })
+      .addCase(forgetPassword.rejected, (state) => {
         state.status = 'fail';
-        if (action.payload.error === 'blocked') {
-          state.message = 'This account is blocked. Please contact support.';
-        } else if (action.payload.error === 'invalid_role') {
-          state.message = 'This account is not for this app.';
-        } else {
-          state.message = action.payload.message || 'Login failed';
-        }
-        return;
-      }
-      
-      // Handle successful login
-      if (action?.payload?.user?.user_role === 'client') {
-        state.token = action.payload.jwt;
-        state.currentUser = action.payload.user;
-        if (state.rememberMe) {
-          AsyncStorage.setItem('rememberedIdentifier', action.payload.user.email);
-          AsyncStorage.setItem('rememberMe', 'true');
-        } else {
-          AsyncStorage.removeItem('rememberedIdentifier');
-          AsyncStorage.removeItem('rememberMe');
-        }
-        
-        setAmplitudeUserProperties(action.payload.user);
-        // Start location tracking after login
-        if (action.payload.user.documentId) {
-          startTrackingUserLocation(action.payload.user.documentId);
-        }
-      }
-    },
-    [userLogin.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [verify.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [verify.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-
-      // Handle error cases
-      if (action.payload.error) {
+        // state.isLoading = false;
+      })
+      .addCase(setEmailForgetPassword.pending, (state) => {
+        state.status = 'pending';
+        // state.isLoading = true;
+      })
+      .addCase(setEmailForgetPassword.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.email = action.payload;
+        // state.isLoading = false;
+      })
+      .addCase(setEmailForgetPassword.rejected, (state) => {
         state.status = 'fail';
-        if (action.payload.error === 'blocked') {
-          state.message = 'This account is blocked. Please contact support.';
-        } else if (action.payload.error === 'invalid_role') {
-          state.message = 'This account is not for this app.';
-        } else {
-          state.message = action.payload.message || 'Verification failed';
-        }
-        return;
-      }
-
-      state.user = action.payload.user;
-
-      if (action.payload.authToken && action?.payload?.user_role === 'client') {
-        state.token = action.payload.authToken;
-        state.user = action.payload;
-        state.currentUser = action.payload.user;
+        // state.isLoading = false;
+      })
+      .addCase(resetPassword.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+      })
+      .addCase(resetPassword.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(userRegister.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(userRegister.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
         
-        // Set Amplitude user properties after successful OTP verification
-        setAmplitudeUserProperties(action.payload.user);
-      }
-      state.status = action.payload.status;
-    },
-    [verify.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [sendVerify.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [sendVerify.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-     
-    },
-    [sendVerify.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [getCurrentUser.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [getCurrentUser.fulfilled]: (state, action) => {
-      state.status = 'success';
-      state.isLoading = false;
-      state.currentUser = action.payload;
-      
-      // Set Amplitude user properties when current user is fetched
-      setAmplitudeUserProperties(action.payload);
-    },
-    [getCurrentUser.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
-    [logOut.pending]: state => {
-      state.status = 'pending';
-      state.isLoading = true;
-    },
-    [logOut.fulfilled]: state => {
-      state.status = 'success';
-      state.isLoading = false;
-      state.currentUser = null;
-      state.token = null;
-      state.user = null
-       // Clear Amplitude user properties on logout
-    clearAmplitudeUserProperties();
-    // Stop location tracking on logout
-    stopTrackingUserLocation();
-    },
-    [logOut.rejected]: state => {
-      state.status = 'fail';
-      state.isLoading = false;
-    },
+        // Handle error cases
+        if (action.payload.error) {
+          state.status = 'fail';
+          if (action.payload.error === 'blocked') {
+            state.message = 'This account is blocked. Please contact support.';
+          } else if (action.payload.error === 'invalid_role') {
+            state.message = 'This account is not for this app.';
+          } else {
+            state.message = action.payload.message || 'Registration failed';
+          }
+          return;
+        }
+        
+        // Handle successful registration
+        if (action.payload.jwt && action?.payload?.user?.user_role === 'client') {
+          state.token = action.payload.jwt;
+          state.currentUser = action.payload.user;
+          
+          // Set Amplitude user properties after successful registration
+          setAmplitudeUserProperties(action.payload.user);
+          // Start location tracking after registration
+          if (action.payload.user.documentId) {
+            startTrackingUserLocation(action.payload.user.documentId);
+          }
+        } else if (action.payload.jwt === -1 && action?.payload?.user?.user_role === 'client') {
+          // Handle guest user
+          state.token = action.payload.jwt;
+          state.currentUser = action.payload.user;
+          
+          // Set Amplitude user properties for guest user
+          const guestUser = {
+            ...action.payload.user,
+            id: 'guest',
+            documentId: 'guest',
+            is_guest: true
+          };
+          setAmplitudeUserProperties(guestUser);
+          // Optionally, do not track guest users
+        }
+      })
+      .addCase(userRegister.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(updateUser.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+        
+        // Update Amplitude user properties when user profile is updated
+        if (action.payload) {
+          updateAmplitudeUserProfile(action.payload);
+        }
+      })
+      .addCase(updateUser.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(userLogin.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(userLogin.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+        
+        // Handle error cases
+        if (action.payload.error) {
+          state.status = 'fail';
+          if (action.payload.error === 'blocked') {
+            state.message = 'This account is blocked. Please contact support.';
+          } else if (action.payload.error === 'invalid_role') {
+            state.message = 'This account is not for this app.';
+          } else {
+            state.message = action.payload.message || 'Login failed';
+          }
+          return;
+        }
+        
+        // Handle successful login
+        if (action?.payload?.user?.user_role === 'client') {
+          state.token = action.payload.jwt;
+          state.currentUser = action.payload.user;
+          if (state.rememberMe) {
+            AsyncStorage.setItem('rememberedIdentifier', action.payload.user.email);
+            AsyncStorage.setItem('rememberMe', 'true');
+          } else {
+            AsyncStorage.removeItem('rememberedIdentifier');
+            AsyncStorage.removeItem('rememberMe');
+          }
+          
+          setAmplitudeUserProperties(action.payload.user);
+          // Start location tracking after login
+          if (action.payload.user.documentId) {
+            startTrackingUserLocation(action.payload.user.documentId);
+          }
+        }
+      })
+      .addCase(userLogin.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(verify.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(verify.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+
+        // Handle error cases
+        if (action.payload.error) {
+          state.status = 'fail';
+          if (action.payload.error === 'blocked') {
+            state.message = 'This account is blocked. Please contact support.';
+          } else if (action.payload.error === 'invalid_role') {
+            state.message = 'This account is not for this app.';
+          } else {
+            state.message = action.payload.message || 'Verification failed';
+          }
+          return;
+        }
+
+        state.user = action.payload.user;
+
+        if (action.payload.authToken && action?.payload?.user_role === 'client') {
+          state.token = action.payload.authToken;
+          state.user = action.payload;
+          state.currentUser = action.payload.user;
+          
+          // Set Amplitude user properties after successful OTP verification
+          setAmplitudeUserProperties(action.payload.user);
+        }
+        state.status = action.payload.status;
+      })
+      .addCase(verify.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(sendVerify.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(sendVerify.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+       
+      })
+      .addCase(sendVerify.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(getCurrentUser.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(getCurrentUser.fulfilled, (state, action) => {
+        state.status = 'success';
+        state.isLoading = false;
+        state.currentUser = action.payload;
+        
+        // Set Amplitude user properties when current user is fetched
+        setAmplitudeUserProperties(action.payload);
+      })
+      .addCase(getCurrentUser.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      })
+      .addCase(logOut.pending, (state) => {
+        state.status = 'pending';
+        state.isLoading = true;
+      })
+      .addCase(logOut.fulfilled, (state) => {
+        state.status = 'success';
+        state.isLoading = false;
+        state.currentUser = null;
+        state.token = null;
+        state.user = null
+         // Clear Amplitude user properties on logout
+        clearAmplitudeUserProperties();
+        // Stop location tracking on logout
+        stopTrackingUserLocation();
+      })
+      .addCase(logOut.rejected, (state) => {
+        state.status = 'fail';
+        state.isLoading = false;
+      });
   },
 });
 

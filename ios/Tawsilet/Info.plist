@@ -80,6 +80,8 @@
 	<string>This app needs access to microphone for voice calls</string>
 	<key>NSCameraUsageDescription</key>
 	<string>This app needs access to camera for video calls</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app needs access to local network for VoIP calls</string>
   <key>ITSAppUsesNonExemptEncryption</key>
   <false/>
 

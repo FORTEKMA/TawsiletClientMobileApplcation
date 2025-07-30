@@ -3,23 +3,20 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Dimensions,
   Animated,
   Image,
   StatusBar,
-  Alert,
   Platform,
   SafeAreaView,
   BackHandler,
 } from 'react-native';
+import styles from './styles';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { createAgoraEngine } from "../../utils/AgoraConfig"
 import { useSelector } from 'react-redux';
 import {
   sendVoIPCallNotification,
-  sendVoIPCallActionNotification,
   generateVoIPChannelName,
   validateVoIPCallParams
 } from '../../utils/VoIPManager';
@@ -28,42 +25,36 @@ import { useTranslation } from 'react-i18next';
 import RNCallKeep from 'react-native-callkeep';
 
 // Import Agora SDK with error handling
-let RtcLocalView, RtcRemoteView, VideoRenderMode, ChannelProfile, ClientRole;
+let RtcLocalView, RtcRemoteView, VideoRenderMode;
 
 try {
   const AgoraSDK = require('react-native-agora');
   RtcLocalView = AgoraSDK.RtcLocalView;
   RtcRemoteView = AgoraSDK.RtcRemoteView;
   VideoRenderMode = AgoraSDK.VideoRenderMode;
-  ChannelProfile = AgoraSDK.ChannelProfile;
-  ClientRole = AgoraSDK.ClientRole;
 } catch (error) {
-  // Provide fallback values
   RtcLocalView = null;
   RtcRemoteView = null;
   VideoRenderMode = { Hidden: 1 };
-  ChannelProfile = { Communication: 0 };
-  ClientRole = { Broadcaster: 1 };
 }
-import AgoraConfig, {
-  AGORA_APP_ID,
+
+import {
   isAgoraSDKAvailable,
-  isAgoraConfigured,
   getAgoraToken,
   getPlatformAudioConfig,
   CHANNEL_PROFILE,
   CLIENT_ROLE,
-  AUDIO_PROFILE,
-  AUDIO_SCENARIO,
   VIDEO_ENCODER_CONFIG
 } from '../../utils/AgoraConfig';
 import { useNavigation } from '@react-navigation/native';
  
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const VoIPCallScreen = ({
-  route,
-}) => {
+// Global Agora engine instance to prevent multiple initializations
+let globalAgoraEngine = null;
+let globalEngineInitialized = false;
+
+const VoIPCallScreen = ({ route }) => {
   const { t } = useTranslation();
   const navigation = useNavigation();
   const currentUser = useSelector(state => state.user?.currentUser);
@@ -71,14 +62,16 @@ const VoIPCallScreen = ({
   // Extract route params
   const routeParams = route?.params || {};
   const finalDriverData = routeParams.driverData || {};
-  const finalCallType = routeParams.callType || 'outgoing';
-  const isIncoming = routeParams.isIncoming || finalCallType === 'incoming';
+  const finalCallType = routeParams.callType || 'voice';
+  const isIncoming = routeParams.isIncoming || false;
   const orderId = routeParams.orderId;
   const orderData = routeParams.orderData || {};
-  const callUUID = routeParams.callUUID; // Get callUUID from route params
+  const callUUID = routeParams.callUUID;
+  const incomingChannelName = routeParams.channelName;
+  const incomingCaller = routeParams.caller;
 
   // Call states
-  const [callStatus, setCallStatus] = useState(isIncoming ? 'ringing' : 'connecting');
+  const [callStatus, setCallStatus] = useState('connecting');
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
@@ -89,33 +82,55 @@ const VoIPCallScreen = ({
   const [networkQuality, setNetworkQuality] = useState('excellent');
 
   // Agora Engine Reference
-  const agoraEngineRef = useRef(null);
-  const channelName = useRef(`tawsilet_${orderId || Date.now()}`);
+  const agoraEngineRef = useRef(globalAgoraEngine);
+  const channelName = useRef(incomingChannelName || `tawsilet_${orderId || Date.now()}`);
 
   // Animation values
-  const pulseAnimation = useRef(new Animated.Value(1)).current;
   const slideAnimation = useRef(new Animated.Value(screenHeight)).current;
   const fadeAnimation = useRef(new Animated.Value(0)).current;
   const avatarPulseAnimation = useRef(new Animated.Value(1)).current;
   const buttonScaleAnimation = useRef(new Animated.Value(1)).current;
-  const rippleAnimation = useRef(new Animated.Value(0)).current;
 
   // Timer for call duration
   const timerRef = useRef(null);
   const callStartTime = useRef(null);
 
-  // Handle Android back button
+  // Track component mount/unmount
+  const componentMounted = useRef(true);
+
+  useEffect(() => {
+    componentMounted.current = true;
+    
+    if (callUUID) {
+      RNCallKeep.setCurrentCallActive(callUUID);
+    }
+    
+    return () => {
+      componentMounted.current = false;
+    };
+  }, [callUUID]);
+
+  // Track back button events
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      handleEndCall();
-      return true;
+      if (callStatus === 'connected' || callStatus === 'connecting') {
+        return true; // Prevent default
+      }
+      return false; // Allow default
     });
 
-    return () => backHandler.remove();
-  }, []);
+    return () => {
+      backHandler.remove();
+    };
+  }, [callStatus]);
 
   // Generate unique channel name for this call
   const generateCallChannelName = () => {
+    if (incomingChannelName && isIncoming) {
+      channelName.current = incomingChannelName;
+      return channelName.current;
+    }
+    
     if (!channelName.current || channelName.current === `tawsilet_${orderId || Date.now()}`) {
       channelName.current = generateVoIPChannelName(
         orderId || 'temp',
@@ -126,92 +141,82 @@ const VoIPCallScreen = ({
     return channelName.current;
   };
 
-  // Debug function to check Agora setup
-  const debugAgoraSetup = () => {
-    console.log('=== Agora Setup Debug ===');
-    console.log('Agora SDK Available:', isAgoraSDKAvailable());
-    console.log('Agora Configured:', isAgoraConfigured());
-    console.log('App ID:', AGORA_APP_ID);
-    console.log('Channel Name:', channelName.current);
-    console.log('Call Type:', finalCallType);
-    console.log('Is Video Enabled:', isVideoEnabled);
-    console.log('Is Incoming:', isIncoming);
-    console.log('Current User:', currentUser);
-    console.log('Driver Data:', finalDriverData);
-    console.log('========================');
-  };
-
   // Initialize Agora Engine
   useEffect(() => {
-    debugAgoraSetup(); // Add debug logging
-    initializeAgoraEngine();
-    startRippleAnimation();
-
-    // Send call notification if this is an outgoing call
-    if (!isIncoming && finalDriverData?.id) {
-      const callParams = {
-        driverId: finalDriverData.id,
-        callType: isVideoEnabled ? 'video' : 'voice',
-        caller: {
-          id: currentUser?.id,
-          firstName: currentUser?.firstName,
-          lastName: currentUser?.lastName,
-          phoneNumber: currentUser?.phoneNumber,
-        },
-        channelName: generateCallChannelName(),
-        orderData: orderData,
-      };
-console.log("callParams",currentUser)
-      if (validateVoIPCallParams(callParams)) {
-        sendVoIPCallNotification(callParams)
-          .catch(error => {
-            console.error('Failed to send initial call notification:', error);
-          });
-      } else {
-        console.error('Invalid VoIP call parameters');
+    // For incoming calls, accept the call
+    if (isIncoming) {
+      acceptIncomingCall();
+    } else {
+      // For outgoing calls, initialize engine and send notification
+      initializeAgoraEngine();
+      
+      if (finalDriverData?.id) {
+        const callParams = {
+          driverId: finalDriverData.id,
+          callType: isVideoEnabled ? 'video' : 'voice',
+          caller: {
+            id: currentUser?.id,
+            firstName: currentUser?.firstName,
+            lastName: currentUser?.lastName,
+            phoneNumber: currentUser?.phoneNumber,
+          },
+          channelName: generateCallChannelName(),
+          orderData: orderData,
+        };
+        
+        if (validateVoIPCallParams(callParams)) {
+          sendVoIPCallNotification(callParams)
+            .catch(error => {
+              console.error('Failed to send initial call notification:', error);
+            });
+        }
       }
     }
 
     return () => {
-      cleanupAgoraEngine();
+      // Ensure cleanup when component unmounts
+      if (componentMounted.current) {
+        cleanupAgoraEngine();
+      }
     };
   }, []);
 
   const initializeAgoraEngine = async () => {
     try {
-      // Check if Agora SDK is available
       if (!isAgoraSDKAvailable()) {
-        console.log('Agora SDK not available, simulating connection');
         setCallStatus('connected');
         callStartTime.current = Date.now();
         return;
       }
  
-      console.log('Initializing Agora engine...');
+      // Always create a fresh engine instance for new calls
+      // This ensures clean state and prevents conflicts
+      if (globalAgoraEngine) {
+        try {
+          await globalAgoraEngine.release();
+        } catch (releaseError) {
+          console.log('Error releasing previous engine:', releaseError);
+        }
+        globalAgoraEngine = null;
+        globalEngineInitialized = false;
+      }
       
-      // Create and initialize Agora engine using new API
       agoraEngineRef.current = await createAgoraEngine();
+      globalAgoraEngine = agoraEngineRef.current;
+      globalEngineInitialized = true;
        
-      console.log('Setting up event listeners...');
-      
-      // Set up comprehensive event handlers using the new API
-      agoraEngineRef.current.addListener("Warning", (warn) => {
-        console.log('Agora Warning:', warn);
-      });
-      
+      // Set up event handlers
       agoraEngineRef.current.addListener("Error", (err) => {
         console.error('Agora Error:', err);
         setCallStatus("error");
       });
       
       agoraEngineRef.current.addListener("JoinChannelSuccess", (channel, uid, elapsed) => {
-        console.log('Successfully joined channel:', channel, 'with UID:', uid);
         setCallStatus("connected");
         callStartTime.current = Date.now();
       });
       
       agoraEngineRef.current.addListener("UserJoined", (uid, elapsed) => {
-        console.log('Remote user joined:', uid);
         setRemoteUid(uid);
         if (isVideoEnabled) {
           setIsRemoteVideoEnabled(true);
@@ -219,16 +224,14 @@ console.log("callParams",currentUser)
       });
       
       agoraEngineRef.current.addListener("UserOffline", (uid, reason) => {
-        console.log('Remote user offline:', uid, 'reason:', reason);
         setRemoteUid(null);
         setIsRemoteVideoEnabled(false);
-        if (reason === 0) { // User left
+        if (reason === 0) {
           handleEndCall();
         }
       });
       
       agoraEngineRef.current.addListener("RemoteVideoStateChanged", (uid, state, reason, elapsed) => {
-        console.log('Remote video state changed:', uid, 'state:', state);
         setIsRemoteVideoEnabled(state === 2);
       });
       
@@ -246,16 +249,14 @@ console.log("callParams",currentUser)
       });
       
       agoraEngineRef.current.addListener("RtcStats", (stats) => {
-        // Update call quality based on stats
         if (stats.txKBitRate > 0 || stats.rxKBitRate > 0) {
           setCallQuality("HD");
         }
       });
       
-      console.log('Configuring engine settings...');
-      
-      // Configure engine for optimal call quality using AgoraConfig
+      // Configure engine settings
       const audioConfig = getPlatformAudioConfig();
+      
       await agoraEngineRef.current.setChannelProfile(CHANNEL_PROFILE.COMMUNICATION);
       await agoraEngineRef.current.setClientRole(CLIENT_ROLE.BROADCASTER);
       await agoraEngineRef.current.enableAudio();
@@ -275,15 +276,9 @@ console.log("callParams",currentUser)
         await agoraEngineRef.current.setVideoEncoderConfiguration(videoConfig);
       }
       
-      // Generate and use unique channel name
       const uniqueChannelName = generateCallChannelName();
-      console.log('Generated channel name:', uniqueChannelName);
-      
-      // Get token (null for development)
       const token = await getAgoraToken(uniqueChannelName, 0);
-      console.log('Token obtained:', token ? 'Yes' : 'No (development mode)');
       
-      // Join channel with proper media options for v4.x
       const mediaOptions = {
         clientRoleType: CLIENT_ROLE.BROADCASTER,
         channelProfile: CHANNEL_PROFILE.COMMUNICATION,
@@ -293,62 +288,57 @@ console.log("callParams",currentUser)
         autoSubscribeVideo: isVideoEnabled,
       };
       
-      console.log('Joining channel with options:', mediaOptions);
-      
-      const joinResult = await agoraEngineRef.current.joinChannel(token, uniqueChannelName, 0, mediaOptions);
-      console.log('Join channel result:', joinResult);
-      
-      // If join fails, simulate connection for demo
-      if (joinResult !== 0) {
-        console.log('Join channel failed, simulating connection for demo');
-        setTimeout(() => {
-          if (callStatus === 'connecting') {
-            setCallStatus('connected');
-            callStartTime.current = Date.now();
-          }
-        }, 2000);
-      }
+      await agoraEngineRef.current.joinChannel(token, uniqueChannelName, 0, mediaOptions);
       
     } catch (error) {
       console.error('Agora initialization error:', error);
       setCallStatus('error');
-      
-      // Simulate connection for demo if Agora fails
-      setTimeout(() => {
-        if (callStatus === 'error') {
-          console.log('Simulating connection due to Agora error');
-          setCallStatus('connected');
-          callStartTime.current = Date.now();
-        }
-      }, 2000);
     }
   };
 
   const cleanupAgoraEngine = async () => {
     try {
+      // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
       
+      // Leave channel and release engine
       if (agoraEngineRef.current) {
-        // Leave channel with proper options
-        const leaveChannelOptions = {
-          stopAudioMixing: true,
-          stopAllEffect: true,
-          stopMicrophoneRecording: true,
-        };
+        try {
+          const leaveChannelOptions = {
+            stopAudioMixing: true,
+            stopAllEffect: true,
+            stopMicrophoneRecording: true,
+          };
+          
+          await agoraEngineRef.current.leaveChannel(leaveChannelOptions);
+          console.log('Successfully left Agora channel');
+        } catch (leaveError) {
+          console.error('Error leaving channel:', leaveError);
+        }
         
-        await agoraEngineRef.current.leaveChannel(leaveChannelOptions);
-        await agoraEngineRef.current.release();
+        try {
+          // Release the engine to free up resources
+          await agoraEngineRef.current.release();
+          console.log('Successfully released Agora engine');
+        } catch (releaseError) {
+          console.error('Error releasing engine:', releaseError);
+        }
+        
+        // Clear global references
         agoraEngineRef.current = null;
-        
-        console.log('Agora engine cleaned up successfully');
+        globalAgoraEngine = null;
+        globalEngineInitialized = false;
       }
     } catch (error) {
       console.error('Error during Agora cleanup:', error);
-      // Ensure engine reference is cleared even if cleanup fails
+    } finally {
+      // Ensure references are cleared even if errors occur
       agoraEngineRef.current = null;
+      globalAgoraEngine = null;
+      globalEngineInitialized = false;
     }
   };
 
@@ -367,7 +357,7 @@ console.log("callParams",currentUser)
       }),
     ]).start();
 
-    if (isIncoming || callStatus === 'connecting') {
+    if (callStatus === 'connecting') {
       startAvatarPulse();
     }
   }, []);
@@ -414,16 +404,6 @@ console.log("callParams",currentUser)
     avatarPulseAnimation.setValue(1);
   };
 
-  const startRippleAnimation = () => {
-    Animated.loop(
-      Animated.timing(rippleAnimation, {
-        toValue: 1,
-        duration: 2000,
-        useNativeDriver: true,
-      })
-    ).start();
-  };
-
   const animateButton = (callback) => {
     Animated.sequence([
       Animated.timing(buttonScaleAnimation, {
@@ -445,101 +425,22 @@ console.log("callParams",currentUser)
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleAcceptCall = async () => {
-    animateButton(async () => {
-      setCallStatus('connected');
-      stopAvatarPulse();
-      
-      // Send accept notification to driver
-      try {
-        const actionParams = {
-          driverId: finalDriverData.id,
-          action: 'accepted',
-          caller: {
-            id: currentUser?.id,
-            firstName: currentUser?.firstName,
-            lastName: currentUser?.lastName,
-          },
-          channelName: generateCallChannelName(),
-          orderData: orderData,
-        };
-        
-        await sendVoIPCallActionNotification(actionParams);
-      } catch (error) {
-        console.error('Failed to send accept notification:', error);
-      }
-      
-      await initializeAgoraEngine();
-    });
-  };
-
-  const handleDeclineCall = async () => {
-    animateButton(async () => {
-      setCallStatus('ended');
-      stopAvatarPulse();
-      
-      // End the call via CallKeep
-      if (callUUID) {
-        RNCallKeep.endCall(callUUID);
-      }
-
-      // Send decline notification to driver
-      try {
-        const actionParams = {
-          driverId: finalDriverData.id,
-          action: 'declined',
-          caller: {
-            id: currentUser?.id,
-            firstName: currentUser?.firstName,
-            lastName: currentUser?.lastName,
-          },
-          channelName: generateCallChannelName(),
-          orderData: orderData,
-        };
-        
-        await sendVoIPCallActionNotification(actionParams);
-      } catch (error) {
-        console.error('Failed to send decline notification:', error);
-      }
-      
-      await cleanupAgoraEngine();
-      
-      setTimeout(() => navigation.goBack(), 1000);
-    });
-  };
-
   const handleEndCall = async () => {
     animateButton(async () => {
       setCallStatus('ended');
       stopAvatarPulse();
       
-      // End the call via CallKeep
       if (callUUID) {
         RNCallKeep.endCall(callUUID);
       }
 
-      // Send end call notification to driver
-      try {
-        const actionParams = {
-          driverId: finalDriverData.id,
-          action: 'ended',
-          caller: {
-            id: currentUser?.id,
-            firstName: currentUser?.firstName,
-            lastName: currentUser?.lastName,
-          },
-          channelName: generateCallChannelName(),
-          orderData: orderData,
-        };
-       
-        await sendVoIPCallActionNotification(actionParams);
-      } catch (error) {
-        console.error('Failed to send end call notification:', error);
-      }
-      
+      // Ensure complete cleanup
       await cleanupAgoraEngine();
       
-      setTimeout(() => navigation.goBack(), 1000);
+      // Navigate back after cleanup
+      if (componentMounted.current) {
+        navigation.goBack();
+      }
     });
   };
 
@@ -568,6 +469,14 @@ console.log("callParams",currentUser)
   };
 
   const getCallerName = () => {
+    if (isIncoming && incomingCaller) {
+      if (incomingCaller.firstName && incomingCaller.lastName) {
+        return `${incomingCaller.firstName} ${incomingCaller.lastName}`;
+      } else if (incomingCaller.firstName) {
+        return incomingCaller.firstName;
+      }
+    }
+    
     if (finalDriverData?.firstName && finalDriverData?.lastName) {
       return `${finalDriverData.firstName} ${finalDriverData.lastName}`;
     } else if (finalDriverData?.firstName) {
@@ -579,6 +488,10 @@ console.log("callParams",currentUser)
   };
 
   const getCallerAvatar = () => {
+    if (isIncoming && incomingCaller?.avatar) {
+      return incomingCaller.avatar;
+    }
+    
     return finalDriverData?.avatar ||
            finalDriverData?.profilePicture?.url ||
            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face';
@@ -588,8 +501,6 @@ console.log("callParams",currentUser)
     switch (callStatus) {
       case 'connecting':
         return t('call.connecting', 'Connecting...');
-      case 'ringing':
-        return t('call.ringing', 'Ringing...');
       case 'connected':
         return formatCallDuration(callDuration);
       case 'ended':
@@ -601,9 +512,21 @@ console.log("callParams",currentUser)
     }
   };
 
+  // Handle incoming call acceptance
+  const acceptIncomingCall = async () => {
+    if (isIncoming && callStatus === 'connecting') {
+      try {
+        await initializeAgoraEngine();
+      } catch (error) {
+        console.error('Error accepting incoming call:', error);
+        setCallStatus('error');
+      }
+    }
+  };
+
   return (
     <>
-      <StatusBar barStyle="light-content" backgroundColor="#000" translucent />
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" translucent />
       
       <SafeAreaView style={styles.safeArea}>
         <Animated.View
@@ -617,29 +540,6 @@ console.log("callParams",currentUser)
         >
           {/* Background gradient */}
           <View style={styles.backgroundGradient} />
-
-          {/* Ripple effect */}
-          <View style={styles.rippleContainer}>
-            <Animated.View
-              style={[
-                styles.ripple,
-                {
-                  transform: [
-                    {
-                      scale: rippleAnimation.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [1, 2],
-                      }),
-                    },
-                  ],
-                  opacity: rippleAnimation.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [0.6, 0],
-                  }),
-                },
-              ]}
-            />
-          </View>
 
           {/* Caller Info */}
           <View style={styles.callerInfoContainer}>
@@ -659,7 +559,7 @@ console.log("callParams",currentUser)
                 <MaterialCommunityIcons
                   name={isVideoEnabled ? 'video' : 'phone'}
                   size={20}
-                  color="#fff"
+                  color="#ffffff"
                 />
               </View>
             </Animated.View>
@@ -670,7 +570,7 @@ console.log("callParams",currentUser)
 
             {orderData?.id && (
               <View style={styles.orderInfoContainer}>
-                <MaterialCommunityIcons name="receipt" size={14} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="receipt" size={14} color="#6c757d" />
                 <Text style={styles.orderInfoText}>
                   {t('call.order_number', 'Order')} #{orderData.id}
                 </Text>
@@ -680,6 +580,7 @@ console.log("callParams",currentUser)
 
           {/* Call Controls */}
           <View style={styles.controlsContainer}>
+            {/* Connected call controls - Mute, Speaker, Video, End Call */}
             <View style={styles.buttonRow}>
               <TouchableOpacity
                 style={styles.controlButton}
@@ -688,10 +589,9 @@ console.log("callParams",currentUser)
                 <MaterialCommunityIcons
                   name={isMuted ? 'microphone-off' : 'microphone'}
                   size={28}
-                  color="#fff"
+                  color="#495057"
                 />
-                <Text style={styles.controlButtonText}>{t('call.mute', 'Mute')}</Text>
-              </TouchableOpacity>
+               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.controlButton}
@@ -700,10 +600,9 @@ console.log("callParams",currentUser)
                 <MaterialCommunityIcons
                   name={isSpeakerOn ? 'volume-high' : 'volume-off'}
                   size={28}
-                  color="#fff"
+                  color="#495057"
                 />
-                <Text style={styles.controlButtonText}>{t('call.speaker', 'Speaker')}</Text>
-              </TouchableOpacity>
+               </TouchableOpacity>
 
               {finalCallType === 'video' && (
                 <TouchableOpacity
@@ -713,7 +612,7 @@ console.log("callParams",currentUser)
                   <MaterialCommunityIcons
                     name={isVideoEnabled ? 'video' : 'video-off'}
                     size={28}
-                    color="#fff"
+                    color="#495057"
                   />
                   <Text style={styles.controlButtonText}>{t('call.video', 'Video')}</Text>
                 </TouchableOpacity>
@@ -726,7 +625,7 @@ console.log("callParams",currentUser)
                 onPress={handleEndCall}
                 activeOpacity={0.8}
               >
-                <MaterialCommunityIcons name="phone-hangup" size={32} color="#fff" />
+                <MaterialCommunityIcons name="phone-hangup" size={32} color="#ffffff" />
               </TouchableOpacity>
             </Animated.View>
             <Text style={styles.endCallLabel}>{t('call.end_call', 'End Call')}</Text>

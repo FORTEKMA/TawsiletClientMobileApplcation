@@ -6,4 +6,10 @@
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <!-- Full Screen Notification Incoming Call Theme -->
+    <style name="incomingCall" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize status bar color -->
+        <item name="colorPrimaryDark">#000000</item>
+    </style>
+
 </resources>

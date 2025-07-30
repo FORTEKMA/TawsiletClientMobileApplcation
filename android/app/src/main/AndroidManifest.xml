@@ -15,11 +15,28 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Permissions for react-native-callkeep -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
+    <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS" />
+    
+    <!-- Additional permissions for Android 12+ -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    
+    <!-- Telecom permissions for CallKeep -->
+    <uses-permission android:name="android.permission.BIND_TELECOM_CONNECTION_SERVICE" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    
+    <!-- Permissions for react-native-full-screen-notification-incoming-call -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+     
     
     <application
       android:name=".MainApplication"
@@ -60,16 +77,59 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
-
-      <!-- CallKeep ConnectionService -->
-      <service android:name="io.wazo.callkeep.VoiceConnectionService"
-          android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
-          android:exported="true">
-          <intent-filter>
-              <action android:name="android.telecom.ConnectionService" />
-          </intent-filter>
+      
+      <!-- CallKeep Connection Service -->
+      <service 
+        android:name="io.wazo.callkeep.VoiceConnectionService" 
+        android:label="Tawsilet" 
+        android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE" 
+        android:foregroundServiceType="phoneCall" 
+        android:exported="true">
+        <intent-filter>
+          <action android:name="android.telecom.ConnectionService"/>
+        </intent-filter>
       </service>
-
+      
+      <!-- CallKeep Background Messaging Service -->
+      <service 
+        android:name="io.wazo.callkeep.RNCallKeepBackgroundMessagingService"
+        android:exported="false" />
+        
+      <!-- Firebase Messaging Service -->
+      <service
+        android:name="io.invertase.firebase.messaging.ReactNativeFirebaseMessagingService"
+        android:exported="false">
+        <intent-filter>
+          <action android:name="com.google.firebase.MESSAGING_EVENT" />
+        </intent-filter>
+      </service>
+      
+      <!-- Full Screen Notification Incoming Call Activities and Service -->
+      <activity 
+        android:name="com.reactnativefullscreennotificationincomingcall.IncomingCallActivity"
+        android:theme="@style/incomingCall"
+        android:launchMode="singleTask"
+        android:excludeFromRecents="true"
+        android:exported="true"
+        android:showWhenLocked="true"
+        android:turnScreenOn="true" />
+        
+      <activity 
+        android:name="com.reactnativefullscreennotificationincomingcall.NotificationReceiverActivity"
+        android:theme="@style/incomingCall"
+        android:launchMode="singleTask"
+        android:excludeFromRecents="true"
+        android:exported="true"
+        android:showWhenLocked="true"
+        android:turnScreenOn="true" />
+        
+      <service
+        android:name="com.reactnativefullscreennotificationincomingcall.IncomingCallService"
+        android:enabled="true"
+        android:stopWithTask="false"
+        android:foregroundServiceType="phoneCall"
+        android:exported="true" />
+      
     </application>
 </manifest>
 

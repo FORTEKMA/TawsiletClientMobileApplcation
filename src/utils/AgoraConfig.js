@@ -314,6 +314,7 @@ export const leaveChannel = async (engine, options = {}) => {
   };
 
   return engine.leaveChannel(leaveOptions);
+  
 };
 
 /**

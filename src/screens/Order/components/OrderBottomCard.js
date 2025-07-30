@@ -175,14 +175,7 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
       setCurrentCallId(null);
     }
   }, [currentCallId]);
-
-  const handleEndCall = useCallback(async () => {
-    if (currentCallId) {
-      await voipManager.endCall(currentCallId);
-      setShowCall(false);
-      setCurrentCallId(null);
-    }
-  }, [currentCallId]);
+ 
 
   const handlePressIn = useCallback(() => {
     Animated.spring(scaleAnim, {

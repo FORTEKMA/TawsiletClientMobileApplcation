@@ -12,11 +12,10 @@ import ChatScreen from '../screens/ChatScreen'; // Import ChatScreen
 import TrackingScreen from '../screens/TrackingScreen'; // Import TrackingScreen
 import VoIPCallScreen from '../screens/VoIPCallScreen';
 import IncomingCallScreen from '../screens/IncomingCallScreen';
-import { createNavigationContainerRef } from '@react-navigation/native';
-import { startTrackingUserLocation } from "../utils/userLocationTracker"
+ import { startTrackingUserLocation } from "../utils/userLocationTracker"
+import { navigationRef,  } from './navigationRef';
 
-export const navigationRef = createNavigationContainerRef();
-
+ 
 const Stack = createStackNavigator();
 
 const MainNavigator = ({onReady}) => {
@@ -34,7 +33,10 @@ const MainNavigator = ({onReady}) => {
    }, []);
 
   return (
-    <NavigationContainer ref={navigationRef} onReady={onReady}>
+    <NavigationContainer         ref={navigationRef}
+  
+    
+    onReady={onReady}>
         <Stack.Navigator
       screenOptions={{
         headerShown: false,

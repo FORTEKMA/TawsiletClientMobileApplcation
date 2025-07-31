@@ -64,3 +64,25 @@ yarn-error.log
 
 # testing
 /coverage
+
+# Sensitive files and credentials
+*.json
+!package.json
+!package-lock.json
+!yarn.lock
+!tsconfig.json
+!babel.config.js
+!metro.config.js
+!jest.config.js
+!app.json
+!ios/GoogleService-Info.plist
+!android/app/google-services.json
+!src/utils/GeoJSON/*.json
+!src/utils/mapStyle.json
+!src/utils/marker.json
+!src/utils/loader.json
+
+# Google Cloud credentials
+*-aa5f238c9e5a.json
+*service-account*.json
+*credentials*.json

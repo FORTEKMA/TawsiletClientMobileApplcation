@@ -29,7 +29,6 @@ import api from '../../utils/api';
 import { useTranslation } from 'react-i18next';
 import CustomAlert from '../../components/CustomAlert';
 import Geolocation from '@react-native-community/geolocation';
-import { ref , onValue, off, query, orderByChild, equalTo } from 'firebase/database';
 import db from '../../utils/firebase';
  import PickupLocation from './components/PickupLocation';
 import DropoffLocation from './components/DropoffLocation';
@@ -266,11 +265,7 @@ const MainScreen = () => {
 
   // Optimized Firebase listener
   useEffect(() => {
-    const driversQuery = query(
-      ref(db, 'drivers'),
-      orderByChild('isActive'),
-      equalTo(true)
-    );
+    const driversQuery = db.ref('drivers').orderByChild('isActive').equalTo(true);
   
     let isSubscribed = true;
   
@@ -287,7 +282,7 @@ const MainScreen = () => {
       });
     }, 1000); // 1 update per second max
   
-    const unsubscribe = onValue(driversQuery, snapshot => {
+    const unsubscribe = driversQuery.on('value', snapshot => {
       if (!isSubscribed) return;
   
       try {
@@ -317,7 +312,7 @@ const MainScreen = () => {
     return () => {
       isSubscribed = false;
       // No built-in cancel with custom throttle, so we just stop updates via isSubscribed
-      off(driversQuery, unsubscribe);
+      driversQuery.off('value', unsubscribe);
     };
   }, [formData?.pickupAddress]);
 

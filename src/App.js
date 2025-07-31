@@ -40,6 +40,7 @@ import i18n from "./local";
 import CheckConnection from './components/CheckConnection';
 import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 import api, { setStoreReference } from './utils/api';
+import chatService from './utils/chatService';
 
 import VoIPManager from './utils/VoIPManager';
 import FirebaseManager from './utils/FirebaseManager';
@@ -61,6 +62,9 @@ let persistor = persistStore(store);
 
 // Set store reference for API module
 setStoreReference(store);
+
+// Set store reference for chat service
+chatService.setStore(store);
 
 const App=()=> {
   useKeepAwake();

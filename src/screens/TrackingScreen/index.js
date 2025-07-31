@@ -31,7 +31,6 @@ import { TRACKING_MAP_STYLE, MAP_PERFORMANCE_SETTINGS, MAPBOX_ACCESS_TOKEN } fro
 import { API_GOOGLE } from '@env';
 import api from '../../utils/api';
 import { colors } from '../../utils/colors'; // Assuming colors are defined here, will override
-import { ref as dbRef, onValue, off } from 'firebase/database';
 import db from '../../utils/firebase';
 import DriverMarker from '../../components/DriverMarker';
 import { RouteOptimizer, DriverMovementTracker, MapPerformanceUtils, NavigationRouteManager } from '../../utils/mapUtils';
@@ -230,8 +229,8 @@ const TrackingScreen = ({ route }) => {
   // Listen to driver location updates from Firebase with enhanced tracking
   useEffect(() => {
     if (driver?.documentId) {
-      const driverRef = dbRef(db, `drivers/${driver.documentId}`);
-      const unsubscribe = onValue(driverRef, snapshot => {
+      const driverRef = db.ref(`drivers/${driver.documentId}`);
+      const unsubscribe = driverRef.on('value', snapshot => {
         const data = snapshot.val();
         if (data?.latitude && data?.longitude) {
           const newPosition = {
@@ -284,7 +283,7 @@ const TrackingScreen = ({ route }) => {
           }
         }
       });
-      return () => off(driverRef, unsubscribe);
+      return () => driverRef.off('value', unsubscribe);
     }
   }, [driver?.documentId, isFollowingDriver, mapReady, order, streetViewMode, cameraFollowBearing]);
 

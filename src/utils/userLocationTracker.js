@@ -1,5 +1,4 @@
 import Geolocation from 'react-native-geolocation-service';
-import { ref, set, onDisconnect } from 'firebase/database';
 import db from './firebase';
 import { Platform, PermissionsAndroid } from 'react-native';
 
@@ -48,16 +47,16 @@ export async function startTrackingUserLocation(documentId) {
   stopTrackingUserLocation(); // Ensure no duplicate watches
 
   // Set isActive true when tracking starts
-  set(ref(db, `users/${documentId}/is_active`), true);
+  db.ref(`users/${documentId}/is_active`).set(true);
 
   // Set up onDisconnect to set isActive to false when the app disconnects
-  onDisconnect(ref(db, `users/${documentId}/is_active`)).set(false);
+  db.ref(`users/${documentId}/is_active`).onDisconnect().set(false);
 
   watchId = Geolocation.watchPosition(
     position => {
       const { latitude, longitude, accuracy, timestamp } = position.coords;
       if(latitude && longitude){
-      set(ref(db, `users/${documentId}`), {
+      db.ref(`users/${documentId}`).set({
         latitude,
         longitude,
         accuracy,

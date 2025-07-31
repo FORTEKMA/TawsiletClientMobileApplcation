@@ -10,7 +10,6 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useSelector } from 'react-redux';
 import db from '../../../utils/firebase';
-import { ref, update, off, onValue, get, child, remove, push, set } from 'firebase/database';
 import Ring from './Ring';
 import Slider from 'react-native-slide-to-unlock';
 import { 
@@ -172,7 +171,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       }
 
       // Create a unique ride request reference
-      const newRequestRef = push(ref(db, 'rideRequests'));
+      const newRequestRef = db.ref('rideRequests').push();
       if (!newRequestRef) {
         throw new Error('Failed to create request reference');
       }
@@ -180,7 +179,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
 
         
       // Use set to create the initial request object
-       await set(newRequestRef, {
+       await newRequestRef.set({
         
         status: 'searching',
         createdAt: Date.now(),
@@ -197,7 +196,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       });
 
       // Main listener for request status changes
-      const unsubscribe = onValue(newRequestRef, (snapshot) => {
+      const unsubscribe = newRequestRef.on('value', (snapshot) => {
         if (!snapshot || !snapshot.exists()) {
           return;
         }
@@ -243,8 +242,8 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       let processNextDriver = null;
 
       const setupNotifiedDriversListener = () => {
-        const notifiedDriversRef = child(newRequestRef, 'notifiedDrivers');
-        unsubscribeNotifiedDrivers = onValue(notifiedDriversRef, async (snapshot) => {
+        const notifiedDriversRef = newRequestRef.child('notifiedDrivers');
+        unsubscribeNotifiedDrivers = notifiedDriversRef.on('value', async (snapshot) => {
           if (!snapshot || !snapshot.exists() || !currentDriverId) {
             return;
           }
@@ -314,7 +313,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
 
           try {
             if (requestRef.current) {
-              await update(child(requestRef.current, 'notifiedDrivers'), {
+              await requestRef.current.child('notifiedDrivers').update({
                 [driver.id]: true
               });
 
@@ -356,7 +355,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
 
               if (requestRef.current) {
                 console.log('[Timeout] Setting notifiedDrivers', driver.id, 'to false');
-                await update(child(requestRef.current, 'notifiedDrivers'), {
+                await requestRef.current.child('notifiedDrivers').update({
                   [driver.id]: false
                 });
               }
@@ -434,7 +433,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     
       if (accepted === null && isSearchingRef.current) {
         if (requestRef.current && !accepted) {
-          off(requestRef.current);
+          requestRef.current.off();
         }
         
         // Track no driver found
@@ -468,7 +467,7 @@ const SearchDriversComponent = ({ goBack, formData }) => {
     } catch (error) {
       console.log("dddd",error)
       if (requestRef.current) {
-        off(requestRef.current);
+        requestRef.current.off();
       }
       
       // Track search error
@@ -514,16 +513,16 @@ const SearchDriversComponent = ({ goBack, formData }) => {
       
       // Check if the request exists and its status before removing
       if (requestRef.current) {
-        get(requestRef.current).then((snapshot) => {
+        requestRef.current.once('value').then((snapshot) => {
           if (snapshot.exists()) {
             const data = snapshot.val();
             // Only remove if the request wasn't accepted
             if (data.status !== 'accepted') {
-              remove(requestRef.current);
+              requestRef.current.remove();
             }
           }
           // Always remove the listener
-          off(requestRef.current);
+          requestRef.current.off();
         });
       }
     }

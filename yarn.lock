@@ -5163,6 +5163,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-firebase/firestore@npm:^22.4.0":
+  version: 22.4.0
+  resolution: "@react-native-firebase/firestore@npm:22.4.0"
+  dependencies:
+    react-native-url-polyfill: 2.0.0
+  peerDependencies:
+    "@react-native-firebase/app": 22.4.0
+  checksum: a327359c448cc2e87c0d4d147c8969522b97e19fce829fd272106b6ace106b7c4e4109938ed40a60cdc247b596e8ae784f2ea09ec79043f4be85b7291d32f894
+  languageName: node
+  linkType: hard
+
 "@react-native-firebase/messaging@npm:^22.4.0":
   version: 22.4.0
   resolution: "@react-native-firebase/messaging@npm:22.4.0"
@@ -5173,6 +5184,15 @@ __metadata:
     expo:
       optional: true
   checksum: e50345bf1575a4df797821753a70898af38dbdc74caf3f114fde8229ed4a97395b9b02119807d0eca8a80ea6afff82138783765c193093a585d366f88177e1c6
+  languageName: node
+  linkType: hard
+
+"@react-native-firebase/storage@npm:^22.4.0":
+  version: 22.4.0
+  resolution: "@react-native-firebase/storage@npm:22.4.0"
+  peerDependencies:
+    "@react-native-firebase/app": 22.4.0
+  checksum: e723517e1ce44397432e28a2ac33b492b004e5af29719a453dcf7cc78509b3577f178bcba4f8cf5c7712bad185d7933cba1bf4b3479202cfd7222fdc0338d2cd
   languageName: node
   linkType: hard
 
@@ -9471,7 +9491,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"buffer@npm:^5.5.0":
+"buffer@npm:^5.4.3, buffer@npm:^5.5.0":
   version: 5.7.1
   resolution: "buffer@npm:5.7.1"
   dependencies:
@@ -20294,7 +20314,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"punycode@npm:^2.1.0":
+"punycode@npm:^2.1.0, punycode@npm:^2.1.1":
   version: 2.3.1
   resolution: "punycode@npm:2.3.1"
   checksum: bb0a0ceedca4c3c57a9b981b90601579058903c62be23c5e8e843d2c2d4148a3ecf029d5133486fb0e1822b098ba8bba09e89d6b21742d02fa26bda6441a6fb2
@@ -20743,16 +20763,6 @@ __metadata:
     react-native: "*"
     react-native-web: "*"
   checksum: e808169b45c5e8021462a6914f7c3fb28e84ae8d58097ed7b3418fee41efa2bc44012abc09ff3f3bd6ee14427b9efe1b0f8d8b3a19cc01325b2f2cd0137d5d00
-  languageName: node
-  linkType: hard
-
-"react-native-date-picker@npm:^4.4.2":
-  version: 4.4.2
-  resolution: "react-native-date-picker@npm:4.4.2"
-  peerDependencies:
-    react: ">= 17.0.1"
-    react-native: ">= 0.64.3"
-  checksum: 29fcff75b4ecbeb36d87a1972d0dc2fec7a8a59185a874c8bc313a9f953f5f7b16e023b7a6fad70b619a82e8b4d50feeca936e6ba639f68cfd4ebddb7190a982
   languageName: node
   linkType: hard
 
@@ -21312,6 +21322,17 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 313fe6e6b6437b2384d13f8987a141f9aa2df0930a668628276ed5ea990917e7d953dfa1584aa4991326ee9430baab1b735adf0b4a9861e702996617a583cc33
+  languageName: node
+  linkType: hard
+
+"react-native-url-polyfill@npm:2.0.0":
+  version: 2.0.0
+  resolution: "react-native-url-polyfill@npm:2.0.0"
+  dependencies:
+    whatwg-url-without-unicode: 8.0.0-3
+  peerDependencies:
+    react-native: "*"
+  checksum: 1a2e1030a62fd093764b5330ce0ff34d72246e581dd2892cddc347d8621931aeb2c9ea3e054960484a1259230e8461e569e1890f1ff452d3c5c0adef70190fc3
   languageName: node
   linkType: hard
 
@@ -23956,7 +23977,9 @@ __metadata:
     "@react-native-community/netinfo": ^11.4.1
     "@react-native-firebase/app": ^22.1.0
     "@react-native-firebase/database": ^22.1.0
+    "@react-native-firebase/firestore": ^22.4.0
     "@react-native-firebase/messaging": ^22.4.0
+    "@react-native-firebase/storage": ^22.4.0
     "@react-native-google-signin/google-signin": ^14.0.0
     "@react-native-picker/picker": ^2.10.2
     "@react-native/eslint-config": ^0.72.2
@@ -24005,7 +24028,6 @@ __metadata:
     react-native-country-codes-picker: ^2.3.4
     react-native-country-flag: ^2.0.2
     react-native-country-picker-modal: ^2.0.0
-    react-native-date-picker: ^4.4.2
     react-native-device-info: ^14.0.4
     react-native-document-picker: ^9.3.1
     react-native-dotenv: ^3.4.9
@@ -25289,6 +25311,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"webidl-conversions@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "webidl-conversions@npm:5.0.0"
+  checksum: ccf1ec2ca7c0b5671e5440ace4a66806ae09c49016ab821481bec0c05b1b82695082dc0a27d1fe9d804d475a408ba0c691e6803fd21be608e710955d4589cd69
+  languageName: node
+  linkType: hard
+
 "websocket-driver@npm:>=0.5.1":
   version: 0.7.4
   resolution: "websocket-driver@npm:0.7.4"
@@ -25311,6 +25340,17 @@ __metadata:
   version: 3.6.20
   resolution: "whatwg-fetch@npm:3.6.20"
   checksum: c58851ea2c4efe5c2235f13450f426824cf0253c1d45da28f45900290ae602a20aff2ab43346f16ec58917d5562e159cd691efa368354b2e82918c2146a519c5
+  languageName: node
+  linkType: hard
+
+"whatwg-url-without-unicode@npm:8.0.0-3":
+  version: 8.0.0-3
+  resolution: "whatwg-url-without-unicode@npm:8.0.0-3"
+  dependencies:
+    buffer: ^5.4.3
+    punycode: ^2.1.1
+    webidl-conversions: ^5.0.0
+  checksum: 1fe266f7161e0bd961087c1254a5a59d1138c3d402064495eed65e7590d9caed5a1d9acfd6e7a1b0bf0431253b0e637ee3e4ffc08387cd60e0b2ddb9d4687a4b
   languageName: node
   linkType: hard
 

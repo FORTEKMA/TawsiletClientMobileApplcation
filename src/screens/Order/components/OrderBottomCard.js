@@ -11,7 +11,6 @@ import OrderReportProblemModal from './OrderReportProblemModal';
 import { useNavigation } from '@react-navigation/native';
 import api from '../../../utils/api';
 import BackgroundTimer from 'react-native-background-timer';
-import { ref, update, off } from 'firebase/database';
 import db from '../../../utils/firebase';
 import voipManager from '../../../utils/VoIPManager';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -208,7 +207,7 @@ const OrderBottomCard = ({ order, onCallDriver, refresh }) => {
   };
 
   const handleSubmitCancellation = async (reason) => {
-    update(ref(db, `rideRequests/${order.requestId}`), {commandStatus: "Canceled_by_client",});
+            db.ref(`rideRequests/${order.requestId}`).update({commandStatus: "Canceled_by_client",});
 
     setShowReasonSheet(false);
     setSelectedReason(null);

@@ -17,7 +17,7 @@ import { colors } from '../../utils/colors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import api from '../../utils/api';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import { useSelector } from 'react-redux';
 import ImagePickerModal from '../Profile/components/ImagePickerModal';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
@@ -59,9 +59,9 @@ const NewTicketScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error fetching commands:', error);
       Toast.show({
-        title: t('tickets.commands_fetch_error'),
-        status: "error",
-        placement: "bottom",
+        type: 'error',
+        text1: t('tickets.commands_fetch_error'),
+        position: 'bottom',
       });
     }
   };
@@ -150,8 +150,8 @@ const NewTicketScreen = ({ navigation, route }) => {
   const handleSubmit = async () => {
     if (!description.trim()) {
       Toast.show({
-        title: t('tickets.description_required'),
-        status: "error",
+        type: 'error',
+        text1: t('tickets.description_required'),
         placement: "bottom",
       });
       return;
@@ -167,9 +167,9 @@ const NewTicketScreen = ({ navigation, route }) => {
         const commandData = await validateCommand(command.trim());
         if (!commandData) {
           Toast.show({
-            title: t('tickets.invalid_command'),
-            status: "error",
-            placement: "bottom",
+            type: 'error',
+            text1: t('tickets.invalid_command'),
+            position: 'bottom',
           });
           setIsLoading(false);
           return;
@@ -182,9 +182,9 @@ const NewTicketScreen = ({ navigation, route }) => {
         attachmentId = await uploadAttachment(file);
         if (!attachmentId) {
           Toast.show({
-            title: t('tickets.attachment_upload_error'),
-            status: "error",
-            placement: "bottom",
+            type: 'error',
+            text1: t('tickets.attachment_upload_error'),
+            position: 'bottom',
           });
           setIsLoading(false);
           return;
@@ -207,9 +207,9 @@ const NewTicketScreen = ({ navigation, route }) => {
 
       if (response.data) {
         Toast.show({
-          title: t('tickets.submit_success'),
-          status: "success",
-          placement: "bottom",
+          type: 'success',
+          text1: t('tickets.submit_success'),
+          position: 'bottom',
         });
 
         if (route.params?.onSubmit) {
@@ -220,9 +220,9 @@ const NewTicketScreen = ({ navigation, route }) => {
     } catch (error) {
       console.error('Error submitting ticket:', error);
       Toast.show({
-        title: t('tickets.submit_error'),
-        status: "error",
-        placement: "bottom",
+        type: 'error',
+        text1: t('tickets.submit_error'),
+        position: 'bottom',
       });
     } finally {
       setIsLoading(false);

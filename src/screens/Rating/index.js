@@ -11,7 +11,7 @@ import {
   Keyboard,
 } from 'react-native';
 import api from '../../utils/api';
-import {Toast} from "native-base"
+import Toast from 'react-native-toast-message';
 import {useDispatch, useSelector} from 'react-redux';
 import {createReview} from '../../store/reviewSlice/reviewSlice';
 import {StarRatingSection} from './components/StarRatingSection';
@@ -22,8 +22,7 @@ import {styles} from './styles';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useNavigation} from '@react-navigation/native';
 import {colors} from '../../utils/colors';
-import {Box, VStack} from 'native-base';
-import {useTranslation} from 'react-i18next';
+ import {useTranslation} from 'react-i18next';
 import {updateHasReview} from "../../store/userSlice/userSlice"
 import { 
   trackScreenView, 
@@ -86,10 +85,10 @@ useEffect(()=>{
         routes: [{ name: 'Home' }],
       });
       Toast.show({
-        title: t('rating.success'),
-        placement: 'top',
-        duration: 3000,
-        bg: 'green.500',
+        type: 'success',
+        text1: t('rating.success'),
+        position: 'top',
+        visibilityTime: 3000,
       });
     } catch (error) {
       console.log(error.response.data);

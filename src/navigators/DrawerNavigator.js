@@ -1,4 +1,4 @@
-import React,{useEffect} from 'react';
+import React,{useEffect, useState} from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { 
   View, 
@@ -10,12 +10,15 @@ import {
   ScrollView,
   Alert,
   Dimensions,
-  StatusBar 
+  StatusBar,
+  Linking
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import DeviceInfo from 'react-native-device-info';
+import { checkVersion } from 'react-native-check-version';
 
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
@@ -25,6 +28,7 @@ import HisoryStackNavigator from './HisoryStackNavigator';
 import ProfileStack from './ProfileStack';
 import HomeStackNavigator from './HomeNavigation';
 import AllChatsScreen from '../screens/AllChatsScreen';
+import LogoutModal from '../screens/Profile/components/LogoutModal';
 import { colors } from '../utils/colors';
 import { logOut,getCurrentUser } from '../store/userSlice/userSlice';
  
@@ -35,9 +39,32 @@ const Drawer = createDrawerNavigator();
 const CustomDrawerContent = ({ navigation, state }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [appVersion, setAppVersion] = useState('1.0.0');
+   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [latestVersion, setLatestVersion] = useState(null);
+  
   useEffect(() => { 
-
     dispatch(getCurrentUser());
+    
+    // Get app version information
+    const getVersionInfo = async () => {
+      try {
+        const version = await DeviceInfo.getVersion();
+        setAppVersion(version);
+        
+        // Check for updates
+        const versionCheck = await checkVersion();
+        if (versionCheck.needsUpdate) {
+          setLatestVersion(versionCheck.latestVersion);
+          setUpdateAvailable(true);
+        }
+      } catch (error) {
+        console.error('Error getting app version:', error);
+      }
+    };
+
+    getVersionInfo();
   },[])
   const currentUser = useSelector(state => state.user.currentUser);
  
@@ -74,23 +101,37 @@ const CustomDrawerContent = ({ navigation, state }) => {
         ]
       );
     } else {
+      setLogoutModalVisible(true);
+    }
+  };
+
+  const handleLogoutConfirm = () => {
+    dispatch(logOut());
+    setLogoutModalVisible(false);
+    navigation.closeDrawer();
+  };
+
+  const handleLogoutCancel = () => {
+    setLogoutModalVisible(false);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const versionCheck = await checkVersion();
+      if (versionCheck.url) {
+        Linking.openURL(versionCheck.url).catch((err) => {
+          console.error('Failed to open store URL:', err);
+          Alert.alert(
+            t('errors.title', 'Error'),
+            t('help.errors.update_store', 'Failed to open app store')
+          );
+        });
+      }
+    } catch (error) {
+      console.error('Error handling update:', error);
       Alert.alert(
-        t('drawer.logout_confirm', 'Logout'),
-        t('drawer.logout_message', 'Are you sure you want to logout?'),
-        [
-          {
-            text: t('common.cancel', 'Cancel'),
-            style: 'cancel',
-          },
-          {
-            text: t('common.logout', 'Logout'),
-            style: 'destructive',
-            onPress: () => {
-              dispatch(logOut());
-              navigation.closeDrawer();
-            },
-          },
-        ]
+        t('errors.title', 'Error'),
+        t('help.errors.update_failed', 'Failed to check for updates')
       );
     }
   };
@@ -150,7 +191,7 @@ const CustomDrawerContent = ({ navigation, state }) => {
       label: t('drawer.notifications', 'Notifications'),
       icon: 'notifications-outline',
       iconType: 'Ionicons',
-      guestAllowed: true,
+      guestAllowed: false,
       badge: null,
     },
     {
@@ -334,12 +375,31 @@ const CustomDrawerContent = ({ navigation, state }) => {
         </TouchableOpacity>
         
         <View style={styles.appInfo}>
-          <Text style={styles.appVersion}>Tawsilet v1.0.0</Text>
+          <Text style={styles.appVersion}>Tawsilet v{appVersion}</Text>
+          {updateAvailable && (
+            <TouchableOpacity 
+              style={styles.updateButton}
+              onPress={handleUpdate}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons name="update" size={16} color={colors.primary} />
+              <Text style={styles.updateText}>
+                {t('drawer.update_available', 'Update Available')} v{latestVersion}
+              </Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.appSubtext}>
             {t('drawer.powered_by', 'Powered by FORTEKMA')}
           </Text>
         </View>
       </View>
+      
+      {/* Logout Modal */}
+      <LogoutModal
+        isVisible={logoutModalVisible}
+        onClose={handleLogoutCancel}
+        onLogout={handleLogoutConfirm}
+      />
     </SafeAreaView>
   );
 };
@@ -673,6 +733,25 @@ const styles = StyleSheet.create({
     color: '#D1D5DB',
     fontWeight: '400',
     marginTop: 2,
+  },
+  
+  updateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  
+  updateText: {
+    fontSize: hp(1.3),
+    color: colors.primary,
+    fontWeight: '500',
+    marginLeft: 4,
   },
 });
 

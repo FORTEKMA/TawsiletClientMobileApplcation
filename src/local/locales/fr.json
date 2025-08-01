@@ -68,7 +68,9 @@
     "thank_you_cooperation": "Merci pour votre coopération.",
     "report_received": "Nous avons reçu votre rapport. Notre équipe examinera le problème et vous contactera dès que possible.",
     "continue": "Continuer",
-    "address_pickup_delivery": "Adresse de dépose / de ramassage"
+    "address_pickup_delivery": "Adresse de dépose / de ramassage",
+    "sign_in": "Se connecter",
+    "logout": "Se déconnecter"
   },
   "errors": {
     "title": "Erreur",
@@ -212,7 +214,7 @@
     "errorOccurred": "Un problème est survenu",
     "verify_phone": "Vérification du téléphone",
     "didnt_get_otp": "Vous n'avez pas reçu le code OTP ?",
-    "resend_in": "Renvoyer dans",
+    "resend_in": "Renvoyer dans {{time}}",
     "seconds": "secondes",
     "choose_method": "Choisissez la méthode de vérification",
     "method_info": "Nous enverrons le code de vérification à {{number}} par SMS ou WhatsApp",
@@ -485,7 +487,9 @@
     "whatsapp": "WhatsApp",
     "errors": {
       "email": "Impossible d'ouvrir l'application email.",
-      "whatsapp": "Impossible d'ouvrir WhatsApp."
+      "whatsapp": "Impossible d'ouvrir WhatsApp.",
+      "update_store": "Impossible d'ouvrir le magasin d'applications",
+      "update_failed": "Échec de la vérification des mises à jour"
     },
     "faq": {
       "title": "Questions fréquentes",
@@ -738,7 +742,11 @@
     "submitting": "Soumission...",
     "success": "Soumis avec succès!",
     "success_24h": "Votre demande de validation a été soumise et sera traitée sous 24 heures.",
-    "upload_error": "Échec du téléchargement. Veuillez réessayer."
+    "upload_error": "Échec du téléchargement. Veuillez réessayer.",
+    "tap_to_upload": "Appuyez pour télécharger la photo",
+    "photo_requirements": "Photo avec document CIN",
+    "processing_time": "Temps de traitement : 24 heures",
+    "secure_upload": "Vos données sont sécurisées et chiffrées"
   },
   "choose_vehicle": {
     "account_under_validation": "Votre compte est en cours de validation.",
@@ -859,7 +867,12 @@
     "sign_in_required": "Connexion requise",
     "sign_in_message": "Veuillez vous connecter pour accéder aux fonctionnalités de votre compte.",
     "feature_requires_signin": "{{actionName}} nécessite de vous connecter d'abord.",
-    "all_chats": "Toutes les discussions"
+    "all_chats": "Toutes les discussions",
+    "home": "Accueil",
+    "history": "Historique",
+    "notifications": "Notifications",
+    "profile": "Profil",
+    "update_available": "Mise à jour disponible"
   },
   "tracking": {
     "driver": "Chauffeur",

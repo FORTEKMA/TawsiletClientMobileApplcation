@@ -26,8 +26,7 @@ import UpdateBlockScreen from "./components/UpdateBlockScreen"
 import store from './store';
 import {ONESIGNAL_APP_ID} from '@env';
 import {Provider} from 'react-redux';
-import {NativeBaseProvider} from 'native-base';
-import MainNavigator from './navigators/Main';
+ import MainNavigator from './navigators/Main';
 import {OneSignal} from 'react-native-onesignal';
 import {colors} from './utils/colors';
 import './local';
@@ -40,8 +39,7 @@ import i18n from "./local";
 import CheckConnection from './components/CheckConnection';
 import LottieSplashScreen from '@attarchi/react-native-lottie-splash-screen';
 import api, { setStoreReference } from './utils/api';
-import chatService from './utils/chatService';
-
+ 
 import VoIPManager from './utils/VoIPManager';
 import FirebaseManager from './utils/FirebaseManager';
 
@@ -63,8 +61,7 @@ let persistor = persistStore(store);
 // Set store reference for API module
 setStoreReference(store);
 
-// Set store reference for chat service
-chatService.setStore(store);
+ 
 
 const App=()=> {
   useKeepAwake();
@@ -197,7 +194,7 @@ const App=()=> {
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <View style={styles.container}>
-            <NativeBaseProvider>
+            
             {maintenanceMode ? (
               <UpdateBlockScreen storeUrl={null} isMaintenance />
             ) : updateRequired ? (
@@ -217,7 +214,7 @@ const App=()=> {
         position='top'
         
       />
-            </NativeBaseProvider>
+            
           </View>
           <ModalPortal />
         </PersistGate>

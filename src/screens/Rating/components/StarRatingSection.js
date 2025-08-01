@@ -3,7 +3,6 @@ import {Text, View, Animated} from 'react-native';
 import StarRating from 'react-native-star-rating-widget';
 import {styles} from '../styles';
 import {colors} from '../../../utils/colors';
-import {Box, VStack} from 'native-base';
 import {useTranslation} from 'react-i18next';
 
 export const StarRatingSection = ({rating, setRating, existingRating}) => {
@@ -27,11 +26,16 @@ export const StarRatingSection = ({rating, setRating, existingRating}) => {
   };
 
   return (
-    <VStack space={4} alignItems="center" py={4}>
+    <View style={{alignItems: 'center', paddingVertical: 16, gap: 16}}>
       <Text style={[styles.titleText, {color: colors.primary}]}>
         {getRatingText(existingRating ?? rating)}
       </Text>
-      <Box bg={colors.lightGray} p={4} borderRadius="xl" width="100%">
+      <View style={{
+        backgroundColor: colors.lightGray,
+        padding: 16,
+        borderRadius: 12,
+        width: '100%'
+      }}>
         <StarRating
           rating={existingRating ?? rating}
           onChange={setRating}
@@ -42,7 +46,7 @@ export const StarRatingSection = ({rating, setRating, existingRating}) => {
           color={colors.primary}
           emptyColor={colors.gray}
         />
-      </Box>
-    </VStack>
+      </View>
+    </View>
   );
 }; 

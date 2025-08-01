@@ -194,7 +194,7 @@ const Order = ({ route }) => {
                 <TouchableOpacity 
                   style={styles.chatButton}
                   onPress={() => navigation.navigate('ChatScreen', { 
-                    requestId: order.id,
+                    requestId: String(order.id),
                     driverData: driver 
                   })}
                 >

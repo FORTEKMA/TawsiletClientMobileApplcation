@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,22 +6,22 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
-import {useForm, Controller} from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import {styles} from '../styles';
-import {useDispatch} from 'react-redux';
+import { styles } from '../styles';
+import { useDispatch } from 'react-redux';
 import {
   userLogin,
   updateUser,
   getCurrentUser,
   setRememberMe,
 } from '../../../store/userSlice/userSlice';
-import {useTranslation} from 'react-i18next';
-import {OneSignal} from 'react-native-onesignal';
-import {useNavigation} from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { OneSignal } from 'react-native-onesignal';
+import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
+const EmailLoginForm = ({ onLoginSuccess, hideForgetPassword }) => {
   const [show, setShow] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -29,7 +29,7 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
   const {
     control,
     handleSubmit,
-    formState: {errors},
+    formState: { errors },
     setValue,
   } = useForm({
     defaultValues: {
@@ -39,7 +39,7 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
     mode: 'onChange',
   });
   const dispatch = useDispatch();
-  const {t} = useTranslation();
+  const { t } = useTranslation();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -49,7 +49,7 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
       if (remembered === 'true' && identifier) {
         setValue('identifier', identifier);
         setRememberMeState(true);
-        dispatch(setRememberMe({remember: true, identifier}));
+        dispatch(setRememberMe({ remember: true, identifier }));
       }
     };
     loadRememberedUser();
@@ -58,15 +58,17 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
   const onSubmit = async data => {
     setIsLoading(true);
     setLoginError('');
-    dispatch(setRememberMe({remember: rememberMe, identifier: data.identifier}));
+    dispatch(setRememberMe({ remember: rememberMe, identifier: data.identifier }));
     try {
       const result = await dispatch(userLogin(data));
-       if (result?.payload?.error) {
+      if (result?.payload?.error) {
         setLoginError(t('login.invalidCredentials'));
       } else {
-         if (onLoginSuccess) {
+        navigation.goBack();
+        if (onLoginSuccess) {
           onLoginSuccess();
         }
+
       }
     } catch (error) {
       console.log(error);
@@ -93,11 +95,11 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
               message: t('login.invalidEmail'),
             },
           }}
-          render={({field: {onChange, value, onBlur}}) => (
+          render={({ field: { onChange, value, onBlur } }) => (
             <TextInput
               style={[styles.input, errors.identifier && styles.inputError]}
               placeholder={t('login.emailPlaceholder')}
-              placeholderTextColor="#8391A1"
+              placeholderTextColor="#9CA3AF"
               onChangeText={onChange}
               onBlur={onBlur}
               value={value}
@@ -110,6 +112,7 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
           <Text style={styles.errorText}>{errors.identifier.message}</Text>
         )}
       </View>
+
       <View style={styles.inputContainer}>
         <View
           style={[
@@ -126,11 +129,11 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
                 message: t('login.passwordMinLength'),
               },
             }}
-            render={({field: {onChange, value, onBlur}}) => (
+            render={({ field: { onChange, value, onBlur } }) => (
               <TextInput
                 style={styles.passwordInput}
                 placeholder={t('login.passwordPlaceholder')}
-                placeholderTextColor="#8391A1"
+                placeholderTextColor="#9CA3AF"
                 onChangeText={onChange}
                 onBlur={onBlur}
                 value={value}
@@ -144,18 +147,19 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
             <Ionicons
               name={show ? 'eye-off-outline' : 'eye-outline'}
               size={22}
-              color="#8391A1"
+              color="#6B7280"
             />
           </TouchableOpacity>
         </View>
         {errors.password && (
-          <Text style={[styles.errorText, {marginTop: 0}]}>
+          <Text style={[styles.errorText, { marginTop: 0 }]}>
             {errors.password.message}
           </Text>
         )}
       </View>
+
       {loginError ? (
-        <Text style={[styles.errorText, {marginTop: 10}]}>{loginError}</Text>
+        <Text style={[styles.errorText, { marginTop: 10 }]}>{loginError}</Text>
       ) : null}
 
       <View style={{
@@ -163,24 +167,34 @@ const EmailLoginForm = ({onLoginSuccess, hideForgetPassword}) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        marginBottom: 15,
+        marginBottom: 24,
+        marginTop: 8,
       }}>
         <TouchableOpacity
-          style={{flexDirection: 'row', alignItems: 'center', gap: 6}}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
           onPress={() => setRememberMeState(!rememberMe)}>
-          <Ionicons
-            name={rememberMe ? 'checkbox' : 'square-outline'}
-            size={24}
-            color="#8391A1"
-          />
-          <Text style={{color: '#8391A1'}}>{t('login.rememberMe')}</Text>
+          <View style={{
+            width: 20,
+            height: 20,
+            borderRadius: 4,
+            borderWidth: 2,
+            borderColor: rememberMe ? '#000000' : '#D1D5DB',
+            backgroundColor: rememberMe ? '#000000' : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            {rememberMe && (
+              <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+            )}
+          </View>
+          <Text style={{ color: '#6B7280', fontSize: 14, fontWeight: '500' }}>
+            {t('login.rememberMe')}
+          </Text>
         </TouchableOpacity>
 
-        
-          <TouchableOpacity onPress={onForgotPassword}>
-            <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
-          </TouchableOpacity>
-        
+        <TouchableOpacity onPress={onForgotPassword}>
+          <Text style={styles.forgotPassword}>{t('login.forgotPassword')}</Text>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity

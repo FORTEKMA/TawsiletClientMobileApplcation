@@ -4,7 +4,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
 import { colors } from '../../../utils/colors';
 import api from '../../../utils/api';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
 import Modal from 'react-native-modal';
 import { useSelector} from 'react-redux';
@@ -34,17 +34,17 @@ const OrderReportProblemModal = ({ visible, onClose, order }) => {
     
       onClose();
       Toast.show({
-        title: t('history.card.report_success'),
-        status: "success",
-        placement: "bottom",
+        type: 'success',
+        text1: t('history.card.report_success'),
+        position: 'bottom',
       });
       setReportText('');
     } catch (error) {
       console.log(error.response);
       Toast.show({
-        title: t('history.card.report_error'),
-        status: "error",
-        placement: "bottom",
+        type: 'error',
+        text1: t('history.card.report_error'),
+        position: 'bottom',
       });
     } finally {
       setIsLoading(false);

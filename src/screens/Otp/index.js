@@ -12,7 +12,7 @@ import {
 import { useDispatch } from 'react-redux';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { OneSignal } from "react-native-onesignal";
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import Modal from 'react-native-modal';
 import { OtpInput } from "react-native-otp-entry";
 import { useTranslation } from 'react-i18next';
@@ -214,31 +214,35 @@ const Otp = ({ route, navigation }) => {
   }, [route.params, dispatch, navigation, handleOneSignalLogin, t]);
 
   const handleLogin = useCallback(async (userData) => {
+    try{
     if (userData.blocked) {
       trackOtpVerification(false, { error: 'account_blocked' });
       trackLoginFailure('phone', 'account_blocked');
       
       Toast.show({
-        title: t('common.error'),
-        description: t('auth.account_blocked'),
-        placement: "top",
-        duration: 3000,
-        status: "error"
+        type: 'error',
+        text1: t('common.error'),
+        text2: t('auth.account_blocked'),
+        position: 'top',
+        visibilityTime: 3000
       });
       navigation.goBack();
       return;
     }
-
     handleOneSignalLogin(userData.id);
     
     dispatch(userRegister({
       user: userData,
       jwt: userData.authToken
     }));
-    
-    navigation.pop(2);
-    trackOtpVerification(true, { action: 'login' });
-    trackLoginSuccess('phone', { phone_verified: true });
+
+    navigation.navigate('Home');
+
+    // trackOtpVerification(true, { action: 'login' });
+    // trackLoginSuccess('phone', { phone_verified: true });
+  } catch (error) {
+    console.error('Login failed:', error);
+  }
   }, [dispatch, navigation, handleOneSignalLogin, t]);
 
   // Main verification handler
@@ -269,7 +273,7 @@ const Otp = ({ route, navigation }) => {
         await handleNewRegistration();
         return;
       }
-
+     
       if (response.data.success) {
         await handleLogin(response.data);
       } else {
@@ -277,7 +281,7 @@ const Otp = ({ route, navigation }) => {
         navigation.navigate('Register', { number });
       }
     } catch (error) {
-      console.error('Verification failed:', error);
+      console.error('Verification failed:', error.response);
       setError(t('otp.verification_failed'));
       trackOtpVerification(false, { error: 'network_error' });
     } finally {

@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, I18nManager, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, I18nManager, Platform, ActivityIndicator } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTranslation } from 'react-i18next';
-import { styles } from '../styles';
-import ConfirmButton from './ConfirmButton';
-import Geolocation from 'react-native-geolocation-service';
-import { getAddressFromCoordinates, getDistanceFromGoogleAPI, getDistanceFromLatLonInMeters } from '../../../utils/helpers/mapUtils';
-import { Spinner, Toast } from 'native-base';
+import { getDistanceFromGoogleAPI, getDistanceFromLatLonInMeters } from '../../../utils/helpers/mapUtils';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { API_GOOGLE } from "@env";
 import { 
@@ -247,7 +243,7 @@ const DropoffLocation = ({ formData, goNext, isMapDragging, onBack, animateToReg
         {/* Loading State */}
         {isCalculatingDistance && (
           <View style={localStyles.loadingContainer}>
-            <Spinner size="sm" color="#007AFF" />
+            <ActivityIndicator size="small" color="#007AFF" />
             <Text style={localStyles.loadingText}>
               {t('location.calculating_distance') || 'Calculating distance...'}
             </Text>

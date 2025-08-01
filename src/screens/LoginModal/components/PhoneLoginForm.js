@@ -7,7 +7,7 @@ import { styles } from '../styles';
 import { useNavigation } from '@react-navigation/native';
 import { ScrollView } from 'react-native-gesture-handler';
 import api from '../../../utils/api';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import { ActivityIndicator } from 'react-native';
 
 const PhoneLoginForm = React.memo(() => {
@@ -60,11 +60,11 @@ const PhoneLoginForm = React.memo(() => {
         const user = users[0];
         if (user.blocked) {
           Toast.show({
-            title: t('common.error'),
-              description: t('auth.account_blocked'),
-            placement: 'top',
-            status: 'error',
-            duration: 3000
+            type: 'error',
+            text1: t('common.error'),
+            text2: t('auth.account_blocked'),
+            position: 'top',
+            visibilityTime: 3000
           });
           setLoading(false);
           return;
@@ -74,11 +74,11 @@ const PhoneLoginForm = React.memo(() => {
    navigation.navigate('confirmation', { number });
     } catch (error) {
       Toast.show({
-        title: t('common.error'),
-        description: t('login.apiError'),
-        placement: 'top',
-        status: 'error',
-        duration: 3000
+        type: 'error',
+        text1: t('common.error'),
+        text2: t('login.apiError'),
+        position: 'top',
+        visibilityTime: 3000
       });
       console.log(error);
     } finally {

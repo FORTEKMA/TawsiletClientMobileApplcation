@@ -15,7 +15,7 @@ import  {colors}  from "../utils/colors"
 import { useSelector,useDispatch } from 'react-redux';
 import { getFocusedRouteNameFromRoute, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import { OneSignal } from 'react-native-onesignal';
 import { GoogleSignin as GoogleSigninService } from '@react-native-google-signin/google-signin';
 import { googleSignIn, appleSignIn } from '../services/socialAuth';
@@ -136,11 +136,11 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
         if (result.user.blocked) {
           trackLoginFailure('google', 'account_blocked');
           Toast.show({
-            title: t('common.error'),
-            description: t('auth.account_blocked'),
-            placement: 'top',
-            duration: 3000,
-            status: 'error',
+            type: 'error',
+            text1: t('common.error'),
+            text2: t('auth.account_blocked'),
+            position: 'top',
+            visibilityTime: 3000
           });
           return;
         }
@@ -169,11 +169,11 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
         if (result.user.blocked) {
           trackLoginFailure('apple', 'account_blocked');
           Toast.show({
-            title: t('common.error'),
-            description: t('auth.account_blocked'),
-            placement: 'bottom',
-            duration: 3000,
-            status: 'error',
+            type: 'error',
+            text1: t('common.error'),
+            text2: t('auth.account_blocked'),
+            position: 'bottom',
+            visibilityTime: 3000
           });
           return;
         }

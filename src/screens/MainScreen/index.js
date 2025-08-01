@@ -29,7 +29,8 @@ import api from '../../utils/api';
 import { useTranslation } from 'react-i18next';
 import CustomAlert from '../../components/CustomAlert';
 import Geolocation from '@react-native-community/geolocation';
-import db from '../../utils/firebase';
+import { realtimeDb } from '../../utils/firebase'; // Changed import
+import { ref, onValue, off } from 'firebase/database'; // Import ref, onValue, off
  import PickupLocation from './components/PickupLocation';
 import DropoffLocation from './components/DropoffLocation';
  import LottieView from 'lottie-react-native';
@@ -265,7 +266,7 @@ const MainScreen = () => {
 
   // Optimized Firebase listener
   useEffect(() => {
-    const driversQuery = db.ref('drivers').orderByChild('isActive').equalTo(true);
+    const driversRef = ref(realtimeDb, 'drivers');
   
     let isSubscribed = true;
   
@@ -282,7 +283,7 @@ const MainScreen = () => {
       });
     }, 1000); // 1 update per second max
   
-    const unsubscribe = driversQuery.on('value', snapshot => {
+    const unsubscribe = onValue(driversRef, snapshot => {
       if (!isSubscribed) return;
   
       try {
@@ -311,8 +312,7 @@ const MainScreen = () => {
   
     return () => {
       isSubscribed = false;
-      // No built-in cancel with custom throttle, so we just stop updates via isSubscribed
-      driversQuery.off('value', unsubscribe);
+      off(driversRef, 'value', unsubscribe);
     };
   }, [formData?.pickupAddress]);
 
@@ -845,7 +845,12 @@ if (activeDateStr) setActivationDate(activeDateStr);
           )}
           {step === 4 && (
              
-              <ConfirmRide handleReset={handleReset} formData={formData} goNext={goNext} goBack={goBack} />
+              <ConfirmRide 
+                handleReset={handleReset} 
+                formData={formData} 
+                goNext={goNext} 
+                goBack={goBack}
+              />
          
           )}
           {step === 4.5 && (

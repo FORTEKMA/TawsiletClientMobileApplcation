@@ -18,13 +18,55 @@ import {
 import {colors} from '../utils/colors';
 import {useSelector} from 'react-redux';
 import {ScrollView} from 'react-native-gesture-handler';
-import {Badge, Divider} from 'native-base';
+// Custom Badge component to replace native-base Badge
+const Badge = ({ children, colorScheme, style }) => {
+  const getBadgeColor = (scheme) => {
+    switch (scheme) {
+      case 'yellow':
+        return '#F59E0B';
+      case 'purple':
+        return '#8B5CF6';
+      case 'green':
+        return '#10B981';
+      case 'cyan':
+        return '#06B6D4';
+      case 'orange':
+        return '#F97316';
+      case 'teal':
+        return '#14B8A6';
+      case 'pink':
+        return '#EC4899';
+      case 'red':
+        return '#EF4444';
+      case 'gray':
+      default:
+        return '#6B7280';
+    }
+  };
+
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: getBadgeColor(colorScheme),
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: 6,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        style,
+      ]}>
+      <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
+        {children}
+      </Text>
+    </View>
+  );
+};
 
 const start = require('../assets/historyStart.png');
 const end = require('../assets/historyArrive.png');
-const dots = require('../assets/dots.png');
-const livraison = require('../assets/livraison.png');
-
+ 
 const SignalerProblem = () => {
   const [problemModalVisible, setProblemModalVisible] = useState(false);
   const [alertModalVisible, setAlertModalVisible] = useState(false);

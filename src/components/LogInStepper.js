@@ -7,16 +7,11 @@ import {
   Image,
   TouchableOpacity,
   TextInput,
-  ScrollView,
-  KeyboardAvoidingView,
 } from 'react-native';
 import React, {useRef, useState} from 'react';
 import {colors} from '../utils/colors';
-import {HStack, Icon, Input} from 'native-base';
-import CountryFlag from 'react-native-country-flag';
-import CountryPicker from 'react-native-country-picker-modal';
-import {CardStyleInterpolators} from '@react-navigation/stack';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+ import CountryPicker from 'react-native-country-picker-modal';
+ import Ionicons from 'react-native-vector-icons/Ionicons';
 import PhoneInput from 'react-native-phone-input';
 import Divider from './Divider';
 import {useDispatch} from 'react-redux';
@@ -91,14 +86,14 @@ const LogInStepper = ({}) => {
   };
   const renderFlag = ({imageSource}) => {
     return (
-      <HStack alignItems={'center'} space="2">
+      <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
         <Image
           source={imageSource}
           resizeMode="contain"
           style={{width: 30, height: 25}}
         />
         <Ionicons name={'chevron-down-outline'} size={24} color={'gray'} />
-      </HStack>
+      </View>
     );
   };
   return (
@@ -110,11 +105,11 @@ const LogInStepper = ({}) => {
           </Text>
 
           <Text style={{color: colors.primary}}>Email</Text>
-          <Input
-            variant={'unstyled'}
+          <TextInput
+            style={[styles.textInput, {borderColor: 'red'}]}
             placeholder="email@example.com"
             onChangeText={text => setEmail(text)}
-            isInvalid={true}
+            placeholderTextColor="gray"
           />
           {Errors.email && <Text style={{color: 'red'}}>{Errors.email}</Text>}
           <TouchableOpacity
@@ -172,30 +167,33 @@ const LogInStepper = ({}) => {
 
           <Text style={{color: colors.primary}}>Email</Text>
           <View style={styles.inputContainer}>
-            <Input
-              width={'100%'}
+            <TextInput
+              style={styles.textInput}
               placeholder="Email@exemple.com"
               onChangeText={text => setLogin({...login, identifier: text})}
+              placeholderTextColor="gray"
             />
           </View>
           <Text style={{color: colors.primary}}>Mot de passe</Text>
           <View style={styles.inputContainer}>
-            <Input
-              width={'100%'}
-              onChangeText={text => setLogin({...login, password: text})}
-              type={show ? 'text' : 'password'}
-              InputRightElement={
-                <TouchableOpacity onPress={() => setShow(!show)}>
-                  <Ionicons
-                    style={{paddingRight: 10}}
-                    name={show ? 'eye-off-outline' : 'eye-outline'}
-                    size={20}
-                    color={'gray'}
-                  />
-                </TouchableOpacity>
-              }
-              placeholder="Password"
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.textInput}
+                onChangeText={text => setLogin({...login, password: text})}
+                secureTextEntry={!show}
+                placeholder="Password"
+                placeholderTextColor="gray"
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon}
+                onPress={() => setShow(!show)}>
+                <Ionicons
+                  name={show ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={'gray'}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
           <TouchableOpacity
             style={styles.btn}
@@ -400,6 +398,26 @@ const styles = StyleSheet.create({
   socialIcon: {
     width: 50,
     height: 50,
+  },
+  textInput: {
+    width: '100%',
+    height: 50,
+    borderBottomWidth: 1,
+    borderColor: '#B2B5C433',
+    paddingHorizontal: 10,
+    color: 'black',
+    fontSize: 16,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    borderBottomWidth: 1,
+    borderColor: '#B2B5C433',
+  },
+  eyeIcon: {
+    paddingRight: 10,
+    paddingLeft: 10,
   },
 });
 

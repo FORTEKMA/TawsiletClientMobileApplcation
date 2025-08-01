@@ -67,7 +67,9 @@
     "thank_you_cooperation": "شكراً لتعاونكم.",
     "report_received": "لقد تلقينا تقريركم. سيقوم فريقنا بفحص المشكلة والاتصال بكم في أقرب وقت ممكن.",
     "continue": "متابعة",
-    "address_pickup_delivery": "عنوان الاستلام / التسليم"
+    "address_pickup_delivery": "عنوان الاستلام / التسليم",
+    "sign_in": "تسجيل الدخول",
+    "logout": "تسجيل الخروج"
   },
   "errors": {
     "title": "خطأ",
@@ -440,7 +442,9 @@
     "whatsapp": "واتساب",
     "errors": {
       "email": "لا يمكن فتح تطبيق البريد الإلكتروني.",
-      "whatsapp": "لا يمكن فتح واتساب."
+      "whatsapp": "لا يمكن فتح واتساب.",
+      "update_store": "فشل في فتح متجر التطبيقات",
+      "update_failed": "فشل في التحقق من التحديثات"
     },
     "faq": {
       "title": "الأسئلة الشائعة",
@@ -726,7 +730,11 @@
     "submitting": "جاري الإرسال...",
     "success": "تم الإرسال بنجاح!",
     "success_24h": "تم إرسال طلب التوثيق وسيتم مراجعته خلال 24 ساعة.",
-    "upload_error": "فشل التحميل. يرجى المحاولة مرة أخرى."
+    "upload_error": "فشل التحميل. يرجى المحاولة مرة أخرى.",
+    "tap_to_upload": "انقر لتحميل الصورة",
+    "photo_requirements": "صورة مع وثيقة الهوية",
+    "processing_time": "وقت المعالجة: 24 ساعة",
+    "secure_upload": "بياناتك آمنة ومشفرة"
   },
   "choose_vehicle": {
     "account_under_validation": "حسابك قيد المراجعة.",
@@ -841,7 +849,12 @@
     "sign_in_required": "مطلوب تسجيل الدخول",
     "sign_in_message": "يرجى تسجيل الدخول للوصول إلى ميزات حسابك.",
     "feature_requires_signin": "{{actionName}} يتطلب تسجيل الدخول أولاً.",
-    "all_chats": "كل الدردشات"
+    "all_chats": "كل الدردشات",
+    "home": "الرئيسية",
+    "history": "السجل",
+    "notifications": "الإشعارات",
+    "profile": "الملف الشخصي",
+    "update_available": "التحديث متاح"
   },
   "tracking": {
     "driver": "السائق",

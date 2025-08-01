@@ -13,6 +13,9 @@ import {
   trackBookingStepBack,
   trackRideConfirmed
 } from '../../../utils/analytics';
+import WomanValidationModal from './WomanValidationModal';
+import LoginModal from '../../LoginModal';
+import Toast from 'react-native-toast-message';
 
 const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset }) => {
   const { t, i18n: i18nInstance } = useTranslation();
@@ -22,6 +25,13 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
   const [priceData, setPriceData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showWomanValidationModal, setShowWomanValidationModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [womanValidationForm, setWomanValidationForm] = useState({
+    user_with_cin: null,
+    cinFront: null,
+    cinBack: null,
+  });
   
   // Animation values
   const slideAnim = React.useRef(new Animated.Value(300)).current;
@@ -118,7 +128,6 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     }
   };
 
-
   const handleConfirm = () => {
     trackBookingStepCompleted(4, 'Ride Confirmation', {
       price: price,
@@ -129,8 +138,6 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     });
     goNext({ price });
   };
-
-
 
   const handleReservation = async () => {
     try {
@@ -182,7 +189,39 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
 
   
   const handleConfirmRide = async () => {
-    formData?.selectedDate != undefined ? handleReservation() : handleConfirm()
+    // Check if this is a women vehicle (id=4) and handle validation
+    if (formData?.vehicleType?.id === 4) {
+      if (!user) {
+        setShowLoginModal(true);
+        return;
+      }
+      
+      if (user?.womanValidation?.validation_state === 'valid') {
+        // User is validated, proceed with ride confirmation
+        formData?.selectedDate != undefined ? handleReservation() : handleConfirm();
+        return;
+      } else if (user?.womanValidation?.validation_state === 'waiting') {
+        Toast.show({
+          type: 'info',
+          text1: t('confirm_ride.account_under_validation', 'Your account is under validation.'),
+          visibilityTime: 2500,
+        });
+        return;
+      } else if (!user?.womanValidation) {
+        setShowWomanValidationModal(true);
+        return;
+      } else {
+        Toast.show({
+          type: 'info',
+          text1: t('confirm_ride.must_complete_women_validation', 'You must complete the women validation process to confirm this ride.'),
+          visibilityTime: 2500,
+        });
+        return;
+      }
+    }
+    
+    // For non-women vehicles, proceed normally
+    formData?.selectedDate != undefined ? handleReservation() : handleConfirm();
   };
 
   const handleBack = () => {
@@ -211,6 +250,16 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
     } else {
       return selectedDate.toLocaleDateString() + ' ' + selectedDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     }
+  };
+
+  const splitDateTime = (date) => {
+    if (!date) return {};
+    
+    const selectedDate = new Date(date);
+    return {
+      date: selectedDate.toISOString().split('T')[0],
+      time: selectedDate.toTimeString().split(' ')[0],
+    };
   };
 
   const vehicleInfo = getVehicleInfo();
@@ -394,6 +443,20 @@ const ConfirmRideComponent = ({ goBack, formData, rideData, goNext, handleReset 
           </Animated.View>
         </View>
       </Modal>
+
+      {/* Woman Validation Modal */}
+      <WomanValidationModal
+        visible={showWomanValidationModal}
+        onClose={() => setShowWomanValidationModal(false)}
+        form={womanValidationForm}
+        setForm={setWomanValidationForm}
+      />
+
+      {/* Login Modal */}
+      <LoginModal
+        visible={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
     </Animated.View>
   );
 };

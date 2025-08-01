@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import api from '../../utils/api';
 import { OneSignal } from "react-native-onesignal";
-import { Toast } from "native-base";
+import Toast from 'react-native-toast-message';
 import i18n from "../../local"
 import { identify, Identify, setUserId } from '@amplitude/analytics-react-native';
 import { startTrackingUserLocation, stopTrackingUserLocation } from '../../utils/userLocationTracker';
@@ -97,22 +97,22 @@ export const userRegister = createAsyncThunk('user/register', async user => {
     // Handle the user registration logic here
     if (user?.user?.blocked) {
       Toast.show({
-        title: i18n.t('auth.invalid_account'),
-        description: i18n.t('auth.account_blocked'),
-        placement: "top",
-        status: "error",
-        duration: 3000
+        type: 'error',
+        text1: i18n.t('auth.invalid_account'),
+        text2: i18n.t('auth.account_blocked'),
+        position: 'top',
+        visibilityTime: 3000
       });
       return { error: 'blocked', user: user.user };
     }
     
     if (user?.user?.user_role !== 'client') {
       Toast.show({
-        title: i18n.t('auth.invalid_account'),
-        description: i18n.t('auth.account_not_for_app'),
-        placement: "top",
-        status: "error",
-        duration: 3000
+        type: 'error',
+        text1: i18n.t('auth.invalid_account'),
+        text2: i18n.t('auth.account_not_for_app'),
+        position: 'top',
+        visibilityTime: 3000
       });
       return { error: 'invalid_role', user: user.user };
     }
@@ -134,22 +134,22 @@ export const userLogin = createAsyncThunk('user/login', async login => {
     // Handle error cases in the async thunk
     if (response.data?.user?.blocked) {
       Toast.show({
-        title: i18n.t('auth.invalid_account'),
-        description: i18n.t('auth.account_blocked'),
-        placement: "top",
-        status: "error",
-        duration: 3000
+        type: 'error',
+        text1: i18n.t('auth.invalid_account'),
+        text2: i18n.t('auth.account_blocked'),
+        position: 'top',
+        visibilityTime: 3000
       });
       return { error: 'blocked', user: response.data.user };
     }
     
     if (response.data?.user?.user_role !== 'client') {
       Toast.show({
-        title: i18n.t('auth.invalid_account'),
-        description: i18n.t('auth.account_not_for_app'),
-        placement: "top",
-        status: "error",
-        duration: 3000
+        type: 'error',
+        text1: i18n.t('auth.invalid_account'),
+        text2: i18n.t('auth.account_not_for_app'),
+        position: 'top',
+        visibilityTime: 3000
       });
       return { error: 'invalid_role', user: response.data.user };
     }
@@ -213,22 +213,22 @@ export const verify = createAsyncThunk(
       // Handle error cases in the async thunk
       if (response.data?.user?.blocked) {
         Toast.show({
-          title: i18n.t('auth.invalid_account'),
-          description: i18n.t('auth.account_blocked'),
-          placement: "top",
-          status: "error",
-          duration: 3000
+          type: 'error',
+          text1: i18n.t('auth.invalid_account'),
+          text2: i18n.t('auth.account_blocked'),
+          position: 'top',
+          visibilityTime: 3000
         });
         return { error: 'blocked', user: response.data.user };
       }
       
       if (response.data?.user_role !== 'client') {
         Toast.show({
-          title: i18n.t('auth.invalid_account'),
-          description: i18n.t('auth.account_not_for_app'),
-          placement: "top",
-          status: "error",
-          duration: 3000
+          type: 'error',
+          text1: i18n.t('auth.invalid_account'),
+          text2: i18n.t('auth.account_not_for_app'),
+          position: 'top',
+          visibilityTime: 3000
         });
         return { error: 'invalid_role', user: response.data.user };
       }

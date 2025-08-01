@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Alert, useWindowDimensions ,SafeAreaView,Image,View, TouchableOpacity, Text, TextInput, Animated, Easing, ActivityIndicator,Platform, I18nManager, Keyboard,TouchableWithoutFeedback,  Dimensions, PanResponder} from 'react-native';
 import { useDispatch } from 'react-redux';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
-import {Toast} from "native-base"
+import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
 import { useNavigation } from '@react-navigation/native';
  
@@ -121,11 +121,11 @@ const LoginModal = ({ visible, onClose }) => {
         if (result.user.blocked) {
           trackLoginFailure('google', 'account_blocked');
           Toast.show({
-            title: t('common.error'),
-            description: t('auth.account_blocked'),
-            placement: "top",
-            duration: 3000,
-            status: "error"
+            type: 'error',
+            text1: t('common.error'),
+            text2: t('auth.account_blocked'),
+            position: 'top',
+            visibilityTime: 3000
           });
          
           return;
@@ -156,11 +156,11 @@ const LoginModal = ({ visible, onClose }) => {
         if (result.user.blocked) {
           trackLoginFailure('apple', 'account_blocked');
           Toast.show({
-            title: t('common.error'),
-            description: t('auth.account_blocked'),
-            placement: "bottom",
-            duration: 3000,
-            status: "error"
+            type: 'error',
+            text1: t('common.error'),
+            text2: t('auth.account_blocked'),
+            position: 'bottom',
+            visibilityTime: 3000
           });
          
           return;

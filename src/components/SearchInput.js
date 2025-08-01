@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Input } from "native-base";
+import { TextInput, View, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const SearchInput = ({ onFocus, onBlur, setFilter }) => {
@@ -23,20 +23,35 @@ const SearchInput = ({ onFocus, onBlur, setFilter }) => {
   };
 
   return (
-    <>
+    <View style={styles.container}>
       {!isInputFocused && (
         <Ionicons name={"search-outline"} size={24} color="black" />
       )}
-      <Input
-        variant="unstyled"
+      <TextInput
+        style={styles.input}
         placeholder="Rechercher..."
+        placeholderTextColor="#666"
         onFocus={handleInputFocus}
         onBlur={handleInputBlur}
         onSubmitEditing={handleSubmitEditing}
         onChangeText={(text) => setSearchTerm(text)}
       />
-    </>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    fontSize: 16,
+  },
+});
 
 export default SearchInput;

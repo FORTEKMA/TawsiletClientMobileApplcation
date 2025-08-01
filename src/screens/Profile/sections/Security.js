@@ -4,10 +4,9 @@ import { useDispatch } from 'react-redux';
 import { styles } from '../styles';
 import { changePassword } from '../../../store/userSlice/userSlice';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../components/Header';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 
 const Security = () => {
   const { t } = useTranslation();
@@ -67,12 +66,12 @@ const Security = () => {
   const handleUpdatePassword = async () => {
     if (!validateInputs()) {
       Toast.show({
-        title: t('profile.security.validation.title'),
-        description: Object.values(errors)
+        type: 'error',
+        text1: t('profile.security.validation.title'),
+        text2: Object.values(errors)
           .flat()
           .join('\n'),
-        placement: "top",
-        status: "error"
+        position: 'top'
       });
       return;
     }
@@ -81,10 +80,10 @@ const Security = () => {
       setIsLoading(true);
       await dispatch(changePassword(passwordData)).unwrap();
       Toast.show({
-        title: t('common.success'),
-        description: t('profile.security.update_success'),
-        placement: "top",
-        status: "success"
+        type: 'success',
+        text1: t('common.success'),
+        text2: t('profile.security.update_success'),
+        position: 'top'
       });
       setPasswordData({
         currentPassword: '',
@@ -94,11 +93,11 @@ const Security = () => {
       setErrors({});
     } catch (error) {
       Toast.show({
-        title: t('common.error'),
-        description: error?.response?.data?.error?.message ||
+        type: 'error',
+        text1: t('common.error'),
+        text2: error?.response?.data?.error?.message ||
           t('profile.security.update_error'),
-        placement: "top",
-        status: "error"
+        position: 'top'
       });
     } finally {
       setIsLoading(false);

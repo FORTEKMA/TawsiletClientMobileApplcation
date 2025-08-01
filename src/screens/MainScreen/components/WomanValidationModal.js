@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, Pressable, Platform, StatusBar, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Image, Pressable, Platform, StatusBar, SafeAreaView, ActivityIndicator, Animated } from 'react-native';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import ImagePickerModal from "../../Profile/components/ImagePickerModal"
@@ -14,9 +14,42 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const user = useSelector(state => state.user.currentUser);
-  const [pickerType, setPickerType] = useState(null); // 'user_with_cin' | 'cinFront' | 'cinBack' | null
+  const [pickerType, setPickerType] = useState(null);
   const [isImagePickerVisible, setIsImagePickerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [scaleAnim] = useState(new Animated.Value(0.8));
+
+  React.useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 100,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.8,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [visible]);
 
   const handleImagePress = (type) => {
     setPickerType(type);
@@ -46,8 +79,7 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
       // Prepare images to upload
       const imagesToUpload = [
         { key: 'user_with_cin', file: form?.user_with_cin },
-        { key: 'cinFront', file: form?.cinFront },
-        { key: 'cinBack', file: form?.cinBack },
+       
       ];
       const uploadedIds = {};
       for (const img of imagesToUpload) {
@@ -71,8 +103,7 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
    
     const response = await api.put(`/users/${user.id}`, {
         user_with_cin: uploadedIds.user_with_cin,
-        cinFront: uploadedIds.cinFront,
-        cinBack: uploadedIds.cinBack,
+       
        
        });
        await api.post(`usersbyrole/client/woman-validation`, {
@@ -99,8 +130,6 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
         text1: t('woman_validation.upload_error', 'Upload failed. Please try again.'),
         visibilityTime: 2500,
       });
-      // Optionally show error toast
-      // Toast.show({ title: t('woman_validation.upload_error'), status: 'error' });
       console.error('WomanValidationModal upload error:', error);
     }
   };
@@ -108,84 +137,76 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="none"
       transparent={true}
       onRequestClose={onClose}
       statusBarTranslucent
     >
-      <View style={styles.modalBackdrop}>
+      <Animated.View style={[styles.modalBackdrop, { opacity: fadeAnim }]}>
         <SafeAreaView style={styles.safeArea}>
-          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+          <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
           <View style={styles.fullScreenOverlay}>
-            <View style={styles.fullScreenContainer}>
+            <Animated.View style={[styles.fullScreenContainer, { transform: [{ scale: scaleAnim }] }]}>
+              {/* Header with close button */}
+              <View style={styles.header}>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={onClose}
+                  disabled={loading}
+                >
+                  <MaterialIcons name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Icon */}
+              <View style={styles.iconContainer}>
+                <View style={styles.iconBackground}>
+                  <MaterialIcons name="verified-user" size={32} color="#4CAF50" />
+                </View>
+              </View>
+
               <Text style={styles.title}>{t('woman_validation.title')}</Text>
               <Text style={styles.subtitle}>{t('woman_validation.subtitle')}</Text>
 
               {/* User with CIN */}
-              <TouchableOpacity
-                style={[styles.imagePicker, !form?.user_with_cin && styles.imagePickerDashed]}
-                onPress={() => handleImagePress('user_with_cin')}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {form?.user_with_cin ? (
-                  <View style={styles.imagePreviewWrapper}>
-                    <Image source={{ uri: form?.user_with_cin.uri || form?.user_with_cin }} style={styles.imagePreview} />
-                    <View style={styles.editIconOverlay}>
-                      <MaterialIcons name="edit" size={24} color="#fff" />
+              <View style={styles.uploadSection}>
+                <Text style={styles.uploadLabel}>{t('woman_validation.upload_user_with_cin')}</Text>
+                <TouchableOpacity
+                  style={[styles.imagePicker, !form?.user_with_cin && styles.imagePickerDashed]}
+                  onPress={() => handleImagePress('user_with_cin')}
+                  disabled={loading}
+                  activeOpacity={0.7}
+                >
+                  {form?.user_with_cin ? (
+                    <View style={styles.imagePreviewWrapper}>
+                      <Image source={{ uri: form?.user_with_cin.uri || form?.user_with_cin }} style={styles.imagePreview} />
+                      <View style={styles.editIconOverlay}>
+                        <MaterialIcons name="edit" size={20} color="#fff" />
+                      </View>
                     </View>
-                  </View>
-                ) : (
-                  <View style={styles.emptyImageContent}>
-                    <MaterialIcons name="person" size={36} color="#bbb" />
-                    <Text style={styles.imagePickerText}>{t('woman_validation.upload_user_with_cin')}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                  ) : (
+                    <View style={styles.emptyImageContent}>
+                      <View style={styles.uploadIconContainer}>
+                        <MaterialIcons name="add-a-photo" size={28} color="#4CAF50" />
+                      </View>
+                      <Text style={styles.imagePickerText}>{t('woman_validation.tap_to_upload', 'Tap to upload photo')}</Text>
+                      <Text style={styles.imagePickerSubtext}>{t('woman_validation.photo_requirements', 'Photo with CIN document')}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
 
-              {/* CIN Front */}
-              <TouchableOpacity
-                style={[styles.imagePicker, !form?.cinFront && styles.imagePickerDashed]}
-                onPress={() => handleImagePress('cinFront')}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {form?.cinFront ? (
-                  <View style={styles.imagePreviewWrapper}>
-                    <Image source={{ uri: form?.cinFront.uri || form?.cinFront }} style={styles.imagePreview} />
-                    <View style={styles.editIconOverlay}>
-                      <MaterialIcons name="edit" size={24} color="#fff" />
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.emptyImageContent}>
-                    <MaterialIcons name="credit-card" size={36} color="#bbb" />
-                    <Text style={styles.imagePickerText}>{t('woman_validation.upload_cin_front')}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              {/* CIN Back */}
-              <TouchableOpacity
-                style={[styles.imagePicker, !form?.cinBack && styles.imagePickerDashed]}
-                onPress={() => handleImagePress('cinBack')}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {form?.cinBack ? (
-                  <View style={styles.imagePreviewWrapper}>
-                    <Image source={{ uri: form?.cinBack.uri || form?.cinBack }} style={styles.imagePreview} />
-                    <View style={styles.editIconOverlay}>
-                      <MaterialIcons name="edit" size={24} color="#fff" />
-                    </View>
-                  </View>
-                ) : (
-                  <View style={styles.emptyImageContent}>
-                    <MaterialIcons name="credit-card" size={36} color="#bbb" />
-                    <Text style={styles.imagePickerText}>{t('woman_validation.upload_cin_back')}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+              {/* Info section */}
+              <View style={styles.infoContainer}>
+                <View style={styles.infoRow}>
+                  <MaterialIcons name="info-outline" size={16} color="#4CAF50" />
+                  <Text style={styles.infoText}>{t('woman_validation.processing_time', 'Processing time: 24 hours')}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <MaterialIcons name="security" size={16} color="#4CAF50" />
+                  <Text style={styles.infoText}>{t('woman_validation.secure_upload', 'Your data is secure and encrypted')}</Text>
+                </View>
+              </View>
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity
@@ -198,19 +219,22 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
                 <TouchableOpacity
                   style={[
                     styles.submitButton,
-                    (!(form?.user_with_cin && form?.cinFront && form?.cinBack) || loading) && styles.submitButtonDisabled,
+                    (!(form?.user_with_cin ) || loading) && styles.submitButtonDisabled,
                   ]}
                   onPress={handleSubmit}
-                  disabled={loading || !(form?.user_with_cin && form?.cinFront && form?.cinBack)}
+                  disabled={loading || !(form?.user_with_cin)}
                 >
                   {loading ? (
                     <ActivityIndicator color="#fff" size="small" />
                   ) : (
-                    <Text style={styles.submitButtonText}>{t('woman_validation.submit')}</Text>
+                    <>
+                      <MaterialIcons name="send" size={18} color="#fff" style={styles.submitIcon} />
+                      <Text style={styles.submitButtonText}>{t('woman_validation.submit')}</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               </View>
-            </View>
+            </Animated.View>
           </View>
           <ImagePickerModal
             isVisible={isImagePickerVisible}
@@ -219,7 +243,7 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
             onGalleryPress={handleGalleryPress}
           />
         </SafeAreaView>
-      </View>
+      </Animated.View>
     </Modal>
   );
 };
@@ -227,7 +251,7 @@ const WomanValidationModal = ({ visible, onClose, form, setForm }) => {
 const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -241,64 +265,113 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 0,
+    paddingHorizontal: 20,
   },
   fullScreenContainer: {
-    width: '92%',
-    maxWidth: 420,
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#fff',
     borderRadius: 24,
-    padding: 28,
+    padding: 24,
     alignItems: 'center',
-    justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
-    shadowRadius: 16,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  header: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    marginBottom: 16,
+  },
+  iconBackground: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontWeight: 'bold',
-    fontSize: hp(3.2),
-    marginBottom: 6,
-    color: '#222',
+    fontWeight: '700',
+    fontSize: hp(3.4),
+    marginBottom: 8,
+    color: '#1a1a1a',
     textAlign: 'center',
-    letterSpacing: 0.2,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: hp(2.1),
+    fontSize: hp(2.2),
     color: '#666',
-    marginBottom: 22,
+    marginBottom: 32,
     textAlign: 'center',
-    lineHeight: hp(2.8),
+    lineHeight: hp(3),
+    paddingHorizontal: 10,
+  },
+  uploadSection: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  uploadLabel: {
+    fontSize: hp(2.1),
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
   },
   imagePicker: {
     width: '100%',
-    height: hp(17),
-    backgroundColor: '#f8f8f8',
+    height: hp(20),
+    backgroundColor: '#f8f9fa',
     borderRadius: 16,
-    marginBottom: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 2,
+    borderColor: '#e9ecef',
     overflow: 'hidden',
     position: 'relative',
   },
   imagePickerDashed: {
     borderStyle: 'dashed',
-    borderColor: '#bbb',
-    backgroundColor: '#fafbfc',
+    borderColor: '#4CAF50',
+    backgroundColor: '#f8f9fa',
   },
   emptyImageContent: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    paddingHorizontal: 20,
+  },
+  uploadIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   imagePickerText: {
+    color: '#4CAF50',
+    fontSize: hp(2.1),
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  imagePickerSubtext: {
     color: '#888',
-    fontSize: hp(2),
-    marginTop: 8,
+    fontSize: hp(1.8),
     textAlign: 'center',
   },
   imagePreviewWrapper: {
@@ -312,53 +385,82 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     resizeMode: 'cover',
-    borderRadius: 16,
+    borderRadius: 14,
   },
   editIconOverlay: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 16,
-    padding: 2,
+    bottom: 12,
+    right: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  infoContainer: {
+    width: '100%',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoText: {
+    fontSize: hp(1.8),
+    color: '#666',
+    marginLeft: 8,
+    flex: 1,
   },
   buttonRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     width: '100%',
-    marginTop: 28,
+    gap: 12,
   },
   cancelButton: {
-    marginRight: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 10,
-    backgroundColor: '#f3f3f3',
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#e9ecef',
+    alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#FF6B6B',
-    fontWeight: 'bold',
-    fontSize: hp(2),
+    color: '#666',
+    fontWeight: '600',
+    fontSize: hp(2.1),
   },
   submitButton: {
-    backgroundColor: '#222',
-    paddingVertical: 12,
-    paddingHorizontal: 32,
-    borderRadius: 10,
-    minWidth: 110,
+    flex: 2,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonDisabled: {
-    backgroundColor: '#bbb',
+    backgroundColor: '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
-    fontSize: hp(2),
+    fontWeight: '600',
+    fontSize: hp(2.1),
+  },
+  submitIcon: {
+    marginRight: 8,
   },
 });
 

@@ -17,23 +17,25 @@ import {
   Modal,
   ActivityIndicator,
   Vibration,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { useSelector } from 'react-redux';
-import { ref, push, onValue, off, serverTimestamp, query, orderByChild, update, set, onDisconnect, get } from 'firebase/database';
-import db from '../../utils/firebase';
+import firestore from '@react-native-firebase/firestore';
+import { ref, onValue, off, set, onDisconnect } from 'firebase/database';
+import { firestoreDb, realtimeDb } from '../../utils/firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DocumentPicker from 'react-native-document-picker';
- import { launchCamera, launchImageLibrary } from "react-native-image-picker";
+import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 
 const { height: screenHeight } = Dimensions.get('window');
 
 const ChatScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { driverData, requestId, userType = 'user' } = route.params;
+  const { driverData, requestId } = route.params;
 
   const { t } = useTranslation();
   const user = useSelector(state => state.user.currentUser);
@@ -46,13 +48,15 @@ const ChatScreen = () => {
   const [lastSeen, setLastSeen] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('connected');
+  const [connectionStatus, setConnectionStatus] = useState('connected'); 
   
   const flatListRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const typingAnimation = useRef(new Animated.Value(0)).current;
   const connectionAnimation = useRef(new Animated.Value(1)).current;
+  const sendButtonScale = useRef(new Animated.Value(1)).current;
 
   // Enhanced typing indicator animation
   useEffect(() => {
@@ -116,37 +120,92 @@ const ChatScreen = () => {
   }, []);
 
   // Enhanced Firebase listeners with real-time features
-  useEffect(() => {
+    useEffect(() => {
     if (!requestId) return;
 
-    // Set user online status
-    const userPresenceRef = ref(db, `chats/${requestId}/presence/${userType}`);
-    const userLastSeenRef = ref(db, `chats/${requestId}/lastSeen/${userType}`);
-    
-    // Set online status
-    set(userPresenceRef, true);
-    set(userLastSeenRef, serverTimestamp());
-    
-    // Set offline when disconnected
-    onDisconnect(userPresenceRef).set(false);
-    onDisconnect(userLastSeenRef).set(serverTimestamp());
+    const chatDocRef = firestoreDb.collection('chats').doc(requestId);
 
-    // Listen to messages
-    const chatRef = ref(db, `chats/${requestId}/messages`);
-    const messagesQuery = query(chatRef, orderByChild('timestamp'));
-    
-    const unsubscribeMessages = onValue(messagesQuery, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const messagesList = Object.keys(data).map(key => ({
-          id: key,
-          ...data[key],
-        })).sort((a, b) => a.timestamp - b.timestamp);
+    // Initialize chat document and all subcollections if they don't exist
+    const initializeChatDocument = async () => {
+      try {
+        const chatDoc = await chatDocRef.get();
+        if (!chatDoc.exists) {
+          // Create the main chat document
+          await chatDocRef.set({
+            requestId: requestId,
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+            participants: [user.id, driverData?.id || 'driver'],
+            unreadCounts: {
+              [user.id]: 0,
+              driver: 0
+            },
+            lastMessage: '',
+            lastMessageSender: '',
+            isActive: true
+          });
+        }
+
+        // Initialize typing document
+        const typingDocRef = chatDocRef.collection('typing').doc('status');
+        const typingDoc = await typingDocRef.get();
+        if (!typingDoc.exists) {
+          await typingDocRef.set({
+            user: false,
+            driver: false
+          });
+        }
+
+        // Initialize presence documents
+        const userPresenceDocRef = chatDocRef.collection('presence').doc('user');
+        const userPresenceDoc = await userPresenceDocRef.get();
+        if (!userPresenceDoc.exists) {
+          await userPresenceDocRef.set({
+            isOnline: true,
+            lastSeen: firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        const driverPresenceDocRef = chatDocRef.collection('presence').doc('driver');
+        const driverPresenceDoc = await driverPresenceDocRef.get();
+        if (!driverPresenceDoc.exists) {
+          await driverPresenceDocRef.set({
+            isOnline: false,
+            lastSeen: firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        // Set user online status
+        await userPresenceDocRef.set({ 
+          isOnline: true, 
+          lastSeen: firestore.FieldValue.serverTimestamp() 
+        }, { merge: true });
+
+      } catch (error) {
+        console.error('Error initializing chat document:', error);
+      }
+    };
+
+    // Initialize everything first, then set up listeners
+    initializeChatDocument().then(() => {
+      // Listen to messages
+      const messagesQuery = chatDocRef.collection('messages').orderBy('timestamp');
+      
+      const unsubscribeMessages = messagesQuery.onSnapshot((snapshot) => {
+        const messagesList = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate(), // Convert Firestore Timestamp to Date object
+        }));
         
         setMessages(messagesList);
         
-        // Mark messages as read
-        markMessagesAsRead(messagesList);
+        // Mark messages as read with error handling
+        if (messagesList.length > 0) {
+          markMessagesAsRead(messagesList).catch(error => {
+            console.error('Error in markMessagesAsRead:', error);
+          });
+        }
         
         // Auto scroll to bottom when new message arrives
         setTimeout(() => {
@@ -158,76 +217,120 @@ const ChatScreen = () => {
         if (lastMessage && lastMessage.senderId !== user.id && lastMessage.timestamp > Date.now() - 5000) {
           Vibration.vibrate(100);
         }
-      }
+      });
+
+      // Listen for typing indicators
+      const typingDocRef = chatDocRef.collection('typing').doc('status');
+      const unsubscribeTyping = typingDocRef.onSnapshot((docSnap) => {
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          const otherUserType = 'driver';
+          setOtherUserTyping(data?.[otherUserType] || false);
+        }
+      });
+
+      // Listen for other user's presence
+      const otherUserType = 'driver';
+      const otherUserPresenceDocRef = chatDocRef.collection('presence').doc(otherUserType);
+      const unsubscribePresence = otherUserPresenceDocRef.onSnapshot((docSnap) => {
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          setIsOnline(data?.isOnline || false);
+          setLastSeen(data?.lastSeen?.toDate() || null);
+        }
+      });
+
+      // Listen for unread count
+      const unsubscribeUnread = chatDocRef.onSnapshot((docSnap) => {
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          setUnreadCount(data?.unreadCounts?.[user.id] || 0);
+        }
+      });
+
+      // Listen for connection status using Realtime Database
+      const connectedRef = ref(realtimeDb, '.info/connected');
+      const unsubscribeConnection = onValue(connectedRef, (snapshot) => {
+        setConnectionStatus(snapshot.val() ? 'connected' : 'disconnected');
+      });
+
+      // Store cleanup functions
+      const cleanupFunctions = [
+        unsubscribeMessages,
+        unsubscribeTyping,
+        unsubscribePresence,
+        unsubscribeUnread,
+        unsubscribeConnection
+      ];
+
+      // Return cleanup function
+      return () => {
+        // Cleanup listeners
+        cleanupFunctions.forEach(unsubscribe => unsubscribe());
+        
+        // Set user offline
+        const userPresenceDocRef = chatDocRef.collection('presence').doc('user');
+        userPresenceDocRef.set({ 
+          isOnline: false, 
+          lastSeen: firestore.FieldValue.serverTimestamp() 
+        }, { merge: true });
+      };
     });
 
-    // Listen for typing indicators
-    const typingRef = ref(db, `chats/${requestId}/typing`);
-    const unsubscribeTyping = onValue(typingRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const otherUserType = userType === 'user' ? 'driver' : 'user';
-        setOtherUserTyping(data[otherUserType] || false);
-      }
-    });
-
-    // Listen for other user's presence
-    const otherUserType = userType === 'user' ? 'driver' : 'user';
-    const otherUserPresenceRef = ref(db, `chats/${requestId}/presence/${otherUserType}`);
-    const unsubscribePresence = onValue(otherUserPresenceRef, (snapshot) => {
-      setIsOnline(snapshot.val() || false);
-    });
-
-    // Listen for other user's last seen
-    const otherUserLastSeenRef = ref(db, `chats/${requestId}/lastSeen/${otherUserType}`);
-    const unsubscribeLastSeen = onValue(otherUserLastSeenRef, (snapshot) => {
-      setLastSeen(snapshot.val());
-    });
-
-    // Listen for connection status
-    const connectedRef = ref(db, '.info/connected');
-    const unsubscribeConnection = onValue(connectedRef, (snapshot) => {
-      setConnectionStatus(snapshot.val() ? 'connected' : 'disconnected');
-    });
-
-    // Listen for unread count
-    const unreadRef = ref(db, `chats/${requestId}/unreadCount/${userType}`);
-    const unsubscribeUnread = onValue(unreadRef, (snapshot) => {
-      setUnreadCount(snapshot.val() || 0);
-    });
-
-    return () => {
-      // Cleanup listeners
-      off(chatRef, 'value', unsubscribeMessages);
-      off(typingRef, 'value', unsubscribeTyping);
-      off(otherUserPresenceRef, 'value', unsubscribePresence);
-      off(otherUserLastSeenRef, 'value', unsubscribeLastSeen);
-      off(connectedRef, 'value', unsubscribeConnection);
-      off(unreadRef, 'value', unsubscribeUnread);
-      
-      // Set user offline
-      set(userPresenceRef, false);
-      set(userLastSeenRef, serverTimestamp());
-    };
-  }, [requestId, userType, user.id]);
+  }, [requestId, user.id]);
 
   const markMessagesAsRead = async (messagesList) => {
+    if (!requestId || !user?.id) {
+      console.log('Missing requestId or user ID, skipping mark as read');
+      return;
+    }
+
     const unreadMessages = messagesList.filter(msg => 
-      msg.senderId !== user.id && !msg.read
+      msg.senderId !== user.id && !msg.read && msg.id
     );
 
     if (unreadMessages.length > 0) {
-      const updates = {};
-      unreadMessages.forEach(msg => {
-        updates[`chats/${requestId}/messages/${msg.id}/read`] = true;
-        updates[`chats/${requestId}/messages/${msg.id}/readAt`] = serverTimestamp();
-      });
-      
-      // Reset unread count
-      updates[`chats/${requestId}/unreadCount/${userType}`] = 0;
-      
       try {
-        await update(ref(db), updates);
+        // First, verify that the chat document exists
+        const chatDocRef = firestoreDb.collection('chats').doc(requestId);
+        const chatDoc = await chatDocRef.get();
+        
+        if (!chatDoc.exists) {
+          console.log('Chat document does not exist, skipping mark as read');
+          return;
+        }
+
+        // Process messages individually to handle missing documents gracefully
+        const updatePromises = unreadMessages.map(async (msg) => {
+          try {
+            const messageRef = firestoreDb.collection('chats').doc(requestId).collection('messages').doc(msg.id);
+            const messageDoc = await messageRef.get();
+            
+            if (messageDoc.exists) {
+              await messageRef.update({
+                read: true,
+                readAt: firestore.FieldValue.serverTimestamp(),
+              });
+              return true;
+            } else {
+              console.log(`Message document ${msg.id} does not exist, skipping`);
+              return false;
+            }
+          } catch (error) {
+            console.error(`Error updating message ${msg.id}:`, error);
+            return false;
+          }
+        });
+
+        await Promise.all(updatePromises);
+        
+        // Reset unread count for current user in the chat document
+        try {
+          await chatDocRef.set({ [`unreadCounts.${user.id}`]: 0 }, { merge: true });
+        } catch (error) {
+          console.error('Error updating unread count:', error);
+        }
+        
       } catch (error) {
         console.error('Error marking messages as read:', error);
       }
@@ -237,59 +340,149 @@ const ChatScreen = () => {
   const sendMessage = async (messageData = null) => {
     const textToSend = messageData?.text || inputText.trim();
     if (!textToSend && !messageData?.attachment) return;
-    if (!requestId) return;
+    if (!requestId) {
+      console.error('No requestId provided for sending message');
+      return;
+    }
+    if (!user?.id) {
+      console.error('No user ID available for sending message');
+      return;
+    }
+    
+    if (isSending) return; // Prevent multiple sends
+    
+    // Animate send button
+    Animated.sequence([
+      Animated.timing(sendButtonScale, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(sendButtonScale, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    
+    setIsSending(true);
 
     const message = {
       text: textToSend,
       senderId: user.id,
-      senderName: user.name || 'User',
-      senderType: userType,
-      timestamp: serverTimestamp(),
+      senderName: user.firstName + ' ' + user.lastName || 'User',
+      senderType: 'user',
+      timestamp: firestore.FieldValue.serverTimestamp(),
       read: false,
-      messageId: Date.now().toString(),
       ...messageData,
     };
 
     try {
-      const chatRef = ref(db, `chats/${requestId}/messages`);
-      await push(chatRef, message);
+      const chatDocRef = firestoreDb.collection('chats').doc(requestId);
       
-      // Update last message info
-      const chatInfoRef = ref(db, `chats/${requestId}/info`);
-      await update(chatInfoRef, {
-        lastMessage: textToSend || 'Attachment',
-        lastMessageTime: serverTimestamp(),
-        lastMessageSender: userType,
-      });
+      // Ensure chat document exists before sending message
+      let chatDoc = await chatDocRef.get();
+      if (!chatDoc.exists) {
+        await chatDocRef.set({
+          requestId: requestId,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+          participants: [user.id, driverData?.id || 'driver'],
 
-      // Increment unread count for other user
-      const otherUserType = userType === 'user' ? 'driver' : 'user';
-      const unreadRef = ref(db, `chats/${requestId}/unreadCount/${otherUserType}`);
-      const currentUnreadSnapshot = await get(unreadRef);
-      const currentUnread = currentUnreadSnapshot.val() || 0;
-      await set(unreadRef, currentUnread + 1);
+          unreadCounts: {
+            [user.id]: 0,
+            driver: 0
+          },
+          lastMessage: '',
+          lastMessageSender: '',
+          isActive: true
+        });
+        // Small delay to ensure Firestore propagates the creation
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // Get the document again after creating it
+        chatDoc = await chatDocRef.get();
+      }
+
+      const messagesCollectionRef = chatDocRef.collection('messages');
+      await messagesCollectionRef.add(message);
       
+      // Update last message info and increment unread count for other user
+      const otherUserType = 'driver';
+      const currentUnreadCount = chatDoc.exists ? (chatDoc.data()?.unreadCounts?.[otherUserType] || 0) : 0;
+      const chatUpdateData = {
+        lastMessage: textToSend || 'Attachment',
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+        lastMessageSender: 'user',
+        [`unreadCounts.${otherUserType}`]: currentUnreadCount + 1,
+
+        participants: [user.id, driverData?.id || 'driver'],
+      };
+      
+      try {
+        // Verify document exists before updating
+        const verifyDoc = await chatDocRef.get();
+        if (!verifyDoc.exists) {
+          console.log('Chat document does not exist, creating it first');
+                  await chatDocRef.set({
+          requestId: requestId,
+          createdAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+          participants: [user.id, driverData?.id || 'driver'],
+          unreadCounts: {
+            [user.id]: 0,
+            driver: 0
+          },
+          lastMessage: '',
+          lastMessageSender: '',
+          isActive: true,
+          ...chatUpdateData
+        });
+        } else {
+          // Use set with merge to ensure the document exists
+          console.log('Updating chat document with data:', chatUpdateData);
+          await chatDocRef.set(chatUpdateData, { merge: true });
+          console.log('Chat document updated successfully');
+        }
+      } catch (error) {
+        console.error('Error updating chat document:', error);
+        console.error('RequestId:', requestId);
+        console.error('User ID:', user.id);
+        // Continue execution even if chat update fails
+      }
+
       setInputText('');
       setIsTyping(false);
+      setIsSending(false);
       
       // Clear typing indicator
-      const typingRef = ref(db, `chats/${requestId}/typing/${userType}`);
-      await set(typingRef, false);
+      if (requestId) {
+        const typingDocRef = chatDocRef.collection('typing').doc('status');
+        try {
+          await typingDocRef.set({ user: false }, { merge: true });
+        } catch (error) {
+          console.error('Error clearing typing indicator:', error);
+        }
+      }
       
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert(t('chat.error'), t('chat.send_error', 'Failed to send message'));
+      setIsSending(false);
     }
   };
 
   const handleTyping = async (text) => {
     setInputText(text);
-    
-    if (!isTyping && text.trim()) {
+    console.log("requestId",requestId);
+    if (!isTyping && text.trim() && requestId) {
       setIsTyping(true);
       // Set typing indicator in Firebase
-      const typingRef = ref(db, `chats/${requestId}/typing/${userType}`);
-      await set(typingRef, true);
+      const typingDocRef = firestoreDb.collection('chats').doc(requestId).collection('typing').doc('status');
+      try {
+        await typingDocRef.set({ user: true }, { merge: true });
+      } catch (error) {
+        console.error('Error setting typing indicator:', error);
+      }
     }
 
     // Clear previous timeout
@@ -300,8 +493,14 @@ const ChatScreen = () => {
     // Set new timeout to clear typing indicator
     typingTimeoutRef.current = setTimeout(async () => {
       setIsTyping(false);
-      const typingRef = ref(db, `chats/${requestId}/typing/${userType}`);
-      await set(typingRef, false);
+      if (requestId) {
+        const typingDocRef = firestoreDb.collection('chats').doc(requestId).collection('typing').doc('status');
+        try {
+          await typingDocRef.set({ user: false }, { merge: true });
+        } catch (error) {
+          console.error('Error clearing typing indicator:', error);
+        }
+      }
     }, 2000);
   };
 
@@ -396,7 +595,7 @@ const ChatScreen = () => {
     const showAvatar = !isMyMessage && (index === 0 || messages[index - 1]?.senderId !== item.senderId);
     const showTime = index === messages.length - 1 || 
       (messages[index + 1] && messages[index + 1].senderId !== item.senderId) ||
-      (messages[index + 1] && messages[index + 1].timestamp - item.timestamp > 300000); // 5 minutes
+      (messages[index + 1] && item.timestamp && messages[index + 1].timestamp && (messages[index + 1].timestamp.getTime() - item.timestamp.getTime() > 300000)); // 5 minutes
     
     return (
       <View style={[
@@ -478,12 +677,14 @@ const ChatScreen = () => {
                     opacity: typingAnimation.interpolate({
                       inputRange: [0, 1],
                       outputRange: [0.3, 1],
+                      extrapolate: 'clamp',
                     }),
                     transform: [
                       {
                         translateY: typingAnimation.interpolate({
                           inputRange: [0, 0.5, 1],
-                          outputRange: [0, -3, 0],
+                          outputRange: [0, -5, 0],
+                          extrapolate: 'clamp',
                         }),
                       },
                     ],
@@ -497,429 +698,503 @@ const ChatScreen = () => {
     );
   };
 
-  const renderConnectionStatus = () => {
-    if (connectionStatus === 'connected') return null;
-
-    return (
-      <Animated.View style={[styles.connectionBanner, { opacity: connectionAnimation }]}>
-        <MaterialCommunityIcons name="wifi-off" size={16} color="#fff" />
-        <Text style={styles.connectionText}>
-          {t('chat.connecting', 'Connecting...')}
-        </Text>
-      </Animated.View>
-    );
-  };
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        {/* Connection Status Banner */}
-        {renderConnectionStatus()}
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <MaterialCommunityIcons name="arrow-left" size={24} color="#000" />
-          </TouchableOpacity>
-          <View style={styles.headerLeft}>
-            <View style={styles.avatarContainer}>
-              <Image
-                  source={{ uri: driverData?.profilePicture?.url || 'https://via.placeholder.com/40' }}
-                style={styles.headerAvatar}
-              />
-              {isOnline && <View style={styles.onlineIndicator} />}
-            </View>
-            <View style={styles.headerInfo}>
-              <Text style={styles.headerName}>
-                {driverData?.firstName + ' ' + driverData?.lastName || t('chat.driver', 'Driver')}
-              </Text>
-              <Text style={styles.headerStatus}>
-                {isOnline 
-                  ? t('chat.online', 'Online')
-                  : lastSeen 
-                    ? t('chat.last_seen', `Last seen ${formatLastSeen(lastSeen)}`)
-                    : driverData?.vehicule?.mark + ' ' + driverData?.vehicule?.matriculation || t('chat.offline', 'Offline')
-                }
-              </Text>
-            </View>
-          </View>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#212529" />
+        </TouchableOpacity>
+        <Image
+          source={{ uri: driverData?.profilePicture?.url || 'https://via.placeholder.com/50' }}
+          style={styles.headerAvatar}
+        />
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerTitle}>{driverData?.firstName + ' ' + driverData?.lastName || 'Driver'}</Text>
+          <Text style={styles.headerStatus}>
+            {isOnline ? t('chat.online', 'Online') : t('chat.last_seen', 'Last seen')} {isOnline ? '' : formatLastSeen(lastSeen)}
+          </Text>
         </View>
-
-        {/* Messages List */}
-        <KeyboardAvoidingView
-          style={styles.chatContainer}
-          behavior={Platform.OS === 'ios' ? 'padding' : null}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : null}
-        >
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item.id}
-            style={styles.messagesList}
-            contentContainerStyle={styles.messagesContent}
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            ListFooterComponent={renderTypingIndicator}
-          />
-
-          {/* Input Container */}
-          <View style={[
-            styles.inputContainer,
-            { marginBottom: keyboardHeight > 0 ? 10 : 20 }
-          ]}>
-            <View style={styles.inputWrapper}>
-              <TouchableOpacity
-                style={styles.attachmentButton}
-                onPress={handleAttachment}
-              >
-                <MaterialCommunityIcons name="plus" size={24} color="#666" />
-              </TouchableOpacity>
-              
-              <TextInput
-                style={styles.textInput}
-                value={inputText}
-                onChangeText={handleTyping}
-                placeholder={t('chat.type_message', 'Type a message...')}
-                placeholderTextColor="#999"
-                multiline
-                maxLength={500}
-              />
-              
-              <TouchableOpacity
-                style={[
-                  styles.sendButton,
-                  { opacity: inputText.trim() ? 1 : 0.5 }
-                ]}
-                onPress={() => sendMessage()}
-                disabled={!inputText.trim() || isUploading}
-              >
-                {isUploading ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <MaterialCommunityIcons name="send" size={20} color="#fff" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-
-        {/* Attachment Modal */}
-        <Modal
-          visible={showAttachmentModal}
-          transparent
-          onBackdropPress={() => setShowAttachmentModal(false)}
-          animationType="slide"
-          onRequestClose={() => setShowAttachmentModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.attachmentModal}>
-              <Text style={styles.modalTitle}>{t('chat.send_attachment', 'Send Attachment')}</Text>
-              
-              <TouchableOpacity style={styles.attachmentOption} onPress={pickImage}>
-                <MaterialCommunityIcons name="image" size={24} color="#4CAF50" />
-                <Text style={styles.attachmentOptionText}>
-                  {t('chat.photo', 'Photo')}
-                </Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.attachmentOption} onPress={pickDocument}>
-                <MaterialCommunityIcons name="file-document" size={24} color="#2196F3" />
-                <Text style={styles.attachmentOptionText}>
-                  {t('chat.document', 'Document')}
-                </Text>
-              </TouchableOpacity>
-               
-            </View>
-          </View>
-        </Modal>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.actionButton}>
+            <MaterialCommunityIcons name="phone" size={20} color="#212529" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <MaterialCommunityIcons name="video" size={20} color="#212529" />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Connection Status Indicator */}
+      {connectionStatus === 'disconnected' && (
+        <Animated.View style={[styles.connectionStatusContainer, { opacity: connectionAnimation }]}>
+          <MaterialCommunityIcons name="wifi-off" size={16} color="#856404" />
+          <Text style={styles.connectionStatusText}>
+            {t('chat.connection_lost', 'Connection lost. Trying to reconnect...')}
+          </Text>
+        </Animated.View>
+      )}
+
+      {/* Loading State */}
+      {messages.length === 0 && isUploading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#212529" />
+          <Text style={styles.loadingText}>{t('chat.loading_messages', 'Loading messages...')}</Text>
+        </View>
+      )}
+
+      {/* Empty State */}
+      {messages.length === 0 && !isUploading && (
+        <View style={styles.emptyStateContainer}>
+          <MaterialCommunityIcons name="chat-outline" size={64} color="#ADB5BD" />
+          <Text style={styles.emptyStateText}>
+            {t('chat.start_conversation', 'Start a conversation with your driver')}
+          </Text>
+        </View>
+      )}
+
+      {/* Messages List */}
+      {messages.length > 0 && (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.messageListContent}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
+
+      {renderTypingIndicator()}
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <View style={styles.inputContainer}>
+          <TouchableOpacity onPress={handleAttachment} style={styles.attachmentButton}>
+            <MaterialCommunityIcons name="paperclip" size={20} color="#6C757D" />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.textInput}
+            placeholder={t('chat.type_message', 'Type a message...')}
+            placeholderTextColor="#ADB5BD"
+            value={inputText}
+            onChangeText={handleTyping}
+            multiline
+            maxLength={1000}
+          />
+          <Animated.View style={{ transform: [{ scale: sendButtonScale }] }}>
+            <TouchableOpacity 
+              onPress={() => sendMessage()} 
+              style={[
+                styles.sendButton,
+                (!inputText.trim() && !isUploading && !isSending) && styles.sendButtonDisabled
+              ]}
+              disabled={!inputText.trim() && !isUploading || isSending}
+            >
+              {isUploading || isSending ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
+
+      <Modal
+        visible={showAttachmentModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowAttachmentModal(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setShowAttachmentModal(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.attachmentModalContent}>
+                <View style={{ width: 40, height: 4, backgroundColor: '#E9ECEF', borderRadius: 2, alignSelf: 'center', marginBottom: hp('3%') }} />
+                
+                <TouchableOpacity style={styles.attachmentOption} onPress={pickImage}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="image" size={24} color="#212529" />
+                  </View>
+                  <Text style={styles.attachmentOptionText}>{t('chat.photo_library', 'Photo Library')}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.attachmentOption} onPress={() => launchCamera({ mediaType: 'photo' }, (response) => {
+                  if (response.assets && response.assets[0]) {
+                    setIsUploading(true);
+                    setTimeout(() => {
+                      sendMessage({
+                        text: '',
+                        attachment: {
+                          type: 'image',
+                          uri: response.assets[0].uri,
+                          name: response.assets[0].fileName || 'photo.jpg',
+                        },
+                      });
+                      setIsUploading(false);
+                    }, 2000);
+                  }
+                  setShowAttachmentModal(false);
+                })}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="camera" size={24} color="#212529" />
+                  </View>
+                  <Text style={styles.attachmentOptionText}>{t('chat.take_photo', 'Take Photo')}</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.attachmentOption} onPress={pickDocument}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="file-document" size={24} color="#212529" />
+                  </View>
+                  <Text style={styles.attachmentOptionText}>{t('chat.document', 'Document')}</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-  },
-  connectionBanner: {
-    backgroundColor: '#FF5722',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  connectionText: {
-    color: '#fff',
-    fontSize: hp(1.4),
-    marginLeft: 8,
-    fontWeight: '500',
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E9ECEF',
-    backgroundColor: '#F8F9FA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   backButton: {
-    marginRight: 12,
-    padding: 8,
-  },
-  headerLeft: {
-    flexDirection: 'row',
+    width: wp('10%'),
+    height: wp('10%'),
+    borderRadius: wp('5%'),
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
     alignItems: 'center',
-    flex: 1,
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: 12,
+    marginRight: wp('3%'),
   },
   headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50',
+    width: wp('12%'),
+    height: wp('12%'),
+    borderRadius: wp('6%'),
+    marginRight: wp('3%'),
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#E9ECEF',
   },
   headerInfo: {
     flex: 1,
   },
-  headerName: {
-    fontSize: hp(1.8),
+  headerTitle: {
+    fontSize: hp('2.4%'),
     fontWeight: '600',
-    color: '#000',
-    marginBottom: 2,
+    color: '#212529',
+    marginBottom: hp('0.5%'),
   },
   headerStatus: {
-    fontSize: hp(1.4),
+    fontSize: hp('1.6%'),
     color: '#6C757D',
+    fontWeight: '400',
   },
-  chatContainer: {
-    flex: 1,
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  messagesList: {
-    flex: 1,
-    paddingHorizontal: 16,
+  actionButton: {
+    width: wp('10%'),
+    height: wp('10%'),
+    borderRadius: wp('5%'),
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: wp('2%'),
   },
-  messagesContent: {
-    paddingVertical: 16,
+  messageListContent: {
+    paddingVertical: hp('2%'),
+    paddingHorizontal: wp('4%'),
   },
   messageContainer: {
-    marginVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: hp('2%'),
   },
   myMessageContainer: {
-    alignItems: 'flex-end',
+    justifyContent: 'flex-end',
   },
   otherMessageContainer: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
+    justifyContent: 'flex-start',
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
-    marginTop: 4,
+    width: wp('8%'),
+    height: wp('8%'),
+    borderRadius: wp('4%'),
+    marginRight: wp('2%'),
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
   messageBubble: {
-    maxWidth: wp(75),
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    maxWidth: '75%',
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
     borderRadius: 18,
-    marginVertical: 2,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   myMessageBubble: {
-    backgroundColor: '#000',
+    backgroundColor: '#212529',
     borderBottomRightRadius: 6,
   },
   otherMessageBubble: {
-    backgroundColor: '#F1F3F4',
+    backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  messageText: {
+    fontSize: hp('1.8%'),
+    lineHeight: hp('2.4%'),
+    fontWeight: '400',
+  },
+  myMessageText: {
+    color: '#FFFFFF',
+  },
+  otherMessageText: {
+    color: '#212529',
+  },
+  messageFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: hp('1%'),
+  },
+  messageTime: {
+    fontSize: hp('1.2%'),
+    fontWeight: '400',
+  },
+  myMessageTime: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  otherMessageTime: {
+    color: '#ADB5BD',
+  },
+  readIndicator: {
+    marginLeft: wp('1%'),
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E9ECEF',
+  },
+  attachmentButton: {
+    width: wp('10%'),
+    height: wp('10%'),
+    borderRadius: wp('5%'),
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: wp('3%'),
+    marginBottom: hp('1%'),
+  },
+  textInput: {
+    flex: 1,
+    maxHeight: hp('12%'),
+    minHeight: wp('10%'),
+    fontSize: hp('1.8%'),
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
+    backgroundColor: '#F8F9FA',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    color: '#212529',
+    fontWeight: '400',
+  },
+  sendButton: {
+    width: wp('12%'),
+    height: wp('12%'),
+    borderRadius: wp('6%'),
+    backgroundColor: '#212529',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: wp('3%'),
+    marginBottom: hp('1%'),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#ADB5BD',
+  },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: wp('4%'),
+    marginBottom: hp('2%'),
+  },
+  typingAvatar: {
+    width: wp('8%'),
+    height: wp('8%'),
+    borderRadius: wp('4%'),
+    marginRight: wp('2%'),
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+  },
+  typingBubble: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('2%'),
+    borderRadius: 18,
+    borderBottomLeftRadius: 6,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  typingDotsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: hp('2%'),
+  },
+  typingDot: {
+    width: wp('2%'),
+    height: wp('2%'),
+    borderRadius: wp('1%'),
+    backgroundColor: '#6C757D',
+    marginHorizontal: wp('0.5%'),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  attachmentModalContent: {
+    backgroundColor: '#FFFFFF',
+    paddingTop: hp('3%'),
+    paddingBottom: hp('4%'),
+    paddingHorizontal: wp('4%'),
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  attachmentOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: hp('2%'),
+    paddingHorizontal: wp('2%'),
+    borderRadius: 12,
+    marginBottom: hp('1%'),
+  },
+  attachmentOptionText: {
+    marginLeft: wp('4%'),
+    fontSize: hp('2%'),
+    color: '#212529',
+    fontWeight: '500',
   },
   attachmentContainer: {
-    marginBottom: 8,
+    marginBottom: hp('2%'),
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   attachmentImage: {
-    width: wp(60),
-    height: wp(40),
+    width: wp('60%'),
+    height: hp('25%'),
     borderRadius: 12,
     resizeMode: 'cover',
   },
   documentContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    padding: wp('3%'),
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
   documentName: {
-    marginLeft: 8,
-    fontSize: hp(1.5),
-    color: '#666',
+    marginLeft: wp('3%'),
+    fontSize: hp('1.6%'),
+    color: '#212529',
+    fontWeight: '500',
     flex: 1,
   },
-  messageText: {
-    fontSize: hp(1.6),
-    lineHeight: 20,
-  },
-  myMessageText: {
-    color: '#fff',
-  },
-  otherMessageText: {
-    color: '#000',
-  },
-  messageFooter: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 4,
+    backgroundColor: '#F8F9FA',
   },
-  messageTime: {
-    fontSize: hp(1.2),
-  },
-  myMessageTime: {
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  otherMessageTime: {
+  loadingText: {
+    fontSize: hp('1.8%'),
     color: '#6C757D',
+    marginTop: hp('2%'),
+    fontWeight: '500',
   },
-  readIndicator: {
-    marginLeft: 4,
-  },
-  typingContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginVertical: 8,
-  },
-  typingAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  typingBubble: {
-    backgroundColor: '#F1F3F4',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 18,
-    borderBottomLeftRadius: 6,
-  },
-  typingDotsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#6C757D',
-    marginHorizontal: 2,
-  },
-  inputContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 24,
-    paddingLeft: 8,
-    paddingRight: 8,
-    paddingVertical: 8,
-    minHeight: 48,
-  },
-  attachmentButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  textInput: {
+  emptyStateContainer: {
     flex: 1,
-    fontSize: hp(1.6),
-    color: '#000',
-    maxHeight: 100,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-  },
-  sendButton: {
-    backgroundColor: '#000',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    alignItems: 'center',
+    paddingHorizontal: wp('10%'),
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  attachmentModal: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
-  },
-  modalTitle: {
-    fontSize: hp(2),
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 20,
+  emptyStateText: {
+    fontSize: hp('2%'),
+    color: '#6C757D',
     textAlign: 'center',
+    fontWeight: '400',
+    lineHeight: hp('2.8%'),
   },
-  attachmentOption: {
+  connectionStatusContainer: {
+    position: 'absolute',
+    top: hp('12%'),
+    left: wp('4%'),
+    right: wp('4%'),
+    backgroundColor: '#FFF3CD',
+    borderWidth: 1,
+    borderColor: '#FFEAA7',
+    borderRadius: 8,
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('1%'),
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#F8F9FA',
-    marginBottom: 12,
+    justifyContent: 'center',
+    zIndex: 1000,
   },
-  attachmentOptionText: {
-    fontSize: hp(1.7),
-    color: '#000',
-    marginLeft: 16,
+  connectionStatusText: {
+    fontSize: hp('1.4%'),
+    color: '#856404',
     fontWeight: '500',
-  },
-  cancelButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  cancelButtonText: {
-    fontSize: hp(1.7),
-    color: '#666',
-    fontWeight: '500',
+    marginLeft: wp('2%'),
   },
 });
 
 export default ChatScreen;
-

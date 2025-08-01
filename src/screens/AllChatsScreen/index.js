@@ -12,20 +12,22 @@ import {
   Animated,
   StyleSheet,
   Alert,
+  Dimensions
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTranslation } from 'react-i18next';
-import { ref, onValue, off, query, orderByChild, limitToLast } from 'firebase/database';
-import db from '../../utils/firebase';
+import { ref, onValue, off, query as realtimeQuery, orderByChild, limitToLast } from 'firebase/database';
+import { firestoreDb, realtimeDb } from '../../utils/firebase';
 import { colors } from '../../utils/colors';
-import { 
-  trackScreenView, 
- 
-  trackChatOpened 
+import api from '../../utils/api';
+import {
+  trackScreenView,
+   
 } from '../../utils/analytics';
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const AllChatsScreen = () => {
   const { t } = useTranslation();
@@ -35,15 +37,11 @@ const AllChatsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [connectionStatus, setConnectionStatus] = useState('connected');
-  
+
   const currentUser = useSelector((state) => state?.user?.currentUser);
 
-  // Track screen view on mount
   useEffect(() => {
     trackScreenView('AllChats');
- 
-    
-    // Animate screen entrance
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
@@ -51,110 +49,81 @@ const AllChatsScreen = () => {
     }).start();
   }, []);
 
-  // Set up Firebase listeners when screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      if (currentUser?.id) {
-        setupFirebaseListeners();
+       if (currentUser?.id) {
+         setupFirestoreListeners();
+         setupRealtimeDbListeners();
       }
-      
+
       return () => {
-        cleanupFirebaseListeners();
+        if (window.firestoreUnsubscribe) {
+          window.firestoreUnsubscribe();
+          window.firestoreUnsubscribe = null;
+        }
+        if (window.realtimeDbListeners) {
+          cleanupRealtimeDbListeners();
+        }
       };
     }, [currentUser?.id])
   );
 
-  const setupFirebaseListeners = () => {
+  const setupFirestoreListeners = () => {
     if (!currentUser?.id) return;
 
     setLoading(true);
 
-    // Listen for connection status
-    const connectedRef = ref(db, '.info/connected');
-    const connectionListener = onValue(connectedRef, (snapshot) => {
-      setConnectionStatus(snapshot.val() ? 'connected' : 'disconnected');
-    });
+    const chatsCollectionRef = firestoreDb.collection('chats');
+    const q = chatsCollectionRef
+      .where('participants', 'array-contains', currentUser.id)
+      .orderBy('updatedAt', 'desc');
+     const unsubscribe = q.onSnapshot(async (snapshot) => {
+      const chatPromises = snapshot.docs.map(async (chatDoc) => {
+        const chatData = chatDoc.data();
+        const chatId = chatDoc.id;
+       
+        const messagesCollectionRef = firestoreDb.collection(`chats/${chatId}/messages`);
+       
+        const lastMessageQuery = messagesCollectionRef.orderBy('timestamp', 'desc').limit(1);
+        const lastMessageSnapshot = await lastMessageQuery.get();
+        const lastMessage = lastMessageSnapshot.docs[0]?.data() || null;
+    
+        const unreadCount = chatData.unreadCounts?.[currentUser.id] || 0;
 
-    // Get user's chat list - assuming we store user chat references
-    const userChatsRef = ref(db, `userChats/${currentUser.id}`);
-    const userChatsListener = onValue(userChatsRef, async (snapshot) => {
-      const userChatsData = snapshot.val();
-      
-      if (!userChatsData) {
-        setChats([]);
-        setLoading(false);
-        return;
-      }
-
-      // Get chat details for each chat ID
-      const chatPromises = Object.keys(userChatsData).map(async (chatId) => {
-        return new Promise((resolve) => {
-          const chatInfoRef = ref(db, `chats/${chatId}/info`);
-          const chatInfoListener = onValue(chatInfoRef, (chatSnapshot) => {
-            const chatInfo = chatSnapshot.val();
-            
-            if (chatInfo) {
-              // Get last message
-              const messagesRef = ref(db, `chats/${chatId}/messages`);
-              const lastMessageQuery = query(messagesRef, orderByChild('timestamp'), limitToLast(1));
-              
-              onValue(lastMessageQuery, (messageSnapshot) => {
-                const messages = messageSnapshot.val();
-                const lastMessage = messages ? Object.values(messages)[0] : null;
-                
-                // Get unread count for current user
-                const unreadRef = ref(db, `chats/${chatId}/unreadCount/${currentUser.userType || 'user'}`);
-                onValue(unreadRef, (unreadSnapshot) => {
-                  const unreadCount = unreadSnapshot.val() || 0;
-                  
-                  // Get other user info (driver info)
-                  const otherUserType = (currentUser.userType || 'user') === 'user' ? 'driver' : 'user';
-                  const participantsRef = ref(db, `chats/${chatId}/participants`);
-                  
-                  onValue(participantsRef, (participantsSnapshot) => {
-                    const participants = participantsSnapshot.val();
-                    let otherUserData = null;
-                    
-                    if (participants) {
-                      Object.values(participants).forEach(participant => {
-                        if (participant.id !== currentUser.id) {
-                          otherUserData = participant;
-                        }
-                      });
-                    }
-                    
-                    const chatItem = {
-                      id: chatId,
-                      driverName: otherUserData?.name || otherUserData?.firstName + ' ' + (otherUserData?.lastName || '') || 'Unknown Driver',
-                      driverAvatar: otherUserData?.profilePicture?.url || otherUserData?.avatar || 'https://via.placeholder.com/56',
-                      lastMessage: lastMessage?.text || 'No messages yet',
-                      timestamp: lastMessage?.timestamp ? new Date(lastMessage.timestamp) : new Date(),
-                      unreadCount: unreadCount,
-                      orderId: chatId,
-                      status: chatInfo.status || 'active',
-                      lastMessageSender: lastMessage?.senderType || '',
-                      lastMessageTime: lastMessage?.timestamp || Date.now(),
-                      otherUserData: otherUserData,
-                    };
-                    
-                    resolve(chatItem);
-                  });
-                });
-              });
-            } else {
-              resolve(null);
+        const otherParticipantId = chatData.participants.find(id => id !== currentUser.id);
+        let otherUserData = null;
+    
+        if (otherParticipantId) {
+          try {
+            const userResponse = await api.get(`users/${otherParticipantId}?populate[0]=profilePicture`);
+            if (userResponse.data) {
+              otherUserData = userResponse.data;
             }
-          });
-        });
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+             
+          }
+        }
+   
+        return {
+          id: chatId,
+          driverName: otherUserData?.name || otherUserData?.firstName + ' ' + (otherUserData?.lastName || '') || 'Unknown Driver',
+          driverAvatar: otherUserData?.profilePicture?.url || otherUserData?.avatar || 'https://via.placeholder.com/56',
+          lastMessage: lastMessage?.text || 'No messages yet',
+          timestamp: lastMessage?.timestamp ? lastMessage.timestamp.toDate() : new Date(),
+          unreadCount: unreadCount,
+          orderId: chatData.orderId || chatId,
+          status: chatData.status || 'active',
+          lastMessageSender: lastMessage?.senderType || '',
+          lastMessageTime: lastMessage?.timestamp ? lastMessage.timestamp.toDate().getTime() : Date.now(),
+          otherUserData: otherUserData,
+        };
       });
 
       try {
         const chatItems = await Promise.all(chatPromises);
         const validChats = chatItems.filter(chat => chat !== null);
-        
-        // Sort chats by last message time (newest first)
         validChats.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
-        
         setChats(validChats);
       } catch (error) {
         console.error('Error processing chats:', error);
@@ -167,49 +136,49 @@ const AllChatsScreen = () => {
       setLoading(false);
     });
 
-    // Store listeners for cleanup
-    window.firebaseListeners = {
-      connectionListener,
-      userChatsListener,
-    };
+    window.firestoreUnsubscribe = unsubscribe;
   };
 
-  const cleanupFirebaseListeners = () => {
-    if (window.firebaseListeners) {
-      const { connectionListener, userChatsListener } = window.firebaseListeners;
-      
+  const setupRealtimeDbListeners = () => {
+    // Listen for connection status using Realtime Database
+    const connectedRef = ref(realtimeDb, '.info/connected');
+    const connectionListener = onValue(connectedRef, (snapshot) => {
+      setConnectionStatus(snapshot.val() ? 'connected' : 'disconnected');
+    });
+    window.realtimeDbListeners = { connectionListener };
+  };
+
+  const cleanupRealtimeDbListeners = () => {
+    if (window.realtimeDbListeners) {
+      const { connectionListener } = window.realtimeDbListeners;
       if (connectionListener) {
-        off(ref(db, '.info/connected'), 'value', connectionListener);
+        off(ref(realtimeDb, '.info/connected'), 'value', connectionListener);
       }
-      
-      if (userChatsListener && currentUser?.id) {
-        off(ref(db, `userChats/${currentUser.id}`), 'value', userChatsListener);
-      }
-      
-      window.firebaseListeners = null;
+      window.realtimeDbListeners = null;
     }
   };
 
   const handleRefresh = () => {
     setRefreshing(true);
-    
-    // Clean up existing listeners
-    cleanupFirebaseListeners();
-    
-    // Set up new listeners
+
+    if (window.firestoreUnsubscribe) {
+      window.firestoreUnsubscribe();
+      window.firestoreUnsubscribe = null;
+    }
+    if (window.realtimeDbListeners) {
+      cleanupRealtimeDbListeners();
+    }
+
     setTimeout(() => {
-      setupFirebaseListeners();
+      setupFirestoreListeners();
+      setupRealtimeDbListeners();
       setRefreshing(false);
     }, 1000);
   };
 
   const handleChatPress = (chat) => {
-    trackChatOpened(chat.id, {
-      driver_name: chat.driverName,
-      order_id: chat.orderId,
-      chat_status: chat.status
-    });
-    
+ 
+
     navigation.navigate('ChatScreen', {
       requestId: chat.orderId,
       driverData: {
@@ -219,8 +188,8 @@ const AllChatsScreen = () => {
         lastName: chat.driverName.split(' ')[1] || '',
         avatar: chat.driverAvatar,
         profilePicture: { url: chat.driverAvatar },
-        vehicle_info: chat.otherUserData?.vehicule ? 
-          `${chat.otherUserData.vehicule.mark || ''} • ${chat.otherUserData.vehicule.matriculation || ''}`.trim() : 
+        vehicle_info: chat.otherUserData?.vehicule ?
+          `${chat.otherUserData.vehicule.mark || ''} • ${chat.otherUserData.vehicule.matriculation || ''}`.trim() :
           'Vehicle Info',
         rating: chat.otherUserData?.rating || '5.0',
       },
@@ -239,7 +208,7 @@ const AllChatsScreen = () => {
     if (minutes < 60) return t('chat.minutes_ago', `${minutes}m ago`);
     if (hours < 24) return t('chat.hours_ago', `${hours}h ago`);
     if (days < 7) return t('chat.days_ago', `${days}d ago`);
-    
+
     return timestamp.toLocaleDateString();
   };
 
@@ -283,24 +252,24 @@ const AllChatsScreen = () => {
         activeOpacity={0.7}
       >
         <View style={styles.avatarContainer}>
-          <Image 
-            source={{ uri: item.driverAvatar }} 
+          <Image
+            source={{ uri: item.driverAvatar }}
             style={styles.avatar}
             defaultSource={{ uri: 'https://via.placeholder.com/56' }}
           />
           <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(item.status) }]} />
         </View>
-        
+
         <View style={styles.chatContent}>
           <View style={styles.chatHeader}>
             <Text style={styles.driverName}>{item.driverName}</Text>
             <Text style={styles.timestamp}>{formatTimestamp(item.timestamp)}</Text>
           </View>
-          
+
           <View style={styles.messageRow}>
             <Text style={styles.lastMessage} numberOfLines={1}>
-              {item.lastMessageSender === (currentUser?.userType || 'user') ? 
-                `${t('chat.you', 'You')}: ${item.lastMessage}` : 
+              {item.lastMessageSender === (currentUser?.userType || 'user') ?
+                `${t('chat.you', 'You')}: ${item.lastMessage}` :
                 item.lastMessage
               }
             </Text>
@@ -312,11 +281,11 @@ const AllChatsScreen = () => {
               </View>
             )}
           </View>
-          
+
           <Text style={styles.orderId}>#{item.orderId}</Text>
         </View>
+
         
-        <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
       </TouchableOpacity>
     </Animated.View>
   );
@@ -330,7 +299,7 @@ const AllChatsScreen = () => {
       <Text style={styles.emptySubtitle}>
         {t('chat.no_chats_subtitle', 'Your chat conversations with drivers will appear here')}
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.bookRideButton}
         onPress={() => navigation.navigate('Home')}
       >
@@ -354,19 +323,17 @@ const AllChatsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      
-      {/* Connection Status Banner */}
+
       {renderConnectionBanner()}
-      
-      {/* Header */}
+
       <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.drawerToggleButton}
           onPress={() => navigation.openDrawer()}
         >
           <MaterialCommunityIcons name="menu" size={24} color={colors.primary} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>
             {t('chat.all_chats', 'All Chats')}
@@ -375,22 +342,8 @@ const AllChatsScreen = () => {
             {chats.length} {t('chat.conversations', 'conversations')}
           </Text>
         </View>
-        
-        {/* <TouchableOpacity 
-          style={styles.searchButton}
-          onPress={() => {
-            // TODO: Implement search functionality
-            Alert.alert(
-              t('common.coming_soon', 'Coming Soon'),
-              t('chat.search_feature_coming_soon', 'Chat search feature will be available soon!')
-            );
-          }}
-        >
-          <Ionicons name="search" size={24} color={colors.primary} />
-        </TouchableOpacity> */}
       </Animated.View>
 
-      {/* Chat List */}
       {loading ? (
         renderLoadingState()
       ) : (
@@ -534,13 +487,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
+    color: '#8E8E93',
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
   },
   unreadBadge: {
     backgroundColor: colors.primary,
@@ -549,73 +501,70 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   unreadCount: {
+    color: '#fff',
     fontSize: 12,
     fontWeight: '600',
-    color: '#fff',
   },
   orderId: {
     fontSize: 12,
-    color: '#8E8E93',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    color: '#C7C7CC',
+    marginTop: 4,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
+    padding: 20,
+    marginTop: screenHeight * 0.15,
   },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginTop: 24,
-    marginBottom: 8,
+    fontWeight: '700',
+    color: '#333',
+    marginTop: 20,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
+    marginTop: 8,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 32,
+    lineHeight: 22,
   },
   bookRideButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
-    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: 25,
+    borderRadius: 30,
+    marginTop: 30,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowRadius: 5,
+    elevation: 8,
   },
   bookRideButtonText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
     marginLeft: 8,
   },
-  emptyListContainer: {
-    flexGrow: 1,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: screenHeight * 0.2,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 10,
   },
 });
 
 export default AllChatsScreen;
-

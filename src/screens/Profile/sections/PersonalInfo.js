@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, SafeAreaView, StatusBar, Keyboard, TouchableWithoutFeedback ,I18nManager} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { Toast } from 'native-base';
+import Toast from 'react-native-toast-message';
 import PhoneInput from 'react-native-phone-input';
 import CountryPicker from 'react-native-country-picker-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -37,8 +37,7 @@ const PersonalInfo = () => {
   // Timer states for preventing multiple updates
   const [timer, setTimer] = useState(0);
   const [resendAttempts, setResendAttempts] = useState(0);
-  const [isUpdateBlocked, setIsUpdateBlocked] = useState(false);
-
+ 
   const onSelectCountry = (country) => {
     phoneInputRef.current.selectCountry(country.cca2.toLowerCase());
     setFlagsVisible(false);
@@ -89,25 +88,7 @@ const PersonalInfo = () => {
     }
   }, [userData, user]);
 
-  // Timer effect for preventing multiple updates
-  useEffect(() => {
-    let interval;
-    if (timer > 0) {
-      setIsUpdateBlocked(true);
-      interval = setInterval(() => {
-        setTimer(prev => {
-          if (prev <= 1) {
-            setIsUpdateBlocked(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      setIsUpdateBlocked(false);
-    }
-    return () => clearInterval(interval);
-  }, [timer]);
+ 
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -134,17 +115,17 @@ const PersonalInfo = () => {
       await dispatch(getCurrentUser());
 
       Toast.show({
-        title: t("common.success"),
-        description: t("profile.personal_info.update_success"),
-        status: "success",
-        duration: 3000,
+        type: 'success',
+        text1: t("common.success"),
+        text2: t("profile.personal_info.update_success"),
+        position: 'top'
       });
     } catch (error) {
       Toast.show({
-        title: t("common.error"),
-        description: error?.message || t("profile.personal_info.update_error"),
-        status: "error",
-        duration: 3000,
+        type: 'error',
+        text1: t("common.error"),
+        text2: error?.message || t("profile.personal_info.update_error"),
+        position: 'top'
       });
     } finally {
       setIsLoading(false);
@@ -152,24 +133,15 @@ const PersonalInfo = () => {
   };
 
   const handleSaveChanges = async () => {
-    // Prevent multiple attempts while timer is active
-    if (isUpdateBlocked) {
-      Toast.show({
-        title: t("common.warning"),
-        description: t("profile.personal_info.please_wait", { time: formatTime(timer) }),
-        status: "warning",
-        duration: 3000,
-      });
-      return;
-    }
+    
 
     if (userData.phoneNumber !== user.phoneNumber) {
       if (phoneInputRef.current && !phoneInputRef.current.isValidNumber()) {
         Toast.show({
-          title: t("common.error"),
-          description: t("signup.step4.errors.invalid_phone"),
-          status: "error",
-          duration: 3000,
+          type: 'error',
+          text1: t("common.error"),
+          text2: t("signup.step4.errors.invalid_phone"),
+          position: 'top'
         });
         return;
       }
@@ -182,10 +154,10 @@ const PersonalInfo = () => {
 
         if (Array.isArray(phoneResponse.data) && phoneResponse.data.length > 0) {
           Toast.show({
-            title: t("common.error"),
-            description: t("signup.step4.errors.phone_exists"),
-            status: "error",
-            duration: 3000,
+            type: 'error',
+            text1: t("common.error"),
+            text2: t("signup.step4.errors.phone_exists"),
+            position: 'top'
           });
           return;
         }
@@ -199,10 +171,10 @@ const PersonalInfo = () => {
         setOtpModalVisible(true);
       } catch (error) {
         Toast.show({
-          title: t("common.error"),
-          description: t("profile.personal_info.otp_send_error"),
-          status: "error",
-          duration: 3000,
+          type: 'error',
+          text1: t("common.error"),
+          text2: t("profile.personal_info.otp_send_error"),
+          position: 'top'
         });
       } finally {
         setIsLoading(false);
@@ -230,10 +202,10 @@ const PersonalInfo = () => {
       setTimer(60 * Math.pow(2, nextAttempt - 1));
     } catch (error) {
       Toast.show({
-        title: t("common.error"),
-        description: t("profile.personal_info.otp_send_error"),
-        status: "error",
-        duration: 3000,
+        type: 'error',
+        text1: t("common.error"),
+        text2: t("profile.personal_info.otp_send_error"),
+        position: 'top'
       });
     }
   };
@@ -391,21 +363,14 @@ const PersonalInfo = () => {
           <TouchableOpacity
             style={[
               styles.uberActionButton,
-              (isLoading || !isDataChanged || isUpdateBlocked) && styles.uberActionButtonDisabled
+              (isLoading || !isDataChanged ) && styles.uberActionButtonDisabled
             ]}
             onPress={handleSaveChanges}
-            disabled={isLoading || !isDataChanged || isUpdateBlocked}
+            disabled={isLoading || !isDataChanged }
             activeOpacity={0.8}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" size="small" />
-            ) : isUpdateBlocked ? (
-              <>
-                <MaterialCommunityIcons name="clock-outline" size={20} color="#fff" />
-                <Text style={styles.uberActionButtonText}>
-                  {t("common.please_wait")} ({formatTime(timer)})
-                </Text>
-              </>
             ) : (
               <>
                 <MaterialCommunityIcons name="content-save-outline" size={20} color="#fff" />

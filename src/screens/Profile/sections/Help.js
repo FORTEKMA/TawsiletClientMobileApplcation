@@ -6,10 +6,38 @@ import Header from '../components/Header';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import DeviceInfo from 'react-native-device-info';
+import { checkVersion } from "react-native-check-version";
 
 const Help = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const [appVersion, setAppVersion] = React.useState('1.0.0');
+  const [buildNumber, setBuildNumber] = React.useState('1');
+  const [latestVersion, setLatestVersion] = React.useState(null);
+  const [updateAvailable, setUpdateAvailable] = React.useState(false);
+
+  React.useEffect(() => {
+    const getVersionInfo = async () => {
+      try {
+        const version = await DeviceInfo.getVersion();
+        const build = await DeviceInfo.getBuildNumber();
+        setAppVersion(version);
+        setBuildNumber(build);
+        
+        // Check for updates
+        const versionCheck = await checkVersion();
+        if (versionCheck.needsUpdate) {
+          setLatestVersion(versionCheck.latestVersion);
+          setUpdateAvailable(true);
+        }
+      } catch (error) {
+        console.error('Error getting app version:', error);
+      }
+    };
+
+    getVersionInfo();
+  }, []);
 
   const handleCall = () => {
     const phoneNumber = `tel:${36848020}`;
@@ -33,6 +61,21 @@ const Help = () => {
       console.error('Failed to open WhatsApp:', err);
       Alert.alert(t('errors.title'), t('help.errors.whatsapp'));
     });
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const versionCheck = await checkVersion();
+      if (versionCheck.url) {
+        Linking.openURL(versionCheck.url).catch((err) => {
+          console.error('Failed to open store URL:', err);
+          Alert.alert(t('errors.title'), t('help.errors.update_store'));
+        });
+      }
+    } catch (error) {
+      console.error('Error handling update:', error);
+      Alert.alert(t('errors.title'), t('help.errors.update_failed'));
+    }
   };
 
   const renderHelpOption = (icon, title, description, onPress, iconColor = "#007AFF") => (
@@ -101,9 +144,7 @@ const Help = () => {
           
           <View style={styles.uberHeaderContent}>
             <Text style={styles.uberSectionTitle}>{t('help.title')}</Text>
-            <Text style={styles.uberSectionSubtitle}>
-              {t('help.subtitle', 'Get support and find answers')}
-            </Text>
+          
           </View>
           
           <View style={styles.uberHeaderSpacer} />
@@ -200,8 +241,59 @@ const Help = () => {
                 <Text style={styles.uberAppInfoLabel}>
                   {t('help.app_version', 'App Version')}
                 </Text>
-                <Text style={styles.uberAppInfoValue}>1.0.0</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={styles.uberAppInfoValue}>{appVersion}</Text>
+                  {updateAvailable && (
+                    <View style={{ 
+                      backgroundColor: '#FF3B30', 
+                      paddingHorizontal: 8, 
+                      paddingVertical: 2, 
+                      borderRadius: 10, 
+                      marginLeft: 8 
+                    }}>
+                      <Text style={{ color: 'white', fontSize: 10, fontWeight: 'bold' }}>
+                        {t('help.update_available', 'Update Available')}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
+              
+              
+              
+              {updateAvailable && latestVersion && (
+                <>
+                  <View style={styles.uberAppInfoDivider} />
+                  
+                  <View style={styles.uberAppInfoItem}>
+                    <Text style={styles.uberAppInfoLabel}>
+                      {t('help.latest_version', 'Latest Version')}
+                    </Text>
+                    <Text style={[styles.uberAppInfoValue, { color: '#007AFF' }]}>
+                      {latestVersion}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.uberAppInfoDivider} />
+                  
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#007AFF',
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                      borderRadius: 8,
+                      alignItems: 'center',
+                      marginTop: 10
+                    }}
+                    onPress={handleUpdate}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 16 }}>
+                      {t('help.update_now', 'Update Now')}
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              )}
               
               <View style={styles.uberAppInfoDivider} />
               
